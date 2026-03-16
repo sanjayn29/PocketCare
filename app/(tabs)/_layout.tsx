@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
+import { View } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab'; // keep if you want haptics
+import Navbar from './navbar';
 
 // Inverted palette
 const WHITE = '#FFFFFF';
@@ -12,16 +14,26 @@ const GRAY_INACTIVE = '#666666';   // medium gray for inactive
 
 export default function TabLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: {
+    <View style={{ flex: 1 }}>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: {
+          position: 'absolute',
+          bottom: 20,
+          left: 20,
+          right: 20,
           backgroundColor: WHITE,
-          borderTopColor: '#E5E5E5',     // very light gray separator
-          borderTopWidth: 1,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
+          borderRadius: 35, // side curves
+          height: 70,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.1,
+          shadowRadius: 10,
+          elevation: 5,
+          borderTopWidth: 0,
+          paddingBottom: 10,
+          paddingTop: 10,
         },
         tabBarActiveTintColor: GRAY_ACTIVE,
         tabBarInactiveTintColor: GRAY_INACTIVE,
@@ -104,6 +116,14 @@ export default function TabLayout() {
           ),
         }}
       />
+
+      <Tabs.Screen
+        name="navbar"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
+    </View>
   );
 }
