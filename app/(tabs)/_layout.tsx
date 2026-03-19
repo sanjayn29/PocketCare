@@ -3,7 +3,7 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
 
-import { HapticTab } from '@/components/haptic-tab'; // keep if you want haptics
+import { AnimatedTabButton } from '@/components/AnimatedTabButton';
 
 // Inverted palette
 const WHITE = '#FFFFFF';
@@ -48,7 +48,7 @@ export default function TabLayout() {
             letterSpacing: 0.2,
           },
           tabBarShowLabel: true,
-          tabBarButton: HapticTab,
+          tabBarButton: AnimatedTabButton,
         }}
       >
         <Tabs.Screen
