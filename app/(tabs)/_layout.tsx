@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { useAuth } from '@clerk/expo';
+import { Redirect, Tabs } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
 
@@ -12,6 +13,17 @@ const GRAY_ACTIVE = '#111111';     // almost black – very crisp
 const GRAY_INACTIVE = '#666666';   // medium gray for inactive
 
 export default function TabLayout() {
+  const { isSignedIn, isLoaded } = useAuth();
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  // If not signed in, redirect to auth
+  if (!isSignedIn) {
+    return <Redirect href="/(auth)/sign-in" />;
+  }
+
   return (
     <View style={{ flex: 1 }}>
       <Tabs
