@@ -11,7 +11,8 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
-  withTiming
+  withTiming,
+  withSequence
 } from 'react-native-reanimated'
 
 const { width } = Dimensions.get('window');
@@ -33,6 +34,7 @@ export default function AuthPage() {
 
   // Glass shine animation value
   const shimmerValue = useSharedValue(-200)
+  const shakeValue = useSharedValue(0)
 
   useEffect(() => {
     shimmerValue.value = withRepeat(
@@ -40,10 +42,24 @@ export default function AuthPage() {
       -1, // loops infinitely
       false
     )
+
+    // Lightning bolt vibration sequence
+    shakeValue.value = withRepeat(
+      withSequence(
+        withTiming(-12, { duration: 40, easing: Easing.linear }),
+        withTiming(12, { duration: 40, easing: Easing.linear })
+      ),
+      -1, // infinite rapid shake
+      true
+    )
   }, [])
 
   const shimmerStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: shimmerValue.value }, { skewX: '-20deg' }],
+  }))
+
+  const shakeStyle = useAnimatedStyle(() => ({
+    transform: [{ rotateZ: `${shakeValue.value}deg` }, { scale: 1.2 }],
   }))
 
   const handleGoogleSignIn = async () => {
@@ -94,7 +110,9 @@ export default function AuthPage() {
           </View>
 
           {isLoading ? (
-            <ActivityIndicator color="#111" />
+            <Animated.View style={shakeStyle}>
+              <Ionicons name="flash" size={26} color="#111111" />
+            </Animated.View>
           ) : (
             <View style={styles.googleButtonInner}>
               <Image
