@@ -1,5 +1,5 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@clerk/expo';
+import { Ionicons } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
@@ -41,7 +41,7 @@ export default function TabLayout() {
             borderBottomLeftRadius: 0,
             borderBottomRightRadius: 0,
             height: 58,
-            borderTopWidth: 1.5,
+            borderTopWidth: 2.5,
             borderTopColor: BLACK,
             borderLeftWidth: 1.5,
             borderLeftColor: BLACK,
@@ -49,7 +49,7 @@ export default function TabLayout() {
             borderRightColor: BLACK,
             borderBottomWidth: 0,
             paddingBottom: 6,
-            paddingTop: 6,
+            paddingTop: 14,
           },
           tabBarActiveTintColor: GRAY_ACTIVE,
           tabBarInactiveTintColor: GRAY_INACTIVE,
@@ -57,6 +57,7 @@ export default function TabLayout() {
             fontSize: 12,
             fontWeight: '600',
             marginBottom: 4,
+            marginTop: 4,
             letterSpacing: 0.2,
           },
           tabBarShowLabel: true,
@@ -92,12 +93,12 @@ export default function TabLayout() {
         />
 
         <Tabs.Screen
-          name="health"
+          name="ai"
           options={{
-            title: 'Health',
+            title: 'Pocket AI',
             tabBarIcon: ({ color, focused }) => (
               <Ionicons
-                name={focused ? 'heart' : 'heart-outline'}
+                name={focused ? 'flash' : 'flash-outline'}
                 size={focused ? 28 : 26}
                 color={color}
               />
@@ -106,12 +107,12 @@ export default function TabLayout() {
         />
 
         <Tabs.Screen
-          name="skills"
+          name="health"
           options={{
-            title: 'Skills',
+            title: 'Health',
             tabBarIcon: ({ color, focused }) => (
               <Ionicons
-                name={focused ? 'school' : 'school-outline'}
+                name={focused ? 'heart' : 'heart-outline'}
                 size={focused ? 28 : 26}
                 color={color}
               />

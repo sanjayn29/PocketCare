@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Navbar from './navbar';
 
 export default function HealthScreen() {
@@ -21,6 +21,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 80,
   },
   text: {
     fontSize: 20,

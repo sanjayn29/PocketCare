@@ -21,7 +21,7 @@ const APP_FEATURES = [
   { icon: 'heart-outline', title: 'Health', sub: 'AI guidance' },
   { icon: 'wallet-outline', title: 'Finance', sub: 'Smart tracking' },
   { icon: 'briefcase-outline', title: 'Placement', sub: 'Career growth' },
-  { icon: 'school-outline', title: 'Skills', sub: 'Mastery paths' },
+  { icon: 'school-outline', title: 'Goals', sub: 'Mastery paths' },
   { icon: 'sparkles-outline', title: 'Personal AI', sub: 'Tailored advice' },
   { icon: 'checkmark-circle-outline', title: 'TODO', sub: 'Task management' },
 ] as const

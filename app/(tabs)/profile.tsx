@@ -1,5 +1,5 @@
-import { StyleSheet, View, Text, Image, Pressable } from 'react-native';
-import { useUser, useAuth } from '@clerk/expo';
+import { useAuth, useUser } from '@clerk/expo';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import Navbar from './navbar';
 
 export default function ProfileScreen() {

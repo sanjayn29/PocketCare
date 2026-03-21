@@ -1,8 +1,8 @@
-import { StyleSheet, View, Text } from 'react-native';
+import { saveUserToFirestore } from '@/lib/save-user';
 import { useUser } from '@clerk/expo';
 import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import Navbar from './navbar';
-import { saveUserToFirestore } from '@/lib/save-user';
 export default function HomeScreen() {
   const { user } = useUser();
 
@@ -47,6 +47,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 80, // Space for navbar at top
   },
   text: {
     fontSize: 20,
