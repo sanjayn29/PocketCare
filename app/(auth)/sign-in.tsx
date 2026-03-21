@@ -7,12 +7,12 @@ import { useRouter } from 'expo-router'
 import React, { useEffect, useState } from 'react'
 import { ActivityIndicator, Dimensions, Image, Pressable, StyleSheet, View } from 'react-native'
 import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-  withSequence
+    Easing,
+    useAnimatedStyle,
+    useSharedValue,
+    withRepeat,
+    withSequence,
+    withTiming
 } from 'react-native-reanimated'
 
 const { width } = Dimensions.get('window');
@@ -31,10 +31,13 @@ export default function AuthPage() {
   const router = useRouter()
   const [errorMessage, setErrorMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [showThunderpower, setShowThunderpower] = useState(false)
 
   // Glass shine animation value
   const shimmerValue = useSharedValue(-200)
-  const shakeValue = useSharedValue(0)
+  const thunderScale = useSharedValue(0)
+  const thunderOpacity = useSharedValue(1)
+  const thunderRotate = useSharedValue(0)
 
   useEffect(() => {
     shimmerValue.value = withRepeat(
@@ -42,24 +45,43 @@ export default function AuthPage() {
       -1, // loops infinitely
       false
     )
-
-    // Lightning bolt vibration sequence
-    shakeValue.value = withRepeat(
-      withSequence(
-        withTiming(-12, { duration: 40, easing: Easing.linear }),
-        withTiming(12, { duration: 40, easing: Easing.linear })
-      ),
-      -1, // infinite rapid shake
-      true
-    )
   }, [])
+
+  // Thunderpower animation sequence - plays after successful login
+  useEffect(() => {
+    if (showThunderpower) {
+      // Initial burst
+      thunderScale.value = withSequence(
+        withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) }),
+        withTiming(1, { duration: 800 }),
+        withTiming(0, { duration: 400 })
+      )
+
+      // Rotation effect
+      thunderRotate.value = withSequence(
+        withTiming(15, { duration: 300, easing: Easing.linear }),
+        withTiming(-15, { duration: 300, easing: Easing.linear }),
+        withTiming(0, { duration: 300, easing: Easing.linear })
+      )
+
+      // Fade out
+      thunderOpacity.value = withTiming(0, { duration: 1800, easing: Easing.in(Easing.quad) }, () => {
+        // Navigate after animation completes
+        router.replace('/(tabs)')
+      })
+    }
+  }, [showThunderpower])
 
   const shimmerStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: shimmerValue.value }, { skewX: '-20deg' }],
   }))
 
-  const shakeStyle = useAnimatedStyle(() => ({
-    transform: [{ rotateZ: `${shakeValue.value}deg` }, { scale: 1.2 }],
+  const thunderpowerStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: thunderScale.value },
+      { rotateZ: `${thunderRotate.value}deg` }
+    ],
+    opacity: thunderOpacity.value,
   }))
 
   const handleGoogleSignIn = async () => {
@@ -72,16 +94,28 @@ export default function AuthPage() {
 
       if (createdSessionId && setActive) {
         await setActive({ session: createdSessionId })
+        // Trigger thunderpower animation after successful login
+        setIsLoading(false)
+        setShowThunderpower(true)
       }
     } catch (err: any) {
       setErrorMessage(err.message || 'Google Sign-In was cancelled or failed')
-    } finally {
       setIsLoading(false)
     }
   }
 
   return (
     <ThemedView style={styles.container}>
+      {/* Thunderpower Animation Overlay - plays after successful login */}
+      {showThunderpower && (
+        <Animated.View style={[styles.thunderpowerOverlay, thunderpowerStyle]}>
+          <View style={styles.thunderpowerCenter}>
+            <Ionicons name="flash" size={120} color="#FFD700" />
+            <View style={styles.thunderGlow} />
+          </View>
+        </Animated.View>
+      )}
+
       <View style={styles.topSection}>
         <View style={styles.logoContainer}>
           <Image
@@ -110,9 +144,7 @@ export default function AuthPage() {
           </View>
 
           {isLoading ? (
-            <Animated.View style={shakeStyle}>
-              <Ionicons name="flash" size={26} color="#111111" />
-            </Animated.View>
+            <ActivityIndicator size="small" color="#111111" />
           ) : (
             <View style={styles.googleButtonInner}>
               <Image
@@ -312,5 +344,27 @@ const styles = StyleSheet.create({
     marginTop: 16,
     textAlign: 'center',
     fontWeight: '500',
+  },
+  thunderpowerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  thunderpowerCenter: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  thunderGlow: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    top: '50%',
+    left: '50%',
+    marginLeft: -90,
+    marginTop: -90,
   },
 })
