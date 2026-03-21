@@ -1,3 +1,4 @@
+import FloatingActionButton from '@/components/FloatingActionButton';
 import { saveUserToFirestore } from '@/lib/save-user';
 import { useUser } from '@clerk/expo';
 import React from 'react';
@@ -31,6 +32,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <Navbar />
+      <FloatingActionButton />
       <View style={styles.content}>
         <Text style={styles.text}>Home</Text>
       </View>
