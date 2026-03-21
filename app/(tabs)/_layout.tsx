@@ -142,6 +142,41 @@ export default function TabLayout() {
         />
 
         <Tabs.Screen
+          name="goals"
+          options={{
+            href: null,
+          }}
+        />
+
+        <Tabs.Screen
+          name="notes"
+          options={{
+            href: null,
+          }}
+        />
+
+        <Tabs.Screen
+          name="calculator"
+          options={{
+            href: null,
+          }}
+        />
+
+        <Tabs.Screen
+          name="tasks"
+          options={{
+            href: null,
+          }}
+        />
+
+        <Tabs.Screen
+          name="skills"
+          options={{
+            href: null,
+          }}
+        />
+
+        <Tabs.Screen
           name="navbar"
           options={{
             href: null,

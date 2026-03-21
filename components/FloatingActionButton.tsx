@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface FloatingActionButtonProps {
   onMenuPress?: (optionId: string) => void;
@@ -66,13 +68,16 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
         }),
       ]).start();
 
-      Animated.parallel(
+      // Ensure every open starts from hidden state, then reveal options one by one.
+      menuItemAnims.forEach((anim) => anim.setValue(0));
+
+      Animated.stagger(
+        120,
         menuItemAnims.map((anim) =>
-          Animated.spring(anim, {
+          Animated.timing(anim, {
             toValue: 1,
+            duration: 220,
             useNativeDriver: true,
-            friction: 8,
-            tension: 95,
           })
         )
       ).start();
@@ -86,12 +91,25 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
   const handleMenuPress = (optionId: string) => {
     setShowMenu(false);
 
-    if (optionId === 'profile') {
-      router.push('/profile');
-    }
+    const optionRoutes: Record<string, string> = {
+      goals: '/goals',
+      notes: '/notes',
+      calculator: '/calculator',
+      tasks: '/tasks',
+      skills: '/skills',
+      profile: '/profile',
+    };
 
+    const route = optionRoutes[optionId];
     if (onMenuPress) {
       onMenuPress(optionId);
+    }
+
+    if (route) {
+      // Defers navigation so the same tap both closes sheet and navigates reliably.
+      setTimeout(() => {
+        router.push(route as any);
+      }, 60);
     }
   };
 
@@ -149,8 +167,10 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
         onRequestClose={() => setShowMenu(false)}
       >
         <View style={styles.modalOverlay}>
-          <Animated.View style={[styles.backdrop, { opacity: overlayOpacity }]} />
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowMenu(false)} />
+          <AnimatedPressable
+            style={[styles.backdrop, { opacity: overlayOpacity }]}
+            onPress={() => setShowMenu(false)}
+          />
 
           <Animated.View
             style={[
@@ -190,19 +210,26 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
                       },
                     ]}
                   >
-                    <Pressable
-                      style={({ pressed }) => [
+                    <TouchableOpacity
+                      activeOpacity={0.75}
+                      style={[
                         styles.menuItem,
                         { backgroundColor: option.tint },
-                        pressed && styles.menuItemPressed,
                       ]}
+                      hitSlop={8}
+                      pressRetentionOffset={10}
                       onPress={() => handleMenuPress(option.id)}
                     >
-                      <View style={styles.menuItemIconWrap}>
+                      <TouchableOpacity
+                        activeOpacity={0.75}
+                        hitSlop={8}
+                        onPress={() => handleMenuPress(option.id)}
+                        style={styles.menuItemIconWrap}
+                      >
                         <Ionicons name={option.icon as any} size={20} color="#111111" />
-                      </View>
+                      </TouchableOpacity>
                       <Text style={styles.menuItemLabel}>{option.label}</Text>
-                    </Pressable>
+                    </TouchableOpacity>
                   </Animated.View>
                 );
               })}
@@ -264,6 +291,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(15, 23, 42, 0.45)',
   },
   bottomSheet: {
+    zIndex: 2,
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
@@ -307,28 +335,22 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
   },
   menuItems: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    rowGap: 10,
+    flexDirection: 'column',
+    gap: 10,
   },
   menuItemCell: {
-    width: '31.8%',
+    width: '100%',
   },
   menuItem: {
-    flexDirection: 'column',
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 102,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
+    justifyContent: 'flex-start',
+    minHeight: 68,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: '#E7ECF3',
-  },
-  menuItemPressed: {
-    opacity: 0.8,
-    transform: [{ scale: 0.99 }],
   },
   menuItemIconWrap: {
     width: 34,
@@ -344,7 +366,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#0F172A',
-    marginTop: 8,
-    textAlign: 'center',
+    marginLeft: 10,
+    textAlign: 'left',
   },
 });
