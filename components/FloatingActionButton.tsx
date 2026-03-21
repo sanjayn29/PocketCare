@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -7,11 +8,8 @@ interface FloatingActionButtonProps {
 }
 
 export default function FloatingActionButton({ onMenuPress }: FloatingActionButtonProps) {
+  const router = useRouter();
   const [showMenu, setShowMenu] = useState(false);
-  const pulseAnim = useRef(new Animated.Value(0)).current;
-  const iconRotate = useRef(new Animated.Value(0)).current;
-  const menuScale = useRef(new Animated.Value(0.9)).current;
-  const menuOpacity = useRef(new Animated.Value(0)).current;
 
   const menuOptions = [
     { id: 'goals', label: 'Goals', icon: 'flag', tint: '#E8F4FF' },
@@ -19,7 +17,14 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
     { id: 'calculator', label: 'Calculator', icon: 'calculator', tint: '#FFF4E8' },
     { id: 'tasks', label: 'Tasks', icon: 'checkbox', tint: '#F5EDFF' },
     { id: 'skills', label: 'Skills', icon: 'school', tint: '#FFEFF4' },
+    { id: 'profile', label: 'Profile', icon: 'person', tint: '#EAF2FF' },
   ];
+
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+  const iconRotate = useRef(new Animated.Value(0)).current;
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const sheetTranslateY = useRef(new Animated.Value(340)).current;
+  const menuItemAnims = useRef(menuOptions.map(() => new Animated.Value(0))).current;
 
   useEffect(() => {
     Animated.loop(
@@ -48,26 +53,43 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
 
     if (showMenu) {
       Animated.parallel([
-        Animated.spring(menuScale, {
-          toValue: 1,
-          useNativeDriver: true,
-          friction: 7,
-          tension: 95,
-        }),
-        Animated.timing(menuOpacity, {
+        Animated.timing(overlayOpacity, {
           toValue: 1,
           duration: 180,
           useNativeDriver: true,
         }),
+        Animated.spring(sheetTranslateY, {
+          toValue: 0,
+          useNativeDriver: true,
+          friction: 8,
+          tension: 90,
+        }),
       ]).start();
+
+      Animated.parallel(
+        menuItemAnims.map((anim) =>
+          Animated.spring(anim, {
+            toValue: 1,
+            useNativeDriver: true,
+            friction: 8,
+            tension: 95,
+          })
+        )
+      ).start();
     } else {
-      menuScale.setValue(0.9);
-      menuOpacity.setValue(0);
+      overlayOpacity.setValue(0);
+      sheetTranslateY.setValue(340);
+      menuItemAnims.forEach((anim) => anim.setValue(0));
     }
-  }, [iconRotate, menuOpacity, menuScale, showMenu]);
+  }, [iconRotate, menuItemAnims, overlayOpacity, sheetTranslateY, showMenu]);
 
   const handleMenuPress = (optionId: string) => {
     setShowMenu(false);
+
+    if (optionId === 'profile') {
+      router.push('/profile');
+    }
+
     if (onMenuPress) {
       onMenuPress(optionId);
     }
@@ -123,51 +145,70 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
       <Modal
         visible={showMenu}
         transparent={true}
-        animationType="fade"
+        animationType="none"
         onRequestClose={() => setShowMenu(false)}
       >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setShowMenu(false)}
-        >
+        <View style={styles.modalOverlay}>
+          <Animated.View style={[styles.backdrop, { opacity: overlayOpacity }]} />
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setShowMenu(false)} />
+
           <Animated.View
             style={[
-              styles.menuContainer,
+              styles.bottomSheet,
               {
-                opacity: menuOpacity,
-                transform: [{ scale: menuScale }],
+                transform: [{ translateY: sheetTranslateY }],
               },
             ]}
           >
-            <View style={styles.menuBanner} />
+            <View style={styles.handle} />
             <View style={styles.menuHeader}>
-              <Text style={styles.menuTitle}>Quick Actions</Text>
-              <Pressable onPress={() => setShowMenu(false)}>
-                <Ionicons name="close" size={24} color="#111111" />
+              <Text style={styles.menuTitle}>Choose an Option</Text>
+              <Pressable onPress={() => setShowMenu(false)} style={styles.closeButton}>
+                <Ionicons name="close" size={18} color="#111111" />
               </Pressable>
             </View>
 
             <View style={styles.menuItems}>
-              {menuOptions.map((option) => (
-                <Pressable
-                  key={option.id}
-                  style={({ pressed }) => [
-                    styles.menuItem,
-                    { backgroundColor: option.tint },
-                    pressed && styles.menuItemPressed,
-                  ]}
-                  onPress={() => handleMenuPress(option.id)}
-                >
-                  <View style={styles.menuItemIconWrap}>
-                    <Ionicons name={option.icon as any} size={20} color="#111111" />
-                  </View>
-                  <Text style={styles.menuItemLabel}>{option.label}</Text>
-                  <Ionicons name="chevron-forward" size={16} color="#5A6B80" />
-                </Pressable>
-              ))}
+              {menuOptions.map((option, index) => {
+                const itemAnim = menuItemAnims[index];
+
+                return (
+                  <Animated.View
+                    key={option.id}
+                    style={[
+                      styles.menuItemCell,
+                      {
+                      opacity: itemAnim,
+                      transform: [
+                        {
+                          translateY: itemAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [16, 0],
+                          }),
+                        },
+                      ],
+                      },
+                    ]}
+                  >
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.menuItem,
+                        { backgroundColor: option.tint },
+                        pressed && styles.menuItemPressed,
+                      ]}
+                      onPress={() => handleMenuPress(option.id)}
+                    >
+                      <View style={styles.menuItemIconWrap}>
+                        <Ionicons name={option.icon as any} size={20} color="#111111" />
+                      </View>
+                      <Text style={styles.menuItemLabel}>{option.label}</Text>
+                    </Pressable>
+                  </Animated.View>
+                );
+              })}
             </View>
           </Animated.View>
-        </Pressable>
+        </View>
       </Modal>
     </>
   );
@@ -216,54 +257,71 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
+    justifyContent: 'flex-end',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(15, 23, 42, 0.45)',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  menuContainer: {
+  bottomSheet: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 20,
-    width: '80%',
-    maxWidth: 340,
-    borderWidth: 1,
-    borderColor: '#E8EDF5',
-    overflow: 'hidden',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 18,
+    paddingTop: 10,
+    paddingBottom: 18,
+    borderTopWidth: 2,
+    borderTopColor: '#D8E7FA',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.18,
-    shadowRadius: 20,
-    elevation: 12,
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 18,
+    elevation: 16,
   },
-  menuBanner: {
-    position: 'absolute',
-    width: 180,
-    height: 180,
+  handle: {
+    alignSelf: 'center',
+    width: 44,
+    height: 5,
     borderRadius: 999,
-    top: -120,
-    right: -50,
-    backgroundColor: '#E7F1FF',
+    backgroundColor: '#CBD5E1',
+    marginBottom: 12,
   },
   menuHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 12,
+  },
+  closeButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F1F5F9',
   },
   menuTitle: {
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: '800',
     color: '#0F172A',
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
   },
   menuItems: {
-    gap: 12,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 10,
+  },
+  menuItemCell: {
+    width: '31.8%',
   },
   menuItem: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 12,
+    justifyContent: 'center',
+    minHeight: 102,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: '#E7ECF3',
@@ -283,10 +341,10 @@ const styles = StyleSheet.create({
     borderColor: '#E6EBF2',
   },
   menuItemLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: '#0F172A',
-    marginLeft: 12,
-    flex: 1,
+    marginTop: 8,
+    textAlign: 'center',
   },
 });
