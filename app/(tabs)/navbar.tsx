@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
-import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Navbar() {
@@ -14,7 +14,7 @@ export default function Navbar() {
       <View style={styles.leftSection}>
         <View style={styles.logoContainer}>
           <Image 
-            source={require('../../assets/Logo.png')} 
+            source={require('../../assets/Logoo.png')} 
             style={styles.logo}
             resizeMode="cover"
           />
@@ -63,8 +63,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoContainer: {
-    width: 42,
-    height: 42,
+    width: 60,
+    height: 60,
     borderRadius: 12,
     backgroundColor: '#F5F5F5', // fallback background 
     overflow: 'hidden',
