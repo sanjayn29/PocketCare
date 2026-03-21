@@ -1,62 +1,60 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, Pressable, StyleSheet, View } from 'react-native';
 import { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import * as Haptics from 'expo-haptics';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Pressable, StyleSheet, View } from 'react-native';
 
 export function AnimatedTabButton(props: BottomTabBarButtonProps) {
-  const { children, accessibilityState, onPress, onPressIn, style, ...rest } = props;
+  const { children, accessibilityState, onPress, onPressIn } = props;
   const focused = accessibilityState?.selected ?? false;
 
-  // Animated value for the line width (expands from center)
-  const lineWidth = useRef(new Animated.Value(0)).current;
-  // Animated value for a subtle scale bounce on press
+  // Drives the active-state visuals and lift effect.
+  const focusAnim = useRef(new Animated.Value(focused ? 1 : 0)).current;
+  // Press interaction scale.
   const scale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    Animated.spring(lineWidth, {
+    Animated.spring(focusAnim, {
       toValue: focused ? 1 : 0,
       useNativeDriver: false,
-      friction: 6,
-      tension: 80,
+      friction: 7,
+      tension: 95,
     }).start();
-  }, [focused]);
+  }, [focusAnim, focused]);
 
   const handlePressIn = (ev: any) => {
-    // Haptic feedback on iOS
-    if (process.env.EXPO_OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    Haptics.selectionAsync();
 
-    // Subtle scale down animation
     Animated.spring(scale, {
-      toValue: 0.9,
+      toValue: 0.94,
       useNativeDriver: true,
-      friction: 5,
+      friction: 6,
     }).start();
 
     onPressIn?.(ev);
   };
 
   const handlePressOut = () => {
-    // Bounce back
     Animated.spring(scale, {
       toValue: 1,
       useNativeDriver: true,
-      friction: 3,
-      tension: 100,
+      friction: 4,
+      tension: 110,
     }).start();
   };
 
-  // Interpolate line width from 0 to 28px
-  const animatedLineWidth = lineWidth.interpolate({
+  const animatedTranslateY = focusAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 28],
+    outputRange: [0, -7],
   });
 
-  // Interpolate line opacity
-  const animatedLineOpacity = lineWidth.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0, 0.5, 1],
+  const animatedBg = focusAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['transparent', '#EAF3FF'],
+  });
+
+  const animatedDotScale = focusAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.5, 1],
   });
 
   return (
@@ -64,20 +62,28 @@ export function AnimatedTabButton(props: BottomTabBarButtonProps) {
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      style={[styles.button]}
+      style={styles.button}
     >
-      <Animated.View style={[styles.content, { transform: [{ scale }] }]}>
+      <Animated.View
+        style={[
+          styles.content,
+          {
+            backgroundColor: animatedBg,
+            opacity: 1,
+            transform: [{ translateY: animatedTranslateY }, { scale }],
+          },
+        ]}
+      >
         {children}
       </Animated.View>
 
-      {/* Animated line that expands from center */}
       <View style={styles.lineContainer}>
         <Animated.View
           style={[
             styles.line,
             {
-              width: animatedLineWidth,
-              opacity: animatedLineOpacity,
+              opacity: focusAnim,
+              transform: [{ scale: animatedDotScale }],
             },
           ]}
         />
@@ -91,21 +97,27 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 2,
   },
   content: {
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    minWidth: 54,
   },
   lineContainer: {
     position: 'absolute',
-    bottom: 2,
+    bottom: -1,
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
   },
   line: {
-    height: 2.5,
-    backgroundColor: '#111111',
-    borderRadius: 2,
+    height: 5,
+    width: 5,
+    backgroundColor: '#0F172A',
+    borderRadius: 999,
   },
 });
