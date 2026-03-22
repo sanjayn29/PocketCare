@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -27,6 +28,23 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const sheetTranslateY = useRef(new Animated.Value(340)).current;
   const menuItemAnims = useRef(menuOptions.map(() => new Animated.Value(0))).current;
+
+  const openMenu = () => {
+    if (!showMenu) {
+      setShowMenu(true);
+    }
+  };
+
+  const swipeUpResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dy) > 8,
+      onPanResponderRelease: (_, gesture) => {
+        if (gesture.dy < -16 && Math.abs(gesture.dx) < 42) {
+          openMenu();
+        }
+      },
+    })
+  ).current;
 
   useEffect(() => {
     Animated.loop(
@@ -120,44 +138,42 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
           styles.fab,
           pressed && styles.fabPressed,
         ]}
-        onPress={() => setShowMenu(true)}
+        onPress={openMenu}
+        {...swipeUpResponder.panHandlers}
       >
-        <View style={styles.fabOutline} />
-
-        <Animated.View
-          style={[
-            styles.fabPulse,
-            {
-              opacity: pulseAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0.18, 0.35],
-              }),
+        <LinearGradient
+          colors={['#0F172A', '#1D4ED8']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.fabGradient}
+        >
+          <Animated.View
+            style={{
               transform: [
                 {
-                  scale: pulseAnim.interpolate({
+                  rotate: iconRotate.interpolate({
                     inputRange: [0, 1],
-                    outputRange: [1, 1.16],
+                    outputRange: ['0deg', '45deg'],
                   }),
                 },
               ],
-            },
-          ]}
-        />
-
-        <Animated.View
-          style={{
-            transform: [
+            }}
+          >
+            <Ionicons name="add" size={22} color="#FFFFFF" />
+          </Animated.View>
+          <Text style={styles.fabLabel}>Options</Text>
+          <Animated.View
+            style={[
+              styles.fabShine,
               {
-                rotate: iconRotate.interpolate({
+                opacity: pulseAnim.interpolate({
                   inputRange: [0, 1],
-                  outputRange: ['0deg', '45deg'],
+                  outputRange: [0.16, 0.34],
                 }),
               },
-            ],
-          }}
-        >
-          <Ionicons name="add" size={30} color="#FFFFFF" />
-        </Animated.View>
+            ]}
+          />
+        </LinearGradient>
       </Pressable>
 
       <Modal
@@ -188,7 +204,11 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
               </Pressable>
             </View>
 
-            <View style={styles.menuItems}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.menuItems}
+            >
               {menuOptions.map((option, index) => {
                 const itemAnim = menuItemAnims[index];
 
@@ -196,7 +216,7 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
                   <Animated.View
                     key={option.id}
                     style={[
-                      styles.menuItemCell,
+                      styles.menuNavItemCell,
                       {
                       opacity: itemAnim,
                       transform: [
@@ -213,27 +233,22 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
                     <TouchableOpacity
                       activeOpacity={0.75}
                       style={[
-                        styles.menuItem,
+                        styles.menuNavItem,
                         { backgroundColor: option.tint },
                       ]}
                       hitSlop={8}
                       pressRetentionOffset={10}
                       onPress={() => handleMenuPress(option.id)}
                     >
-                      <TouchableOpacity
-                        activeOpacity={0.75}
-                        hitSlop={8}
-                        onPress={() => handleMenuPress(option.id)}
-                        style={styles.menuItemIconWrap}
-                      >
+                      <View style={styles.menuItemIconWrap}>
                         <Ionicons name={option.icon as any} size={20} color="#111111" />
-                      </TouchableOpacity>
+                      </View>
                       <Text style={styles.menuItemLabel}>{option.label}</Text>
                     </TouchableOpacity>
                   </Animated.View>
                 );
               })}
-            </View>
+            </ScrollView>
           </Animated.View>
         </View>
       </Modal>
@@ -244,42 +259,50 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
 const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
-    bottom: 104,
-    right: 24,
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    backgroundColor: '#0F172A',
+    bottom: 86,
+    right: 16,
+    width: 124,
+    height: 48,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.26,
-    shadowRadius: 12,
-    elevation: 11,
-    borderWidth: 2,
-    borderColor: '#0A1222',
-    zIndex: 50,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 8,
+    zIndex: 60,
     overflow: 'visible',
   },
-  fabOutline: {
-    position: 'absolute',
-    top: -3,
-    left: -3,
-    right: -3,
-    bottom: -3,
-    borderRadius: 999,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-    opacity: 0.95,
+  fabGradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    overflow: 'hidden',
+  },
+  fabLabel: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
   },
   fabPressed: {
     opacity: 0.9,
     transform: [{ scale: 0.98 }],
   },
-  fabPulse: {
-    ...StyleSheet.absoluteFillObject,
+  fabShine: {
+    position: 'absolute',
+    width: 58,
+    height: 58,
     borderRadius: 999,
+    top: -28,
+    right: -14,
     backgroundColor: '#93C5FD',
   },
   modalOverlay: {
@@ -335,19 +358,19 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
   },
   menuItems: {
-    flexDirection: 'column',
+    paddingHorizontal: 2,
     gap: 10,
   },
-  menuItemCell: {
-    width: '100%',
+  menuNavItemCell: {
+    width: 92,
   },
-  menuItem: {
-    flexDirection: 'row',
+  menuNavItem: {
+    flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'flex-start',
-    minHeight: 68,
+    justifyContent: 'center',
+    minHeight: 94,
     paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: '#E7ECF3',
@@ -363,10 +386,10 @@ const styles = StyleSheet.create({
     borderColor: '#E6EBF2',
   },
   menuItemLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: '#0F172A',
-    marginLeft: 10,
-    textAlign: 'left',
+    marginTop: 8,
+    textAlign: 'center',
   },
 });
