@@ -331,6 +331,15 @@ export default function GoalsScreen() {
             ))}
           </View>
 
+          <View style={styles.selectorLabelRow}><Text style={styles.selectorLabel}>Priority:</Text></View>
+          <View style={styles.categoryOptions}>
+            {(['low', 'medium', 'high'] as GoalPriority[]).map(p => (
+              <TouchableOpacity key={p} style={[styles.catOption, newPriority === p && styles.catOptionActive]} onPress={() => setNewPriority(p)}>
+                <Text style={[styles.catOptionText, newPriority === p && styles.catOptionTextActive]}>{p}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
           {/* Subtasks Section for Creation */}
           <View style={styles.subtaskSection}>
              <Text style={styles.selectorLabel}>Initial Goal Tasks</Text>
@@ -460,6 +469,24 @@ export default function GoalsScreen() {
           <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled">
             <TextInput style={styles.titleInput} placeholder="Goal Title" value={editTitle} onChangeText={setEditTitle} />
             <TextInput style={styles.contentInput} placeholder="Description" multiline textAlignVertical="top" value={editDesc} onChangeText={setEditDesc} />
+
+            <View style={styles.selectorLabelRow}><Text style={styles.selectorLabel}>Category:</Text></View>
+            <View style={styles.categoryOptions}>
+              {(['health', 'finance', 'career', 'personal'] as GoalCategory[]).map(c => (
+                <TouchableOpacity key={c} style={[styles.catOption, editCategory === c && styles.catOptionActive]} onPress={() => setEditCategory(c)}>
+                  <Text style={[styles.catOptionText, editCategory === c && styles.catOptionTextActive]}>{c}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <View style={styles.selectorLabelRow}><Text style={styles.selectorLabel}>Priority:</Text></View>
+            <View style={styles.categoryOptions}>
+              {(['low', 'medium', 'high'] as GoalPriority[]).map(p => (
+                <TouchableOpacity key={p} style={[styles.catOption, editPriority === p && styles.catOptionActive]} onPress={() => setEditPriority(p)}>
+                  <Text style={[styles.catOptionText, editPriority === p && styles.catOptionTextActive]}>{p}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
             {/* Subtasks System */}
             <View style={styles.subtaskSection}>

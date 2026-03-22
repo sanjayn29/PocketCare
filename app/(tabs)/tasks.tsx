@@ -9,13 +9,20 @@ import Navbar from './navbar';
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
 import { addTask, getTasks, updateTask, deleteTask, Task, TaskPriority, TaskStatus } from '../../lib/tasks-service';
+import { getGoals, updateGoal } from '../../lib/goals-service';
 import DateTimePicker from '@react-native-community/datetimepicker';
+
+export type ExtendedTask = Task & {
+  isGoalTask?: boolean;
+  originalGoalId?: string;
+  originalTaskId?: string;
+};
 
 export default function TasksScreen() {
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress;
   
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<ExtendedTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   
@@ -33,7 +40,7 @@ export default function TasksScreen() {
 
   // Edit Modal states
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editingTask, setEditingTask] = useState<ExtendedTask | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDesc, setEditDesc] = useState('');
   const [editPriority, setEditPriority] = useState<TaskPriority>('medium');
@@ -67,14 +74,34 @@ export default function TasksScreen() {
     if (!email) return;
     try {
       const fetchedTasks = await getTasks(email);
+      const fetchedGoals = await getGoals(email);
+
+      const mappedGoalTasks: ExtendedTask[] = fetchedGoals.flatMap(goal => {
+        if (!goal.tasks) return [];
+        return goal.tasks.map(t => ({
+          id: `goaltask_${goal.id}_${t.id}`,
+          title: `Goal: ${goal.title}`, 
+          description: t.title,
+          status: t.completed ? 'completed' : 'pending',
+          priority: goal.priority as TaskPriority,
+          due_date: goal.deadline || (goal as any).target_date || '',
+          created_at: goal.created_at,
+          isGoalTask: true,
+          originalGoalId: goal.id,
+          originalTaskId: t.id
+        }));
+      });
+
+      const allTasks = [...fetchedTasks, ...mappedGoalTasks];
+
       // Sort tasks: pending first, then by priority, then newest
-      fetchedTasks.sort((a, b) => {
+      allTasks.sort((a, b) => {
         if (a.status !== b.status) return a.status === 'pending' ? -1 : 1;
-        const pOrder = { high: 3, medium: 2, low: 1 };
+        const pOrder: Record<string, number> = { high: 3, medium: 2, low: 1 };
         if (pOrder[a.priority] !== pOrder[b.priority]) return pOrder[b.priority] - pOrder[a.priority];
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
-      setTasks(fetchedTasks);
+      setTasks(allTasks);
     } catch (error) {
       console.error(error);
     } finally {
@@ -115,7 +142,7 @@ export default function TasksScreen() {
     }
   };
 
-  const toggleTaskStatus = async (task: Task) => {
+  const toggleTaskStatus = async (task: ExtendedTask) => {
     if (!email) return;
     const newStatus = task.status === 'pending' ? 'completed' : 'pending';
     
@@ -123,7 +150,19 @@ export default function TasksScreen() {
     setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: newStatus } : t));
     
     try {
-      await updateTask(email, task.id, { status: newStatus });
+      if (task.isGoalTask && task.originalGoalId && task.originalTaskId) {
+        const goalList = await getGoals(email);
+        const parentGoal = goalList.find(g => g.id === task.originalGoalId);
+        
+        if (parentGoal && parentGoal.tasks) {
+          const updatedSubtasks = parentGoal.tasks.map(subt => 
+            subt.id === task.originalTaskId ? { ...subt, completed: newStatus === 'completed' } : subt
+          );
+          await updateGoal(email, parentGoal.id, { tasks: updatedSubtasks });
+        }
+      } else {
+        await updateTask(email, task.id, { status: newStatus });
+      }
     } catch (error) {
       // Revert if error
       loadTasks();
@@ -131,7 +170,10 @@ export default function TasksScreen() {
     }
   };
 
-  const openEditModal = (task: Task) => {
+  const openEditModal = (task: ExtendedTask) => {
+    if (task.isGoalTask) {
+      return Alert.alert('Mapped Goal Task', 'This is a subtask embedded inside a Goal. Please navigate to the Goals menu to heavily edit this subtask structurally.');
+    }
     setEditingTask(task);
     setEditTitle(task.title);
     setEditDesc(task.description);
@@ -149,12 +191,14 @@ export default function TasksScreen() {
     
     setIsSavingEdit(true);
     try {
-      await updateTask(email, editingTask.id, { 
-        title: editTitle, 
-        description: editDesc,
-        priority: editPriority,
-        due_date: editDueDate
-      });
+      if (!editingTask.isGoalTask) {
+        await updateTask(email, editingTask.id, { 
+          title: editTitle, 
+          description: editDesc,
+          priority: editPriority,
+          due_date: editDueDate
+        });
+      }
       setModalVisible(false);
       loadTasks();
     } catch (error) {
@@ -166,6 +210,12 @@ export default function TasksScreen() {
 
   const handleDelete = async (taskId: string) => {
     if (!email) return;
+    
+    const targetTask = tasks.find(t => t.id === taskId);
+    if (targetTask?.isGoalTask) {
+       return Alert.alert('Mapped Goal Task', 'This task is rigidly configured within a Goal. Navigate to the Goals tab to delete it.');
+    }
+
     Alert.alert('Delete Task', 'Are you sure you want to delete this task?', [
       { text: 'Cancel', style: 'cancel' },
       { 
@@ -193,10 +243,10 @@ export default function TasksScreen() {
     );
   };
 
-  const renderTask = ({ item }: { item: Task }) => {
+  const renderTask = ({ item }: { item: ExtendedTask }) => {
     const isCompleted = item.status === 'completed';
     return (
-      <View style={[styles.taskCard, isCompleted && styles.taskCardCompleted]}>
+      <View style={[styles.taskCard, item.isGoalTask && { borderColor: '#E0E7FF', borderWidth: 1.5 }, isCompleted && styles.taskCardCompleted]}>
         <TouchableOpacity 
           style={styles.checkboxArea} 
           onPress={() => toggleTaskStatus(item)}
@@ -215,30 +265,39 @@ export default function TasksScreen() {
           activeOpacity={0.7}
         >
           <View style={styles.taskHeaderRow}>
-            <Text style={[styles.taskTitle, isCompleted && styles.taskTitleCompleted]} numberOfLines={1}>
+            <Text style={[styles.taskTitle, item.isGoalTask && { color: '#1D4ED8' }, isCompleted && styles.taskTitleCompleted]} numberOfLines={1}>
               {item.title}
             </Text>
             <PriorityBadge priority={item.priority} />
           </View>
           
           {item.description ? (
-            <Text style={[styles.taskDesc, isCompleted && styles.taskDescCompleted]} numberOfLines={2}>
+            <Text style={[styles.taskDesc, item.isGoalTask && { color: '#0F172A', fontWeight: '500' }, isCompleted && styles.taskDescCompleted]} numberOfLines={2}>
               {item.description}
             </Text>
           ) : null}
           
-          {item.due_date ? (
-            <View style={styles.dueDateRow}>
-              <Ionicons name="calendar-outline" size={14} color={isCompleted ? "#94A3B8" : "#64748B"} />
-              <Text style={[styles.dueDateText, isCompleted && styles.dueDateTextCompleted]}>
-                Due: {item.due_date}
-              </Text>
-            </View>
-          ) : null}
+          <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4}}>
+             {item.due_date ? (
+               <View style={styles.dueDateRow}>
+                 <Ionicons name="calendar-outline" size={14} color={isCompleted ? "#94A3B8" : "#64748B"} />
+                 <Text style={[styles.dueDateText, isCompleted && styles.dueDateTextCompleted]}>
+                   Due: {item.due_date}
+                 </Text>
+               </View>
+             ) : <View/>}
+
+             {item.isGoalTask && (
+                <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>
+                   <Ionicons name="flag" size={12} color={isCompleted ? "#94A3B8" : "#3B82F6"} />
+                   <Text style={{fontSize: 10, fontWeight: '700', color: isCompleted ? "#94A3B8" : "#3B82F6"}}>GOAL TASK</Text>
+                </View>
+             )}
+          </View>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.deleteArea} onPress={() => handleDelete(item.id)} hitSlop={10}>
-          <Ionicons name="trash-outline" size={20} color="#FF5252" />
+          <Ionicons name="trash-outline" size={20} color={item.isGoalTask ? "#CBD5E1" : "#FF5252"} />
         </TouchableOpacity>
       </View>
     );
