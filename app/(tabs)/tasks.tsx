@@ -1,16 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, Text, View, FlatList, TouchableOpacity, 
-  Modal, TextInput, ActivityIndicator, Alert,
-  KeyboardAvoidingView, Platform, Keyboard
-} from 'react-native';
 import FloatingActionButton from '@/components/FloatingActionButton';
-import Navbar from './navbar';
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
-import { addTask, getTasks, updateTask, deleteTask, Task, TaskPriority, TaskStatus } from '../../lib/tasks-service';
-import { getGoals, updateGoal } from '../../lib/goals-service';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator, Alert,
+  FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet, Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { getGoals, updateGoal } from '../../lib/goals-service';
+import { addTask, deleteTask, getTasks, Task, TaskPriority, updateTask } from '../../lib/tasks-service';
+import Navbar from './navbar';
 
 export type ExtendedTask = Task & {
   isGoalTask?: boolean;
@@ -27,7 +34,7 @@ export default function TasksScreen() {
   const [refreshing, setRefreshing] = useState(false);
   
   // Filter state
-  const [filterMode, setFilterMode] = useState<'all' | 'today'>('all');
+  const [filterMode, setFilterMode] = useState<'all' | 'today' | 'pending' | 'completed' | 'overdue'>('all');
   
   // Inline Create state
   const [isCreating, setIsCreating] = useState(false);
@@ -243,8 +250,12 @@ export default function TasksScreen() {
     );
   };
 
+  const isValidDateOnlyString = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value);
+
   const renderTask = ({ item }: { item: ExtendedTask }) => {
     const isCompleted = item.status === 'completed';
+    const hasDueDate = !!item.due_date && isValidDateOnlyString(item.due_date);
+    const isOverdue = hasDueDate && !isCompleted && item.due_date < todayStr;
     return (
       <View style={[styles.taskCard, item.isGoalTask && { borderColor: '#E0E7FF', borderWidth: 1.5 }, isCompleted && styles.taskCardCompleted]}>
         <TouchableOpacity 
@@ -284,6 +295,11 @@ export default function TasksScreen() {
                  <Text style={[styles.dueDateText, isCompleted && styles.dueDateTextCompleted]}>
                    Due: {item.due_date}
                  </Text>
+                 {isOverdue && (
+                   <View style={styles.overdueBadge}>
+                     <Text style={styles.overdueBadgeText}>DUE DATE ENDED</Text>
+                   </View>
+                 )}
                </View>
              ) : <View/>}
 
@@ -330,9 +346,25 @@ export default function TasksScreen() {
 
   const todayStr = new Date().toISOString().split('T')[0];
   const filteredTasks = tasks.filter(task => {
+    const hasDueDate = !!task.due_date && isValidDateOnlyString(task.due_date);
+    const isOverdue = hasDueDate && task.status !== 'completed' && task.due_date < todayStr;
+
     if (filterMode === 'today') {
       return task.due_date === todayStr;
     }
+
+    if (filterMode === 'pending') {
+      return task.status === 'pending' && !isOverdue;
+    }
+
+    if (filterMode === 'completed') {
+      return task.status === 'completed';
+    }
+
+    if (filterMode === 'overdue') {
+      return isOverdue;
+    }
+
     return true;
   });
 
@@ -441,6 +473,24 @@ export default function TasksScreen() {
           onPress={() => setFilterMode('today')}
         >
           <Text style={[styles.filterChipText, filterMode === 'today' && styles.filterChipTextActive]}>Today Only</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.filterChip, filterMode === 'pending' && styles.filterChipActive]}
+          onPress={() => setFilterMode('pending')}
+        >
+          <Text style={[styles.filterChipText, filterMode === 'pending' && styles.filterChipTextActive]}>Pending</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.filterChip, filterMode === 'completed' && styles.filterChipActive]}
+          onPress={() => setFilterMode('completed')}
+        >
+          <Text style={[styles.filterChipText, filterMode === 'completed' && styles.filterChipTextActive]}>Completed</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.filterChip, filterMode === 'overdue' && styles.filterChipActive]}
+          onPress={() => setFilterMode('overdue')}
+        >
+          <Text style={[styles.filterChipText, filterMode === 'overdue' && styles.filterChipTextActive]}>Overdue</Text>
         </TouchableOpacity>
       </View>
 
@@ -561,6 +611,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 16,
     gap: 10,
+    flexWrap: 'wrap',
   },
   filterChip: {
     paddingHorizontal: 16,
@@ -662,6 +713,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    flexWrap: 'wrap',
+  },
+  overdueBadge: {
+    marginLeft: 6,
+    backgroundColor: '#FEE2E2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  overdueBadgeText: {
+    color: '#B91C1C',
+    fontSize: 10,
+    fontWeight: '800',
   },
   dueDateText: {
     fontSize: 12,
