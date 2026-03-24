@@ -107,7 +107,7 @@ export default function Navbar() {
             ]}
           />
           <Image
-            source={require('../../assets/Logoo.png')}
+            source={require('@/assets/Logoo.png')}
             style={styles.logo}
             resizeMode="cover"
           />

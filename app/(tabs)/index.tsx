@@ -3,7 +3,7 @@ import { saveUserToFirestore } from '@/lib/save-user';
 import { useUser } from '@clerk/expo';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Navbar from './navbar';
+import Navbar from '@/components/Navbar';
 export default function HomeScreen() {
   const { user } = useUser();
 

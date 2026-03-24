@@ -1,11 +1,11 @@
 import FloatingActionButton from '@/components/FloatingActionButton';
 import { StyleSheet, Text, View } from 'react-native';
-import Navbar from './navbar';
+
 
 export default function SkillsScreen() {
   return (
     <View style={styles.container}>
-      <Navbar />
+
       <FloatingActionButton />
       <View style={styles.content}>
         <Text style={styles.text}>skills.tsx</Text>

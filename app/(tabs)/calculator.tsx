@@ -25,7 +25,7 @@ import {
   getCalculationHistory,
   updateCalculationHistoryTitle,
 } from '../../lib/calculator-service';
-import Navbar from './navbar';
+
 
 type Result = {
   interest: number;
@@ -308,7 +308,7 @@ export default function CalculatorScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <Navbar />
+
 
       <View style={styles.headerArea}>
         <Text style={styles.pageTitle}>Finance Calculator</Text>

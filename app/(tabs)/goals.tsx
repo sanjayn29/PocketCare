@@ -5,7 +5,7 @@ import {
   KeyboardAvoidingView, Platform, Keyboard, ScrollView
 } from 'react-native';
 import FloatingActionButton from '@/components/FloatingActionButton';
-import Navbar from './navbar';
+
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
 import { addGoal, getGoals, updateGoal, deleteGoal, Goal, GoalPriority, GoalCategory, GoalTask } from '../../lib/goals-service';
@@ -418,7 +418,7 @@ export default function GoalsScreen() {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <Navbar />
+
       <View style={styles.headerArea}><Text style={styles.pageTitle}>My Goals</Text></View>
 
       <View style={styles.filterRow}>

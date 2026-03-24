@@ -5,7 +5,7 @@ import {
   KeyboardAvoidingView, Platform, Keyboard
 } from 'react-native';
 import FloatingActionButton from '@/components/FloatingActionButton';
-import Navbar from './navbar';
+
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
 import { addNote, getNotes, updateNote, deleteNote, Note } from '../../lib/notes-service';
@@ -209,7 +209,7 @@ export default function NotesScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <Navbar />
+
       
       <View style={styles.headerArea}>
         <Text style={styles.pageTitle}>My Notes</Text>

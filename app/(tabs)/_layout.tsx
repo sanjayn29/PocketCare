@@ -176,12 +176,7 @@ export default function TabLayout() {
           }}
         />
 
-        <Tabs.Screen
-          name="navbar"
-          options={{
-            href: null,
-          }}
-        />
+
       </Tabs>
     </View>
   );

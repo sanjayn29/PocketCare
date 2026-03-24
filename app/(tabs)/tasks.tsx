@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { getGoals, updateGoal } from '../../lib/goals-service';
 import { addTask, deleteTask, getTasks, Task, TaskPriority, updateTask } from '../../lib/tasks-service';
-import Navbar from './navbar';
+
 
 export type ExtendedTask = Task & {
   isGoalTask?: boolean;
@@ -455,7 +455,7 @@ export default function TasksScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <Navbar />
+
       
       <View style={styles.headerArea}>
         <Text style={styles.pageTitle}>My Tasks</Text>

@@ -1,7 +1,7 @@
 import FloatingActionButton from '@/components/FloatingActionButton';
 import { useAuth, useUser } from '@clerk/expo';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import Navbar from './navbar';
+
 
 export default function ProfileScreen() {
   const { user } = useUser();
@@ -17,7 +17,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <Navbar />
+
       <FloatingActionButton />
       <View style={styles.content}>
         <View style={styles.profileCard}>
