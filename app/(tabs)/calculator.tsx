@@ -51,6 +51,8 @@ export default function CalculatorScreen() {
   const [renameTargetId, setRenameTargetId] = useState('');
   const [renameTitle, setRenameTitle] = useState('');
   const [renaming, setRenaming] = useState(false);
+  const [basicExpression, setBasicExpression] = useState('');
+  const [basicResult, setBasicResult] = useState<number | null>(null);
 
   useEffect(() => {
     if (!email) {
@@ -220,6 +222,47 @@ export default function CalculatorScreen() {
     ]);
   };
 
+  const handleBasicCalculation = () => {
+    const expression = basicExpression.trim();
+
+    if (!expression) {
+      Alert.alert('Invalid Input', 'Enter an expression to calculate.');
+      return;
+    }
+
+    // Allow only numbers, decimal point, parentheses, spaces, and arithmetic operators.
+    if (!/^[0-9+\-*/().\s]+$/.test(expression)) {
+      Alert.alert('Invalid Input', 'Expression can only contain numbers and + - * / operators.');
+      return;
+    }
+
+    try {
+      const output = Function(`"use strict"; return (${expression})`)();
+
+      if (!Number.isFinite(output)) {
+        Alert.alert('Invalid Operation', 'Please check your expression.');
+        return;
+      }
+
+      setBasicResult(Number(output.toFixed(4)));
+    } catch {
+      Alert.alert('Invalid Expression', 'Please enter a valid arithmetic expression.');
+    }
+  };
+
+  const appendToExpression = (value: string) => {
+    setBasicExpression((prev) => prev + value);
+  };
+
+  const clearExpression = () => {
+    setBasicExpression('');
+    setBasicResult(null);
+  };
+
+  const backspaceExpression = () => {
+    setBasicExpression((prev) => prev.slice(0, -1));
+  };
+
   const renderHistoryGroup = ({ item }: { item: CalculationHistoryGroup }) => (
     <View style={styles.historyCard}>
       <View style={styles.historyHeader}>
@@ -369,6 +412,87 @@ export default function CalculatorScreen() {
                 <Text style={styles.resultValue}>{result.totalAmount.toFixed(2)}</Text>
               </View>
             )}
+
+            <View style={styles.basicCard}>
+              <Text style={styles.basicTitle}>Basic Calculator</Text>
+
+              <TextInput
+                style={styles.input}
+                value={basicExpression}
+                onChangeText={setBasicExpression}
+                placeholder="Enter expression (Example: 25+5*2-10/2)"
+                placeholderTextColor="#94A3B8"
+              />
+
+              <View style={styles.operatorRow}>
+                {['7', '8', '9', '/'].map((token) => (
+                  <TouchableOpacity
+                    key={token}
+                    style={styles.operatorBtn}
+                    onPress={() => appendToExpression(token)}
+                  >
+                    <Text style={styles.operatorBtnText}>{token}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.operatorRow}>
+                {['4', '5', '6', '*'].map((token) => (
+                  <TouchableOpacity
+                    key={token}
+                    style={styles.operatorBtn}
+                    onPress={() => appendToExpression(token)}
+                  >
+                    <Text style={styles.operatorBtnText}>{token}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.operatorRow}>
+                {['1', '2', '3', '-'].map((token) => (
+                  <TouchableOpacity
+                    key={token}
+                    style={styles.operatorBtn}
+                    onPress={() => appendToExpression(token)}
+                  >
+                    <Text style={styles.operatorBtnText}>{token}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.operatorRow}>
+                {['0', '.', '+'].map((token) => (
+                  <TouchableOpacity
+                    key={token}
+                    style={styles.operatorBtn}
+                    onPress={() => appendToExpression(token)}
+                  >
+                    <Text style={styles.operatorBtnText}>{token}</Text>
+                  </TouchableOpacity>
+                ))}
+
+                <TouchableOpacity style={[styles.operatorBtn, styles.equalsBtn]} onPress={handleBasicCalculation}>
+                  <Text style={[styles.operatorBtnText, styles.equalsBtnText]}>=</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.operatorRow}>
+                <TouchableOpacity style={[styles.operatorBtn, styles.utilityBtn]} onPress={clearExpression}>
+                  <Text style={styles.utilityBtnText}>C</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={[styles.operatorBtn, styles.utilityBtn]} onPress={backspaceExpression}>
+                  <Text style={styles.utilityBtnText}>DEL</Text>
+                </TouchableOpacity>
+              </View>
+
+              {basicResult !== null && (
+                <View style={styles.basicResultWrap}>
+                  <Text style={styles.basicResultLabel}>Result</Text>
+                  <Text style={styles.basicResultValue}>{basicResult}</Text>
+                </View>
+              )}
+            </View>
           </View>
         }
         ListEmptyComponent={
@@ -524,6 +648,74 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#1D4ED8',
     fontWeight: '800',
+  },
+  basicCard: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  basicTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 10,
+  },
+  operatorRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 2,
+  },
+  operatorBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  operatorBtnText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#334155',
+  },
+  equalsBtn: {
+    backgroundColor: '#0F172A',
+    borderColor: '#0F172A',
+  },
+  equalsBtnText: {
+    color: '#FFFFFF',
+  },
+  utilityBtn: {
+    backgroundColor: '#E2E8F0',
+    borderColor: '#CBD5E1',
+  },
+  utilityBtnText: {
+    color: '#334155',
+    fontWeight: '800',
+    fontSize: 13,
+  },
+  basicResultWrap: {
+    marginTop: 10,
+    borderRadius: 10,
+    padding: 10,
+    backgroundColor: '#ECFEFF',
+    borderWidth: 1,
+    borderColor: '#A5F3FC',
+  },
+  basicResultLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0E7490',
+  },
+  basicResultValue: {
+    marginTop: 2,
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#155E75',
   },
   historyCard: {
     backgroundColor: '#FFFFFF',
