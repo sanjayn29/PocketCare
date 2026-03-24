@@ -17,12 +17,17 @@ import {
 } from 'react-native';
 import { getGoals, updateGoal } from '../../lib/goals-service';
 import { addTask, deleteTask, getTasks, Task, TaskPriority, updateTask } from '../../lib/tasks-service';
+import { getSkills, updateSkill } from '../../lib/skills-service';
 
 
 export type ExtendedTask = Task & {
   isGoalTask?: boolean;
   originalGoalId?: string;
   originalTaskId?: string;
+  // Skill task extras
+  isSkillTask?: boolean;
+  originalSkillId?: string;
+  originalSkillTaskId?: string;
 };
 
 export default function TasksScreen() {
@@ -82,12 +87,13 @@ export default function TasksScreen() {
     try {
       const fetchedTasks = await getTasks(email);
       const fetchedGoals = await getGoals(email);
+      const fetchedSkills = await getSkills(email);
 
       const mappedGoalTasks: ExtendedTask[] = fetchedGoals.flatMap(goal => {
         if (!goal.tasks) return [];
         return goal.tasks.map(t => ({
           id: `goaltask_${goal.id}_${t.id}`,
-          title: `Goal: ${goal.title}`, 
+          title: `Goal: ${goal.title}`,
           description: t.title,
           status: t.completed ? 'completed' : 'pending',
           priority: goal.priority as TaskPriority,
@@ -99,7 +105,23 @@ export default function TasksScreen() {
         }));
       });
 
-      const allTasks = [...fetchedTasks, ...mappedGoalTasks];
+      const mappedSkillTasks: ExtendedTask[] = fetchedSkills.flatMap(skill => {
+        if (!skill.progress || skill.progress.length === 0) return [];
+        return skill.progress.map(t => ({
+          id: `skilltask_${skill.id}_${t.id}`,
+          title: `Skill: ${skill.name}`,
+          description: t.title,
+          status: t.completed ? 'completed' : 'pending',
+          priority: 'medium' as TaskPriority,
+          due_date: '',
+          created_at: skill.created_at,
+          isSkillTask: true,
+          originalSkillId: skill.id,
+          originalSkillTaskId: t.id,
+        }));
+      });
+
+      const allTasks = [...fetchedTasks, ...mappedGoalTasks, ...mappedSkillTasks];
 
       // Sort tasks: pending first, then by priority, then newest
       allTasks.sort((a, b) => {
@@ -167,6 +189,15 @@ export default function TasksScreen() {
           );
           await updateGoal(email, parentGoal.id, { tasks: updatedSubtasks });
         }
+      } else if (task.isSkillTask && task.originalSkillId && task.originalSkillTaskId) {
+        const skillList = await getSkills(email);
+        const parentSkill = skillList.find(s => s.id === task.originalSkillId);
+        if (parentSkill) {
+          const updatedProgress = parentSkill.progress.map(pt =>
+            pt.id === task.originalSkillTaskId ? { ...pt, completed: newStatus === 'completed' } : pt
+          );
+          await updateSkill(email, parentSkill.id, { progress: updatedProgress });
+        }
       } else {
         await updateTask(email, task.id, { status: newStatus });
       }
@@ -179,7 +210,10 @@ export default function TasksScreen() {
 
   const openEditModal = (task: ExtendedTask) => {
     if (task.isGoalTask) {
-      return Alert.alert('Mapped Goal Task', 'This is a subtask embedded inside a Goal. Please navigate to the Goals menu to heavily edit this subtask structurally.');
+      return Alert.alert('Mapped Goal Task', 'This is a subtask inside a Goal. Navigate to Goals to edit it.');
+    }
+    if (task.isSkillTask) {
+      return Alert.alert('Skill Progress Task', 'This task is part of a Skill. Navigate to Skills to edit it.');
     }
     setEditingTask(task);
     setEditTitle(task.title);
@@ -220,7 +254,10 @@ export default function TasksScreen() {
     
     const targetTask = tasks.find(t => t.id === taskId);
     if (targetTask?.isGoalTask) {
-       return Alert.alert('Mapped Goal Task', 'This task is rigidly configured within a Goal. Navigate to the Goals tab to delete it.');
+      return Alert.alert('Mapped Goal Task', 'Navigate to Goals to delete this task.');
+    }
+    if (targetTask?.isSkillTask) {
+      return Alert.alert('Skill Progress Task', 'Navigate to Skills to delete this task.');
     }
 
     Alert.alert('Delete Task', 'Are you sure you want to delete this task?', [
