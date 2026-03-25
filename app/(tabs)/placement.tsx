@@ -16,6 +16,9 @@ import {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
+type TimeFilter = 'Week' | 'Month' | 'Year' | 'All' | 'Custom';
+const todayStr = new Date().toISOString().split('T')[0];
+
 const STATUS_CONFIG: Record<PlacementStatus, { label: string; color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }> = {
   applied:   { label: 'Applied',   color: '#3B82F6', bg: '#EFF6FF', icon: 'paper-plane' },
   interview: { label: 'Interview', color: '#F59E0B', bg: '#FFFBEB', icon: 'mic' },
@@ -213,7 +216,7 @@ const CreateCard = React.memo(({
 
         <Text style={styles.selectorLabel}>Application Status:</Text>
         <View style={styles.statusRow}>
-          {(Object.keys(STATUS_CONFIG) as PlacementStatus[]).map(s => {
+          {(['interview', 'offer', 'rejected'] as PlacementStatus[]).map(s => {
             const cfg = STATUS_CONFIG[s];
             const active = newStatus === s;
             return (
@@ -291,11 +294,15 @@ export default function PlacementScreen() {
   const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filterStatus, setFilterStatus] = useState<PlacementStatus | 'all'>('all');
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('All');
+  const [customStart, setCustomStart] = useState(todayStr);
+  const [customEnd, setCustomEnd] = useState(todayStr);
+  const [showDatePicker, setShowDatePicker] = useState<'customStart' | 'customEnd' | null>(null);
 
   // ── Create state ──
   const [isCreating, setIsCreating] = useState(false);
   const [newCompany, setNewCompany] = useState('');
-  const [newStatus, setNewStatus]   = useState<PlacementStatus>('applied');
+  const [newStatus, setNewStatus]   = useState<PlacementStatus>('interview');
   const [newDate, setNewDate]       = useState('');
   const [newStudied, setNewStudied] = useState(false);
   const [newRounds, setNewRounds]   = useState<PlacementRound[]>([]);
@@ -309,7 +316,7 @@ export default function PlacementScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing]           = useState<Placement | null>(null);
   const [editCompany, setEditCompany]   = useState('');
-  const [editStatus, setEditStatus]     = useState<PlacementStatus>('applied');
+  const [editStatus, setEditStatus]     = useState<PlacementStatus>('interview');
   const [editDate, setEditDate]         = useState('');
   const [editStudied, setEditStudied]   = useState(false);
   const [editRounds, setEditRounds]     = useState<PlacementRound[]>([]);
@@ -374,7 +381,7 @@ export default function PlacementScreen() {
     setIsSavingNew(true);
     try {
       await addPlacement(email, newCompany.trim(), newStatus, newDate.trim(), newStudied, newRounds);
-      setNewCompany(''); setNewStatus('applied'); setNewDate('');
+      setNewCompany(''); setNewStatus('interview'); setNewDate('');
       setNewStudied(false); setNewRounds([]);
       setRoundTopic(''); setRoundDesc(''); setRoundResult('pending');
       setShowAddRound(false); setIsCreating(false); Keyboard.dismiss();
@@ -384,7 +391,7 @@ export default function PlacementScreen() {
   }, [email, newCompany, newStatus, newDate, newStudied, newRounds]);
 
   const resetCreate = useCallback(() => {
-    setNewCompany(''); setNewStatus('applied'); setNewDate('');
+    setNewCompany(''); setNewStatus('interview'); setNewDate('');
     setNewStudied(false); setNewRounds([]);
     setRoundTopic(''); setRoundDesc(''); setRoundResult('pending');
     setShowAddRound(false); setIsCreating(false); Keyboard.dismiss();
@@ -456,7 +463,25 @@ export default function PlacementScreen() {
     rejected:  placements.filter(p => p.status === 'rejected').length,
   }), [placements]);
 
-  const filtered = filterStatus === 'all' ? placements : placements.filter(p => p.status === filterStatus);
+  const filterByDate = (dateStr: string) => {
+    if (timeFilter === 'All') return true;
+    if (timeFilter === 'Custom') {
+      const t = new Date(dateStr).getTime();
+      const sTime = new Date(customStart).getTime();
+      const eTime = new Date(customEnd).getTime();
+      return t >= sTime && t <= eTime;
+    }
+    const dTime = new Date(dateStr).getTime();
+    const nowTime = new Date().getTime();
+    const diffDays = Math.ceil(Math.abs(nowTime - dTime) / (1000*60*60*24));
+    if (timeFilter === 'Week') return diffDays <= 7;
+    if (timeFilter === 'Month') return diffDays <= 30;
+    if (timeFilter === 'Year') return diffDays <= 365;
+    return true;
+  };
+
+  const filtered = (filterStatus === 'all' ? placements : placements.filter(p => p.status === filterStatus))
+    .filter(p => filterByDate(p.date));
 
   // ── Memoize header so FlatList doesn't remount it ──
   const listHeader = useMemo(() => (
@@ -547,7 +572,7 @@ export default function PlacementScreen() {
 
       {/* ── Filter Bar ── */}
       <View style={styles.filterRow}>
-        {(['all', 'applied', 'interview', 'offer', 'rejected'] as const).map(s => {
+        {(['all', 'interview', 'offer', 'rejected'] as const).map(s => {
           const active = filterStatus === s;
           const label = s === 'all' ? 'All' : STATUS_CONFIG[s].label;
           return (
@@ -563,6 +588,50 @@ export default function PlacementScreen() {
           );
         })}
       </View>
+
+      {/* ── Time Filter Bar ── */}
+      <View style={styles.timeFilterRow}>
+        {(['Week', 'Month', 'Year', 'All', 'Custom'] as TimeFilter[]).map(t => (
+          <TouchableOpacity
+            key={t}
+            style={[styles.timeFilterBtn, timeFilter === t && styles.timeFilterBtnActive]}
+            onPress={() => setTimeFilter(t)}
+          >
+            <Text style={[styles.timeFilterText, timeFilter === t && styles.timeFilterTextActive]}>{t}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* ── Custom Date Filters ── */}
+      {timeFilter === 'Custom' && (
+        <View style={styles.customDateRow}>
+          <TouchableOpacity style={styles.customDateBtn} onPress={() => setShowDatePicker('customStart')}>
+            <Text style={styles.customDateLabel}>Start Date</Text>
+            <Text style={styles.customDateValue}>{customStart}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.customDateBtn} onPress={() => setShowDatePicker('customEnd')}>
+            <Text style={styles.customDateLabel}>End Date</Text>
+            <Text style={styles.customDateValue}>{customEnd}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {showDatePicker && (
+        <DateTimePicker
+          value={new Date(showDatePicker === 'customStart' ? customStart : customEnd)}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'inline' : 'default'}
+          onChange={(event, selectedDate) => {
+            if (Platform.OS === 'android') setShowDatePicker(null);
+            if (selectedDate) {
+              const dateStr = selectedDate.toISOString().split('T')[0];
+              if (showDatePicker === 'customStart') setCustomStart(dateStr);
+              else setCustomEnd(dateStr);
+            }
+          }}
+          maximumDate={new Date()}
+        />
+      )}
 
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color="#3B82F6" /></View>
@@ -608,7 +677,7 @@ export default function PlacementScreen() {
 
             <Text style={styles.selectorLabel}>Application Status:</Text>
             <View style={styles.statusRow}>
-              {(Object.keys(STATUS_CONFIG) as PlacementStatus[]).map(s => {
+              {(['interview', 'offer', 'rejected'] as PlacementStatus[]).map(s => {
                 const cfg = STATUS_CONFIG[s]; const active = editStatus === s;
                 return (
                   <TouchableOpacity key={s} style={[styles.statusChip, active && { backgroundColor: cfg.color, borderColor: cfg.color }]} onPress={() => setEditStatus(s)}>
@@ -686,6 +755,63 @@ const styles = StyleSheet.create({
   },
   filterChipTextActive: {
     color: '#FFFFFF',
+  },
+
+  // ── Time Filter Bar ─────────────────────────────────────────────────────────
+  timeFilterRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginBottom: 12,
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  timeFilterBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  timeFilterBtnActive: {
+    backgroundColor: '#3B82F6',
+    borderColor: '#3B82F6',
+  },
+  timeFilterText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  timeFilterTextActive: {
+    color: '#FFFFFF',
+  },
+
+  // ── Custom Date Filters ─────────────────────────────────────────────────────
+  customDateRow: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  customDateBtn: {
+    flex: 1,
+    backgroundColor: '#FFF',
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+  },
+  customDateLabel: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '700',
+  },
+  customDateValue: {
+    fontSize: 14,
+    color: '#0F172A',
+    fontWeight: '700',
+    marginTop: 4,
   },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
