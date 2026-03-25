@@ -18,6 +18,7 @@ import {
 // ─── UTILS ──────────────────────────────────────────────────────────────────
 const todayStr = new Date().toISOString().split('T')[0];
 type TabType = 'Medical' | 'Diet' | 'Fitness';
+type TimeFilter = 'Week' | 'Month' | 'Year' | 'All' | 'Custom';
 
 const getDaysDiff = (start: string, end: string) => {
   const d1 = new Date(start);
@@ -62,7 +63,13 @@ export default function HealthScreen() {
   const [formStart, setFormStart] = useState(todayStr);
   const [formEnd, setFormEnd] = useState(todayStr);
 
-  const [showDatePicker, setShowDatePicker] = useState<'start'|'end'|'editStart'|'editEnd'|null>(null);
+  const [showDatePicker, setShowDatePicker] = useState<
+    'start'|'end'|'editStart'|'editEnd'|'customStart'|'customEnd'|null
+  >(null);
+
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('All');
+  const [customStart, setCustomStart] = useState(todayStr);
+  const [customEnd, setCustomEnd] = useState(todayStr);
 
   // ── Edit Form States
   const [editingMedical, setEditingMedical] = useState<MedicalRecord | null>(null);
@@ -98,8 +105,31 @@ export default function HealthScreen() {
       else if (showDatePicker === 'end') setFormEnd(d);
       else if (showDatePicker === 'editStart') setEditStart(d);
       else if (showDatePicker === 'editEnd') setEditEnd(d);
+      else if (showDatePicker === 'customStart') setCustomStart(d);
+      else if (showDatePicker === 'customEnd') setCustomEnd(d);
     }
   };
+
+  const filterByDate = (dateStr: string) => {
+    if (timeFilter === 'All') return true;
+    if (timeFilter === 'Custom') {
+      const t = new Date(dateStr).getTime();
+      const sContext = new Date(customStart).getTime();
+      const eContext = new Date(customEnd).getTime() + 86399999;
+      return t >= sContext && t <= eContext;
+    }
+    const dTime = new Date(dateStr).getTime();
+    const nowTime = new Date().getTime();
+    const diffDays = Math.ceil(Math.abs(nowTime - dTime) / (1000*60*60*24));
+    if (timeFilter === 'Week') return diffDays <= 7;
+    if (timeFilter === 'Month') return diffDays <= 30;
+    if (timeFilter === 'Year') return diffDays <= 365;
+    return true;
+  }
+
+  const filteredMedical = medicalList.filter(m => filterByDate(m.start_date));
+  const filteredDiet = dietList.filter(d => filterByDate(d.start_date));
+  const filteredFitness = fitnessList.filter(f => filterByDate(f.start_date));
 
   const resetForm = () => {
     setFormTopic(''); setFormDesc(''); setFormStart(todayStr); setFormEnd(todayStr);
@@ -168,6 +198,33 @@ export default function HealthScreen() {
   }
 
   // ── UI Snippets
+
+  const renderTimeFilterBlock = () => (
+    <View style={styles.segmentBlock}>
+      {(['Week','Month','Year','All','Custom'] as TimeFilter[]).map(t => (
+        <TouchableOpacity key={t} style={[styles.segmentBtn, timeFilter===t && styles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
+          <Text style={[styles.segmentText, timeFilter===t && styles.segmentTextActive]}>{t}</Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
+  const renderCustomDateFilters = () => {
+    if (timeFilter !== 'Custom') return null;
+    return (
+      <View style={{flexDirection: 'row', gap: 10, marginBottom: 16, marginTop: -6}}>
+        <TouchableOpacity style={{flex: 1, backgroundColor: '#FFF', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center'}} onPress={() => setShowDatePicker('customStart')}>
+          <Text style={{fontSize: 12, color: '#64748B', fontWeight: '700'}}>Start Date</Text>
+          <Text style={{fontSize: 14, color: '#0F172A', fontWeight: '700', marginTop: 4}}>{customStart}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={{flex: 1, backgroundColor: '#FFF', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center'}} onPress={() => setShowDatePicker('customEnd')}>
+          <Text style={{fontSize: 12, color: '#64748B', fontWeight: '700'}}>End Date</Text>
+          <Text style={{fontSize: 14, color: '#0F172A', fontWeight: '700', marginTop: 4}}>{customEnd}</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   const renderCreationCard = (type: TabType, saveHandler: () => void, isCreating: boolean, setCreating: (b:boolean)=>void) => {
     if (!isCreating) {
       return (
@@ -210,9 +267,15 @@ export default function HealthScreen() {
 
   const renderMedical = () => (
     <FlatList
-      data={medicalList}
+      data={filteredMedical}
       keyExtractor={item => item.id}
-      ListHeaderComponent={<View style={styles.createCard}>{renderCreationCard('Medical', handleSaveMed, isCreatingMed, setIsCreatingMed)}</View>}
+      ListHeaderComponent={
+        <>
+          {renderTimeFilterBlock()}
+          {renderCustomDateFilters()}
+          <View style={styles.createCard}>{renderCreationCard('Medical', handleSaveMed, isCreatingMed, setIsCreatingMed)}</View>
+        </>
+      }
       contentContainerStyle={{padding: 16, paddingBottom: 100}}
       ListEmptyComponent={<Text style={{textAlign:'center', color:'#94A3B8', marginTop: 40}}>No medical records found.</Text>}
       renderItem={({item}) => (
@@ -355,9 +418,9 @@ export default function HealthScreen() {
       {loading ? <View style={{flex:1, justifyContent:'center'}}><ActivityIndicator size="large" color="#3B82F6" /></View> : 
         activeTab === 'Medical' ? renderMedical() :
         activeTab === 'Diet' ? (
-          <FlatList data={dietList} keyExtractor={d=>d.id} ListHeaderComponent={<View style={styles.createCard}>{renderCreationCard('Diet', handleSaveDiet, isCreatingDiet, setIsCreatingDiet)}</View>} contentContainerStyle={{padding: 16, paddingBottom: 100}} ListEmptyComponent={<Text style={{textAlign:'center', color:'#94A3B8', marginTop: 40}}>No diet plans.</Text>} renderItem={({item}) => renderPlanCard(item, true)} />
+          <FlatList data={filteredDiet} keyExtractor={d=>d.id} ListHeaderComponent={<>{renderTimeFilterBlock()}{renderCustomDateFilters()}<View style={styles.createCard}>{renderCreationCard('Diet', handleSaveDiet, isCreatingDiet, setIsCreatingDiet)}</View></>} contentContainerStyle={{padding: 16, paddingBottom: 100}} ListEmptyComponent={<Text style={{textAlign:'center', color:'#94A3B8', marginTop: 40}}>No diet plans.</Text>} renderItem={({item}) => renderPlanCard(item, true)} />
         ) : (
-          <FlatList data={fitnessList} keyExtractor={f=>f.id} ListHeaderComponent={<View style={styles.createCard}>{renderCreationCard('Fitness', handleSaveFit, isCreatingFit, setIsCreatingFit)}</View>} contentContainerStyle={{padding: 16, paddingBottom: 100}} ListEmptyComponent={<Text style={{textAlign:'center', color:'#94A3B8', marginTop: 40}}>No fitness plans.</Text>} renderItem={({item}) => renderPlanCard(item, false)} />
+          <FlatList data={filteredFitness} keyExtractor={f=>f.id} ListHeaderComponent={<>{renderTimeFilterBlock()}{renderCustomDateFilters()}<View style={styles.createCard}>{renderCreationCard('Fitness', handleSaveFit, isCreatingFit, setIsCreatingFit)}</View></>} contentContainerStyle={{padding: 16, paddingBottom: 100}} ListEmptyComponent={<Text style={{textAlign:'center', color:'#94A3B8', marginTop: 40}}>No fitness plans.</Text>} renderItem={({item}) => renderPlanCard(item, false)} />
         )
       }
 
@@ -384,6 +447,12 @@ const styles = StyleSheet.create({
   mainTabActive: { backgroundColor: '#1E293B', borderColor: '#1E293B' },
   mainTabText: { fontSize: 13, fontWeight: '700', color: '#64748B' },
   mainTabTextActive: { color: '#FFF' },
+
+  segmentBlock: { flexDirection: 'row', backgroundColor: '#F1F5F9', borderRadius: 10, padding: 4, marginBottom: 16 },
+  segmentBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8 },
+  segmentBtnActive: { backgroundColor: '#FFF', shadowColor:'#000', shadowOffset: {width:0, height:2}, shadowOpacity:0.06, shadowRadius:4, elevation: 2 },
+  segmentText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
+  segmentTextActive: { color: '#0F172A', fontWeight: '800' },
 
   card: { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset:{width:0, height:2}, shadowOpacity:0.04, shadowRadius:8, elevation:2 },
 
