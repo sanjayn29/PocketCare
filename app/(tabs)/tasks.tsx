@@ -15,9 +15,9 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { getGoals, updateGoal } from '../../lib/goals-service';
+import { getGoals, Goal, updateGoal } from '../../lib/goals-service';
+import { getSkills, Skill, updateSkill } from '../../lib/skills-service';
 import { addTask, deleteTask, getTasks, Task, TaskPriority, updateTask } from '../../lib/tasks-service';
-import { getSkills, updateSkill } from '../../lib/skills-service';
 
 
 export type ExtendedTask = Task & {
@@ -37,9 +37,15 @@ export default function TasksScreen() {
   const [tasks, setTasks] = useState<ExtendedTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   
   // Filter state
   const [filterMode, setFilterMode] = useState<'all' | 'today' | 'pending' | 'completed' | 'overdue'>('all');
+  const [selectedSkillFilter, setSelectedSkillFilter] = useState<string | null>(null);
+  const [selectedGoalFilter, setSelectedGoalFilter] = useState<string | null>(null);
+  const [showSkillDropdown, setShowSkillDropdown] = useState(false);
+  const [showGoalDropdown, setShowGoalDropdown] = useState(false);
   
   // Inline Create state
   const [isCreating, setIsCreating] = useState(false);
@@ -88,6 +94,9 @@ export default function TasksScreen() {
       const fetchedTasks = await getTasks(email);
       const fetchedGoals = await getGoals(email);
       const fetchedSkills = await getSkills(email);
+
+      setSkills(fetchedSkills);
+      setGoals(fetchedGoals);
 
       const mappedGoalTasks: ExtendedTask[] = fetchedGoals.flatMap(goal => {
         if (!goal.tasks) return [];
@@ -386,6 +395,20 @@ export default function TasksScreen() {
     const hasDueDate = !!task.due_date && isValidDateOnlyString(task.due_date);
     const isOverdue = hasDueDate && task.status !== 'completed' && task.due_date < todayStr;
 
+    // Filter by skill
+    if (selectedSkillFilter) {
+      if (!task.isSkillTask || task.originalSkillId !== selectedSkillFilter) {
+        return false;
+      }
+    }
+
+    // Filter by goal
+    if (selectedGoalFilter) {
+      if (!task.isGoalTask || task.originalGoalId !== selectedGoalFilter) {
+        return false;
+      }
+    }
+
     if (filterMode === 'today') {
       return task.due_date === todayStr;
     }
@@ -529,6 +552,99 @@ export default function TasksScreen() {
         >
           <Text style={[styles.filterChipText, filterMode === 'overdue' && styles.filterChipTextActive]}>Overdue</Text>
         </TouchableOpacity>
+      </View>
+
+      {/* Skill and Goal Filters */}
+      <View style={styles.filterRowSecondary}>
+        {/* Skill Filter */}
+        <View style={styles.dropdownContainer}>
+          <TouchableOpacity 
+            style={[styles.dropdownBtn, selectedSkillFilter && styles.dropdownBtnActive]}
+            onPress={() => {
+              setShowSkillDropdown(!showSkillDropdown);
+              setShowGoalDropdown(false);
+            }}
+          >
+            <Ionicons name="bulb-outline" size={16} color={selectedSkillFilter ? '#FFFFFF' : '#64748B'} />
+            <Text style={[styles.dropdownBtnText, selectedSkillFilter && styles.dropdownBtnTextActive]}>
+              {selectedSkillFilter ? skills.find(s => s.id === selectedSkillFilter)?.name || 'Skill' : 'Skill'}
+            </Text>
+            <Ionicons name={showSkillDropdown ? 'chevron-up' : 'chevron-down'} size={16} color={selectedSkillFilter ? '#FFFFFF' : '#64748B'} />
+          </TouchableOpacity>
+          
+          {showSkillDropdown && (
+            <View style={styles.dropdownMenu}>
+              <TouchableOpacity 
+                style={styles.dropdownItem}
+                onPress={() => {
+                  setSelectedSkillFilter(null);
+                  setShowSkillDropdown(false);
+                }}
+              >
+                <Text style={styles.dropdownItemText}>All Skills</Text>
+              </TouchableOpacity>
+              {skills.map(skill => (
+                <TouchableOpacity 
+                  key={skill.id}
+                  style={[styles.dropdownItem, selectedSkillFilter === skill.id && styles.dropdownItemActive]}
+                  onPress={() => {
+                    setSelectedSkillFilter(skill.id);
+                    setShowSkillDropdown(false);
+                  }}
+                >
+                  <Text style={[styles.dropdownItemText, selectedSkillFilter === skill.id && styles.dropdownItemTextActive]}>
+                    {skill.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+
+        {/* Goal Filter */}
+        <View style={styles.dropdownContainer}>
+          <TouchableOpacity 
+            style={[styles.dropdownBtn, selectedGoalFilter && styles.dropdownBtnActive]}
+            onPress={() => {
+              setShowGoalDropdown(!showGoalDropdown);
+              setShowSkillDropdown(false);
+            }}
+          >
+            <Ionicons name="flag-outline" size={16} color={selectedGoalFilter ? '#FFFFFF' : '#64748B'} />
+            <Text style={[styles.dropdownBtnText, selectedGoalFilter && styles.dropdownBtnTextActive]}>
+              {selectedGoalFilter ? goals.find(g => g.id === selectedGoalFilter)?.title || 'Goal' : 'Goal'}
+            </Text>
+            <Ionicons name={showGoalDropdown ? 'chevron-up' : 'chevron-down'} size={16} color={selectedGoalFilter ? '#FFFFFF' : '#64748B'} />
+          </TouchableOpacity>
+          
+          {showGoalDropdown && (
+            <View style={styles.dropdownMenu}>
+              <TouchableOpacity 
+                style={styles.dropdownItem}
+                onPress={() => {
+                  setSelectedGoalFilter(null);
+                  setShowGoalDropdown(false);
+                }}
+              >
+                <Text style={styles.dropdownItemText}>All Goals</Text>
+              </TouchableOpacity>
+              {goals.map(goal => (
+                <TouchableOpacity 
+                  key={goal.id}
+                  style={[styles.dropdownItem, selectedGoalFilter === goal.id && styles.dropdownItemActive]}
+                  onPress={() => {
+                    setSelectedGoalFilter(goal.id);
+                    setShowGoalDropdown(false);
+                  }}
+                >
+                  <Text style={[styles.dropdownItemText, selectedGoalFilter === goal.id && styles.dropdownItemTextActive]}>
+                    {goal.title}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
       </View>
 
       {loading ? (
@@ -954,4 +1070,74 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
   },
+  // Dropdown Filter Styles
+  filterRowSecondary: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginBottom: 16,
+    gap: 12,
+  },
+  dropdownContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  dropdownBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: 6,
+  },
+  dropdownBtnActive: {
+    backgroundColor: '#1D4ED8',
+    borderColor: '#1D4ED8',
+  },
+  dropdownBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748B',
+    flex: 1,
+  },
+  dropdownBtnTextActive: {
+    color: '#FFFFFF',
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: 48,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    zIndex: 1000,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  dropdownItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  dropdownItemActive: {
+    backgroundColor: '#EFF6FF',
+  },
+  dropdownItemText: {
+    fontSize: 14,
+    color: '#334155',
+    fontWeight: '500',
+  },
+  dropdownItemTextActive: {
+    color: '#1D4ED8',
+    fontWeight: '600',
+  },
 });
+
