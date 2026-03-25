@@ -54,6 +54,10 @@ export default function CalculatorScreen() {
   const [basicExpression, setBasicExpression] = useState('');
   const [basicResult, setBasicResult] = useState<number | null>(null);
 
+  // Filter states
+  const [historyFilterType, setHistoryFilterType] = useState<'all' | 'simple_interest' | 'compound_interest'>('all');
+  const [historyFilterDate, setHistoryFilterDate] = useState<'all' | 'today' | 'week' | 'month'>('all');
+
   useEffect(() => {
     if (!email) {
       setLoading(false);
@@ -82,6 +86,38 @@ export default function CalculatorScreen() {
     const n = Number(compoundsPerYear);
     return { p, r, t, n };
   }, [principal, rate, time, compoundsPerYear]);
+
+  const filteredHistories = useMemo(() => {
+    return histories.filter((group) => {
+      // Filter by calculation type
+      if (historyFilterType !== 'all') {
+        const groupType = group.entries[0]?.type;
+        if (groupType !== historyFilterType) return false;
+      }
+
+      // Filter by date
+      if (historyFilterDate !== 'all') {
+        const groupDate = new Date(group.updated_at);
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const groupDay = new Date(groupDate.getFullYear(), groupDate.getMonth(), groupDate.getDate());
+
+        if (historyFilterDate === 'today') {
+          if (groupDay.getTime() !== today.getTime()) return false;
+        } else if (historyFilterDate === 'week') {
+          const weekAgo = new Date(today);
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          if (groupDay < weekAgo) return false;
+        } else if (historyFilterDate === 'month') {
+          const monthAgo = new Date(today);
+          monthAgo.setDate(monthAgo.getDate() - 30);
+          if (groupDay < monthAgo) return false;
+        }
+      }
+
+      return true;
+    });
+  }, [histories, historyFilterType, historyFilterDate]);
 
   const handleCalculateAndSave = async () => {
     if (!email) {
@@ -316,12 +352,139 @@ export default function CalculatorScreen() {
       </View>
 
       <FlatList
-        data={histories}
+        data={filteredHistories}
         keyExtractor={(item) => item.id}
         renderItem={renderHistoryGroup}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
-          <View style={styles.formCard}>
+          <View>
+            {/* History Filters */}
+            <View style={styles.filterContainer}>
+              <View style={styles.filterRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.filterBtn,
+                    historyFilterType === 'all' && styles.filterBtnActive,
+                  ]}
+                  onPress={() => setHistoryFilterType('all')}
+                >
+                  <Text
+                    style={[
+                      styles.filterBtnText,
+                      historyFilterType === 'all' && styles.filterBtnTextActive,
+                    ]}
+                  >
+                    All Types
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.filterBtn,
+                    historyFilterType === 'simple_interest' && styles.filterBtnActive,
+                  ]}
+                  onPress={() => setHistoryFilterType('simple_interest')}
+                >
+                  <Text
+                    style={[
+                      styles.filterBtnText,
+                      historyFilterType === 'simple_interest' && styles.filterBtnTextActive,
+                    ]}
+                  >
+                    Simple
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.filterBtn,
+                    historyFilterType === 'compound_interest' && styles.filterBtnActive,
+                  ]}
+                  onPress={() => setHistoryFilterType('compound_interest')}
+                >
+                  <Text
+                    style={[
+                      styles.filterBtnText,
+                      historyFilterType === 'compound_interest' && styles.filterBtnTextActive,
+                    ]}
+                  >
+                    Compound
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.filterRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.filterBtn,
+                    historyFilterDate === 'all' && styles.filterBtnActive,
+                  ]}
+                  onPress={() => setHistoryFilterDate('all')}
+                >
+                  <Text
+                    style={[
+                      styles.filterBtnText,
+                      historyFilterDate === 'all' && styles.filterBtnTextActive,
+                    ]}
+                  >
+                    All Time
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.filterBtn,
+                    historyFilterDate === 'today' && styles.filterBtnActive,
+                  ]}
+                  onPress={() => setHistoryFilterDate('today')}
+                >
+                  <Text
+                    style={[
+                      styles.filterBtnText,
+                      historyFilterDate === 'today' && styles.filterBtnTextActive,
+                    ]}
+                  >
+                    Today
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.filterBtn,
+                    historyFilterDate === 'week' && styles.filterBtnActive,
+                  ]}
+                  onPress={() => setHistoryFilterDate('week')}
+                >
+                  <Text
+                    style={[
+                      styles.filterBtnText,
+                      historyFilterDate === 'week' && styles.filterBtnTextActive,
+                    ]}
+                  >
+                    Week
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.filterBtn,
+                    historyFilterDate === 'month' && styles.filterBtnActive,
+                  ]}
+                  onPress={() => setHistoryFilterDate('month')}
+                >
+                  <Text
+                    style={[
+                      styles.filterBtnText,
+                      historyFilterDate === 'month' && styles.filterBtnTextActive,
+                    ]}
+                  >
+                    Month
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.formCard}>
             <View style={styles.segmentRow}>
               <TouchableOpacity
                 style={[styles.segmentBtn, calcType === 'simple_interest' && styles.segmentBtnActive]}
@@ -492,6 +655,7 @@ export default function CalculatorScreen() {
                   <Text style={styles.basicResultValue}>{basicResult}</Text>
                 </View>
               )}
+            </View>
             </View>
           </View>
         }
@@ -823,5 +987,37 @@ const styles = StyleSheet.create({
   modalSaveText: {
     color: '#FFFFFF',
     fontWeight: '700',
+  },
+  filterContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: '#F8FAFC',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  filterRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
+  filterBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  filterBtnActive: {
+    backgroundColor: '#1D4ED8',
+    borderColor: '#1D4ED8',
+  },
+  filterBtnText: {
+    fontSize: 13,
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  filterBtnTextActive: {
+    color: '#FFFFFF',
   },
 });
