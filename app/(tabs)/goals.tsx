@@ -28,6 +28,10 @@ export default function GoalsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   
   const [filterMode, setFilterMode] = useState<'all' | 'active' | 'achieved'>('all');
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<GoalCategory | null>(null);
+  const [selectedPriorityFilter, setSelectedPriorityFilter] = useState<GoalPriority | null>(null);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
   
   // Create Goal States
   const [isCreating, setIsCreating] = useState(false);
@@ -109,8 +113,22 @@ export default function GoalsScreen() {
   };
 
   const filteredGoals = goals.filter(goal => {
-    if (filterMode === 'active') return goal.status === 'active';
-    if (filterMode === 'achieved') return goal.status === 'achieved';
+    if (filterMode === 'active') {
+      if (goal.status !== 'active') return false;
+    } else if (filterMode === 'achieved') {
+      if (goal.status !== 'achieved') return false;
+    }
+    
+    // Filter by category
+    if (selectedCategoryFilter && goal.category !== selectedCategoryFilter) {
+      return false;
+    }
+    
+    // Filter by priority
+    if (selectedPriorityFilter && goal.priority !== selectedPriorityFilter) {
+      return false;
+    }
+    
     return true;
   });
 
@@ -441,6 +459,99 @@ export default function GoalsScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Category and Priority Filters */}
+      <View style={styles.filterRowSecondary}>
+        {/* Category Filter */}
+        <View style={styles.dropdownContainer}>
+          <TouchableOpacity 
+            style={[styles.dropdownBtn, selectedCategoryFilter && styles.dropdownBtnActive]}
+            onPress={() => {
+              setShowCategoryDropdown(!showCategoryDropdown);
+              setShowPriorityDropdown(false);
+            }}
+          >
+            <Ionicons name="layers-outline" size={16} color={selectedCategoryFilter ? '#FFFFFF' : '#64748B'} />
+            <Text style={[styles.dropdownBtnText, selectedCategoryFilter && styles.dropdownBtnTextActive]}>
+              {selectedCategoryFilter ? selectedCategoryFilter.charAt(0).toUpperCase() + selectedCategoryFilter.slice(1) : 'Category'}
+            </Text>
+            <Ionicons name={showCategoryDropdown ? 'chevron-up' : 'chevron-down'} size={16} color={selectedCategoryFilter ? '#FFFFFF' : '#64748B'} />
+          </TouchableOpacity>
+          
+          {showCategoryDropdown && (
+            <View style={styles.dropdownMenu}>
+              <TouchableOpacity 
+                style={styles.dropdownItem}
+                onPress={() => {
+                  setSelectedCategoryFilter(null);
+                  setShowCategoryDropdown(false);
+                }}
+              >
+                <Text style={styles.dropdownItemText}>All Categories</Text>
+              </TouchableOpacity>
+              {['health', 'finance', 'career', 'personal'].map((category) => (
+                <TouchableOpacity 
+                  key={category}
+                  style={[styles.dropdownItem, selectedCategoryFilter === category && styles.dropdownItemActive]}
+                  onPress={() => {
+                    setSelectedCategoryFilter(category as GoalCategory);
+                    setShowCategoryDropdown(false);
+                  }}
+                >
+                  <Text style={[styles.dropdownItemText, selectedCategoryFilter === category && styles.dropdownItemTextActive]}>
+                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+
+        {/* Priority Filter */}
+        <View style={styles.dropdownContainer}>
+          <TouchableOpacity 
+            style={[styles.dropdownBtn, selectedPriorityFilter && styles.dropdownBtnActive]}
+            onPress={() => {
+              setShowPriorityDropdown(!showPriorityDropdown);
+              setShowCategoryDropdown(false);
+            }}
+          >
+            <Ionicons name="flame-outline" size={16} color={selectedPriorityFilter ? '#FFFFFF' : '#64748B'} />
+            <Text style={[styles.dropdownBtnText, selectedPriorityFilter && styles.dropdownBtnTextActive]}>
+              {selectedPriorityFilter ? selectedPriorityFilter.charAt(0).toUpperCase() + selectedPriorityFilter.slice(1) : 'Priority'}
+            </Text>
+            <Ionicons name={showPriorityDropdown ? 'chevron-up' : 'chevron-down'} size={16} color={selectedPriorityFilter ? '#FFFFFF' : '#64748B'} />
+          </TouchableOpacity>
+          
+          {showPriorityDropdown && (
+            <View style={styles.dropdownMenu}>
+              <TouchableOpacity 
+                style={styles.dropdownItem}
+                onPress={() => {
+                  setSelectedPriorityFilter(null);
+                  setShowPriorityDropdown(false);
+                }}
+              >
+                <Text style={styles.dropdownItemText}>All Priorities</Text>
+              </TouchableOpacity>
+              {['low', 'medium', 'high'].map((priority) => (
+                <TouchableOpacity 
+                  key={priority}
+                  style={[styles.dropdownItem, selectedPriorityFilter === priority && styles.dropdownItemActive]}
+                  onPress={() => {
+                    setSelectedPriorityFilter(priority as GoalPriority);
+                    setShowPriorityDropdown(false);
+                  }}
+                >
+                  <Text style={[styles.dropdownItemText, selectedPriorityFilter === priority && styles.dropdownItemTextActive]}>
+                    {priority.charAt(0).toUpperCase() + priority.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+      </View>
+
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color="#1D4ED8" /></View>
       ) : (
@@ -651,5 +762,75 @@ const styles = StyleSheet.create({
   addSubtaskBtn: { width: 44, height: 44, borderRadius: 10, backgroundColor: '#1D4ED8', alignItems: 'center', justifyContent: 'center' },
 
   lockedProgressRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', padding: 16, borderRadius: 10, marginBottom: 16, gap: 10 },
-  lockedProgressText: { flex: 1, fontSize: 13, color: '#64748B', lineHeight: 18 }
+  lockedProgressText: { flex: 1, fontSize: 13, color: '#64748B', lineHeight: 18 },
+
+  // Dropdown Filter Styles
+  filterRowSecondary: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginBottom: 16,
+    gap: 12,
+  },
+  dropdownContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  dropdownBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: 6,
+  },
+  dropdownBtnActive: {
+    backgroundColor: '#1D4ED8',
+    borderColor: '#1D4ED8',
+  },
+  dropdownBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748B',
+    flex: 1,
+  },
+  dropdownBtnTextActive: {
+    color: '#FFFFFF',
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: 48,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    zIndex: 1000,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  dropdownItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  dropdownItemActive: {
+    backgroundColor: '#EFF6FF',
+  },
+  dropdownItemText: {
+    fontSize: 14,
+    color: '#334155',
+    fontWeight: '500',
+  },
+  dropdownItemTextActive: {
+    color: '#1D4ED8',
+    fontWeight: '600',
+  },
 });
