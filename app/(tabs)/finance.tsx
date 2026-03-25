@@ -22,7 +22,7 @@ const isValidDateOnlyString = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(valu
 const todayStr = new Date().toISOString().split('T')[0];
 
 type TabType = 'Overview' | 'Transactions' | 'Debts' | 'Goals';
-type TimeFilter = 'Week' | 'Month' | 'Year' | 'All';
+type TimeFilter = 'Week' | 'Month' | 'Year' | 'All' | 'Custom';
 type ChartType = 'Pie' | 'Line' | 'Bar';
 
 export default function FinanceScreen() {
@@ -64,6 +64,9 @@ export default function FinanceScreen() {
   const [txECategory, setTxECategory] = useState('');
   const [txENote, setTxENote] = useState('');
   const [txEDate, setTxEDate] = useState(todayStr);
+
+  const [customStart, setCustomStart] = useState(todayStr);
+  const [customEnd, setCustomEnd] = useState(todayStr);
 
   // Create Debt State
   const [debtTo, setDebtTo] = useState('');
@@ -153,6 +156,8 @@ export default function FinanceScreen() {
       else if (showDatePicker === 'txEDate') setTxEDate(d);
       else if (showDatePicker === 'debtEGiven') setDebtEGivenDate(d);
       else if (showDatePicker === 'debtEDue') setDebtEDueDate(d);
+      else if (showDatePicker === 'customStart') setCustomStart(d);
+      else if (showDatePicker === 'customEnd') setCustomEnd(d);
     }
   };
 
@@ -189,6 +194,12 @@ export default function FinanceScreen() {
     const now = new Date();
     return combinedTransactions.filter(t => {
       if (timeFilter === 'All') return true;
+      if (timeFilter === 'Custom') {
+        const txTime = new Date(t.date).getTime();
+        const sTime = new Date(customStart).getTime();
+        const eTime = new Date(customEnd).getTime();
+        return txTime >= sTime && txTime <= eTime;
+      }
       const txD = new Date(t.date);
       const diffTime = Math.abs(now.getTime() - txD.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
@@ -197,7 +208,47 @@ export default function FinanceScreen() {
       if (timeFilter === 'Year') return diffDays <= 365;
       return true;
     });
-  }, [combinedTransactions, timeFilter]);
+  }, [combinedTransactions, timeFilter, customStart, customEnd]);
+
+  const filteredDebts = useMemo(() => {
+    const now = new Date();
+    return debts.filter(d => {
+      if (timeFilter === 'All') return true;
+      if (timeFilter === 'Custom') {
+        const dTime = new Date(d.amount_given_date).getTime();
+        const sTime = new Date(customStart).getTime();
+        const eTime = new Date(customEnd).getTime();
+        return dTime >= sTime && dTime <= eTime;
+      }
+      const txD = new Date(d.amount_given_date);
+      const diffTime = Math.abs(now.getTime() - txD.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+      if (timeFilter === 'Week') return diffDays <= 7;
+      if (timeFilter === 'Month') return diffDays <= 30;
+      if (timeFilter === 'Year') return diffDays <= 365;
+      return true;
+    });
+  }, [debts, timeFilter, customStart, customEnd]);
+
+  const filteredGoals = useMemo(() => {
+    const now = new Date();
+    return goals.filter(g => {
+      if (timeFilter === 'All') return true;
+      if (timeFilter === 'Custom') {
+        const gTime = new Date(g.created_at).getTime();
+        const sTime = new Date(customStart).getTime();
+        const eTime = new Date(customEnd).getTime() + 86399999;
+        return gTime >= sTime && gTime <= eTime;
+      }
+      const txD = new Date(g.created_at);
+      const diffTime = Math.abs(now.getTime() - txD.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+      if (timeFilter === 'Week') return diffDays <= 7;
+      if (timeFilter === 'Month') return diffDays <= 30;
+      if (timeFilter === 'Year') return diffDays <= 365;
+      return true;
+    });
+  }, [goals, timeFilter, customStart, customEnd]);
 
   const totalIncome = filteredTxs.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount), 0);
   const totalExpense = filteredTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount), 0);
@@ -437,15 +488,34 @@ export default function FinanceScreen() {
   );
 
   // ── UI Snippets
+
+  const renderCustomDateFilters = () => {
+    if (timeFilter !== 'Custom') return null;
+    return (
+      <View style={{flexDirection: 'row', gap: 10, marginBottom: 16, marginTop: -6}}>
+        <TouchableOpacity style={{flex: 1, backgroundColor: '#FFF', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center'}} onPress={() => setShowDatePicker('customStart')}>
+          <Text style={{fontSize: 12, color: '#64748B', fontWeight: '700'}}>Start Date</Text>
+          <Text style={{fontSize: 14, color: '#0F172A', fontWeight: '700', marginTop: 4}}>{customStart}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={{flex: 1, backgroundColor: '#FFF', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center'}} onPress={() => setShowDatePicker('customEnd')}>
+          <Text style={{fontSize: 12, color: '#64748B', fontWeight: '700'}}>End Date</Text>
+          <Text style={{fontSize: 14, color: '#0F172A', fontWeight: '700', marginTop: 4}}>{customEnd}</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   const renderOverview = () => (
     <ScrollView contentContainerStyle={{padding:16, paddingBottom: 100}} showsVerticalScrollIndicator={false}>
       <View style={styles.segmentBlock}>
-        {(['Week','Month','Year','All'] as TimeFilter[]).map(t => (
+        {(['Week','Month','Year','All','Custom'] as TimeFilter[]).map(t => (
           <TouchableOpacity key={t} style={[styles.segmentBtn, timeFilter===t && styles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
             <Text style={[styles.segmentText, timeFilter===t && styles.segmentTextActive]}>{t}</Text>
           </TouchableOpacity>
         ))}
       </View>
+
+      {renderCustomDateFilters()}
 
       <View style={styles.summaryGrid}>
         <View style={[styles.summaryBox, { borderColor: '#E5E7EB', backgroundColor: '#FFF' }]}>
@@ -530,9 +600,21 @@ export default function FinanceScreen() {
 
   const renderTransactions = () => (
     <FlatList
-      data={combinedTransactions}
+      data={filteredTxs}
       keyExtractor={t=>t.id}
-      ListHeaderComponent={renderTxCard()}
+      ListHeaderComponent={
+        <>
+          <View style={styles.segmentBlock}>
+            {(['Week','Month','Year','All','Custom'] as TimeFilter[]).map(t => (
+              <TouchableOpacity key={t} style={[styles.segmentBtn, timeFilter===t && styles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
+                <Text style={[styles.segmentText, timeFilter===t && styles.segmentTextActive]}>{t}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {renderCustomDateFilters()}
+          {renderTxCard()}
+        </>
+      }
       contentContainerStyle={{padding: 16, paddingBottom: 100}}
       ListEmptyComponent={<Text style={{textAlign:'center', color:'#94A3B8', marginTop: 40}}>No transactions found.</Text>}
       renderItem={({item}) => {
@@ -573,9 +655,21 @@ export default function FinanceScreen() {
 
   const renderDebts = () => (
     <FlatList
-      data={debts}
+      data={filteredDebts}
       keyExtractor={d=>d.id}
-      ListHeaderComponent={renderDebtCard()}
+      ListHeaderComponent={
+        <>
+          <View style={styles.segmentBlock}>
+            {(['Week','Month','Year','All','Custom'] as TimeFilter[]).map(t => (
+              <TouchableOpacity key={t} style={[styles.segmentBtn, timeFilter===t && styles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
+                <Text style={[styles.segmentText, timeFilter===t && styles.segmentTextActive]}>{t}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {renderCustomDateFilters()}
+          {renderDebtCard()}
+        </>
+      }
       contentContainerStyle={{padding: 16, paddingBottom: 100}}
       ListEmptyComponent={<Text style={{textAlign:'center', color:'#94A3B8', marginTop: 40}}>No debts tracked.</Text>}
       renderItem={({item}) => {
@@ -625,9 +719,21 @@ export default function FinanceScreen() {
 
   const renderGoals = () => (
     <FlatList
-      data={goals}
+      data={filteredGoals}
       keyExtractor={g=>g.id}
-      ListHeaderComponent={renderGoalCard()}
+      ListHeaderComponent={
+        <>
+          <View style={styles.segmentBlock}>
+            {(['Week','Month','Year','All','Custom'] as TimeFilter[]).map(t => (
+              <TouchableOpacity key={t} style={[styles.segmentBtn, timeFilter===t && styles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
+                <Text style={[styles.segmentText, timeFilter===t && styles.segmentTextActive]}>{t}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {renderCustomDateFilters()}
+          {renderGoalCard()}
+        </>
+      }
       contentContainerStyle={{padding: 16, paddingBottom: 100}}
       ListEmptyComponent={<Text style={{textAlign:'center', color:'#94A3B8', marginTop: 40}}>No financial goals yet.</Text>}
       renderItem={({item}) => {
