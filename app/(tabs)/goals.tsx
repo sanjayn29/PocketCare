@@ -1,15 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, Text, View, FlatList, TouchableOpacity, 
-  Modal, TextInput, ActivityIndicator, Alert,
-  KeyboardAvoidingView, Platform, Keyboard, ScrollView
-} from 'react-native';
 import FloatingActionButton from '@/components/FloatingActionButton';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator, Alert,
+  FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet, Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
 
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
-import { addGoal, getGoals, updateGoal, deleteGoal, Goal, GoalPriority, GoalCategory, GoalTask } from '../../lib/goals-service';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { addGoal, deleteGoal, getGoals, Goal, GoalCategory, GoalPriority, GoalTask, updateGoal } from '../../lib/goals-service';
 
 export default function GoalsScreen() {
   const { user } = useUser();
