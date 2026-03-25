@@ -1,14 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, Text, View, FlatList, TouchableOpacity, 
-  Modal, TextInput, ActivityIndicator, Alert,
-  KeyboardAvoidingView, Platform, Keyboard
-} from 'react-native';
 import FloatingActionButton from '@/components/FloatingActionButton';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator, Alert,
+  FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet, Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
 
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
-import { addNote, getNotes, updateNote, deleteNote, Note } from '../../lib/notes-service';
+import { addNote, deleteNote, getNotes, Note, updateNote } from '../../lib/notes-service';
 
 export default function NotesScreen() {
   const { user } = useUser();
@@ -30,6 +38,12 @@ export default function NotesScreen() {
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  // Time filter state
+  const [timeFilter, setTimeFilter] = useState<'all' | 'today' | '30days' | 'month' | 'custom'>('all');
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [calendarModalVisible, setCalendarModalVisible] = useState(false);
 
   useEffect(() => {
     if (email) {
@@ -124,6 +138,36 @@ export default function NotesScreen() {
     ]);
   };
 
+  const getFilteredNotes = () => {
+    if (timeFilter === 'all') return notes;
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    return notes.filter((note) => {
+      const noteDate = new Date(note.updated_at);
+      const noteDateOnly = new Date(noteDate.getFullYear(), noteDate.getMonth(), noteDate.getDate());
+
+      switch (timeFilter) {
+        case 'today':
+          return noteDateOnly.getTime() === today.getTime();
+        case '30days':
+          const thirtyDaysAgo = new Date(today);
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          return noteDateOnly.getTime() >= thirtyDaysAgo.getTime();
+        case 'month':
+          return noteDate.getFullYear() === now.getFullYear() &&
+                 noteDate.getMonth() === now.getMonth();
+        case 'custom':
+          const selectedDateOnly = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+          return noteDateOnly.getTime() === selectedDateOnly.getTime();
+        default:
+          return true;
+      }
+    });
+  };
+
   const renderNote = ({ item }: { item: Note }) => {
     const dateStr = new Date(item.updated_at).toLocaleDateString([], { month: 'short', day: 'numeric' });
     
@@ -146,62 +190,133 @@ export default function NotesScreen() {
   };
 
   const renderListHeader = () => (
-    <View style={styles.createCard}>
-      {isCreating ? (
-        <View style={styles.createExpanded}>
-          <TextInput
-            style={styles.createTitleInput}
-            placeholder="Note Title"
-            placeholderTextColor="#94A3B8"
-            value={newTitle}
-            onChangeText={setNewTitle}
-            autoFocus
-          />
-          <TextInput
-            style={styles.createContentInput}
-            placeholder="What's on your mind?"
-            placeholderTextColor="#94A3B8"
-            multiline
-            value={newContent}
-            onChangeText={setNewContent}
-          />
-          <View style={styles.createActions}>
-            <TouchableOpacity 
-              style={styles.cancelBtn} 
-              onPress={() => {
-                setIsCreating(false);
-                setNewTitle('');
-                setNewContent('');
-                Keyboard.dismiss();
-              }}
-            >
-              <Text style={styles.cancelBtnText}>Cancel</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.saveBtn} 
-              onPress={handleSaveNewNote}
-              disabled={isSavingNew}
-            >
-              {isSavingNew ? (
-                <ActivityIndicator size="small" color="#FFF" />
-              ) : (
-                <Text style={styles.saveBtnText}>Save Note</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      ) : (
+    <>
+      <View style={styles.filterContainer}>
         <TouchableOpacity 
-          style={styles.createCollapsed} 
-          activeOpacity={0.8}
-          onPress={() => setIsCreating(true)}
+          style={[styles.filterBtn, timeFilter === 'all' && styles.filterBtnActive]}
+          onPress={() => setTimeFilter('all')}
         >
-          <Ionicons name="create-outline" size={22} color="#1D4ED8" />
-          <Text style={styles.createCollapsedText}>Write a new note...</Text>
+          <Text style={[styles.filterBtnText, timeFilter === 'all' && styles.filterBtnTextActive]}>All</Text>
         </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.filterBtn, timeFilter === 'today' && styles.filterBtnActive]}
+          onPress={() => setTimeFilter('today')}
+        >
+          <Text style={[styles.filterBtnText, timeFilter === 'today' && styles.filterBtnTextActive]}>Today</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.filterBtn, timeFilter === 'custom' && styles.filterBtnActive]}
+          onPress={() => setShowDatePicker(!showDatePicker)}
+        >
+          <Ionicons name="calendar-outline" size={18} color={timeFilter === 'custom' ? '#FFFFFF' : '#64748B'} />
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.filterBtn, timeFilter === '30days' && styles.filterBtnActive]}
+          onPress={() => setTimeFilter('30days')}
+        >
+          <Text style={[styles.filterBtnText, timeFilter === '30days' && styles.filterBtnTextActive]}>30 Days</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.filterBtn, timeFilter === 'month' && styles.filterBtnActive]}
+          onPress={() => setTimeFilter('month')}
+        >
+          <Text style={[styles.filterBtnText, timeFilter === 'month' && styles.filterBtnTextActive]}>Month</Text>
+        </TouchableOpacity>
+      </View>
+
+      {showDatePicker && Platform.OS === 'ios' && (
+        <View style={styles.datePickerIOSContainer}>
+          <DateTimePicker
+            value={selectedDate}
+            mode="date"
+            display="spinner"
+            onChange={(event: DateTimePickerEvent, date?: Date) => {
+              if (date) {
+                setSelectedDate(date);
+                setTimeFilter('custom');
+              }
+            }}
+            textColor="#0F172A"
+          />
+        </View>
       )}
-    </View>
+
+      {showDatePicker && Platform.OS !== 'ios' && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display="default"
+          onChange={(event: DateTimePickerEvent, date?: Date) => {
+            setShowDatePicker(false);
+            if (date) {
+              setSelectedDate(date);
+              setTimeFilter('custom');
+            }
+          }}
+        />
+      )}
+
+      <View style={styles.createCard}>
+        {isCreating ? (
+          <View style={styles.createExpanded}>
+            <TextInput
+              style={styles.createTitleInput}
+              placeholder="Note Title"
+              placeholderTextColor="#94A3B8"
+              value={newTitle}
+              onChangeText={setNewTitle}
+              autoFocus
+            />
+            <TextInput
+              style={styles.createContentInput}
+              placeholder="What's on your mind?"
+              placeholderTextColor="#94A3B8"
+              multiline
+              value={newContent}
+              onChangeText={setNewContent}
+            />
+            <View style={styles.createActions}>
+              <TouchableOpacity 
+                style={styles.cancelBtn} 
+                onPress={() => {
+                  setIsCreating(false);
+                  setNewTitle('');
+                  setNewContent('');
+                  Keyboard.dismiss();
+                }}
+              >
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.saveBtn} 
+                onPress={handleSaveNewNote}
+                disabled={isSavingNew}
+              >
+                {isSavingNew ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <Text style={styles.saveBtnText}>Save Note</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <TouchableOpacity 
+            style={styles.createCollapsed} 
+            activeOpacity={0.8}
+            onPress={() => setIsCreating(true)}
+          >
+            <Ionicons name="create-outline" size={22} color="#1D4ED8" />
+            <Text style={styles.createCollapsedText}>Write a new note...</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </>
   );
 
   return (
@@ -221,7 +336,7 @@ export default function NotesScreen() {
         </View>
       ) : (
         <FlatList
-          data={notes}
+          data={getFilteredNotes()}
           keyExtractor={(item) => item.id}
           renderItem={renderNote}
           ListHeaderComponent={renderListHeader()}
@@ -475,5 +590,91 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
     lineHeight: 24,
+  },
+  // Filter Styles
+  filterContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+    paddingHorizontal: 0,
+  },
+  filterBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  filterBtnActive: {
+    backgroundColor: '#1D4ED8',
+    borderColor: '#1D4ED8',
+  },
+  filterBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  filterBtnTextActive: {
+    color: '#FFFFFF',
+  },
+  // Date Picker Container Styles
+  datePickerIOSContainer: {
+    backgroundColor: '#F8FAFC',
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  // Calendar Styles (unused but kept for reference)
+  calendarContent: {
+    flex: 1,
+    padding: 20,
+  },
+  datePickerContainer: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    overflow: 'hidden',
+  },
+  dateInputBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  dateInputText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0F172A',
+  },
+  calendarInfo: {
+    backgroundColor: '#EFF6FF',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  calendarInfoTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1E40AF',
+    marginBottom: 8,
+  },
+  calendarInfoDate: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 8,
+  },
+  calendarInfoHint: {
+    fontSize: 14,
+    color: '#64748B',
+    fontWeight: '500',
   },
 });
