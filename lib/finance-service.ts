@@ -24,6 +24,7 @@ export type Debt = {
   given_back: boolean
   date_given_back?: string
   interest_type: DebtInterestType
+  interest_rate?: number
   created_at: string
 }
 
@@ -115,7 +116,8 @@ export async function addDebt(
   description: string, 
   due_date: string, 
   amount_given_date: string, 
-  interest_type: DebtInterestType
+  interest_type: DebtInterestType,
+  interest_rate?: number
 ): Promise<boolean> {
   try {
     const userDocRef = await ensureFinanceDoc(email)
@@ -123,7 +125,7 @@ export async function addDebt(
     const newDebt: Debt = {
       id: Date.now().toString(),
       to_whom, amount, description, due_date, amount_given_date, 
-      given_back: false, interest_type,
+      given_back: false, interest_type, interest_rate,
       created_at: new Date().toISOString()
     }
     await updateDoc(userDocRef, { debts: [...(data.debts || []), newDebt] })

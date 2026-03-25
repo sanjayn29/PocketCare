@@ -72,6 +72,7 @@ export default function FinanceScreen() {
   const [debtGivenDate, setDebtGivenDate] = useState(todayStr);
   const [debtDueDate, setDebtDueDate] = useState('');
   const [debtInterest, setDebtInterest] = useState<DebtInterestType>('none');
+  const [debtInterestRate, setDebtInterestRate] = useState('');
 
   // Edit Debt State
   const [editingDebt, setEditingDebt] = useState<Debt | null>(null);
@@ -81,6 +82,7 @@ export default function FinanceScreen() {
   const [debtEGivenDate, setDebtEGivenDate] = useState(todayStr);
   const [debtEDueDate, setDebtEDueDate] = useState('');
   const [debtEInterest, setDebtEInterest] = useState<DebtInterestType>('none');
+  const [debtEInterestRate, setDebtEInterestRate] = useState('');
 
   // Create Goal State
   const [goalTitle, setGoalTitle] = useState('');
@@ -116,7 +118,29 @@ export default function FinanceScreen() {
     finally { setLoading(false); setRefreshing(false); }
   };
 
-  const handleRefresh = () => { setRefreshing(true); loadData(); };
+  const calcDebtAmount = (item: Debt) => {
+    if (item.interest_type === 'none' || !item.interest_rate) return Number(item.amount);
+    const start = new Date(item.amount_given_date).getTime();
+    // Calculate full term using due date; fallback to today if no due date was defined
+    let end = item.due_date ? new Date(item.due_date).getTime() : new Date().getTime();
+    
+    // If early payoff and no due date was enforced, freeze at the returned text 
+    if (item.given_back && item.date_given_back && !item.due_date) {
+      end = new Date(item.date_given_back).getTime();
+    }
+    
+    const daysRange = (end - start) / (1000 * 3600 * 24);
+    if (daysRange <= 0) return Number(item.amount);
+    const r = Number(item.interest_rate) / 100;
+    const years = daysRange / 365.25;
+    let total = Number(item.amount);
+    if (item.interest_type === 'simple') {
+       total = total * (1 + (r * years));
+    } else {
+       total = total * Math.pow(1 + r, years);
+    }
+    return Math.max(total, Number(item.amount));
+  }
 
   // ── Date Picker Helper
   const onDateChange = (event: any, selectedDate?: Date) => {
@@ -132,9 +156,38 @@ export default function FinanceScreen() {
     }
   };
 
+  const combinedTransactions = useMemo(() => {
+    let combined: Transaction[] = [...transactions];
+    debts.forEach(d => {
+      // Debt given -> acts as an expense
+      combined.push({
+        id: `debt_exp_${d.id}`,
+        type: 'expense',
+        amount: d.amount,
+        category: 'Debt Given',
+        note: `To: ${d.to_whom}`,
+        date: d.amount_given_date,
+        created_at: d.created_at
+      });
+      // Debt paid -> acts as an income
+      if (d.given_back && d.date_given_back) {
+        combined.push({
+          id: `debt_inc_${d.id}`,
+          type: 'income',
+          amount: calcDebtAmount(d),
+          category: 'Debt Repaid',
+          note: `From: ${d.to_whom}`,
+          date: d.date_given_back,
+          created_at: d.date_given_back
+        });
+      }
+    });
+    return combined.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [transactions, debts]);
+
   const filteredTxs = useMemo(() => {
     const now = new Date();
-    return transactions.filter(t => {
+    return combinedTransactions.filter(t => {
       if (timeFilter === 'All') return true;
       const txD = new Date(t.date);
       const diffTime = Math.abs(now.getTime() - txD.getTime());
@@ -144,7 +197,7 @@ export default function FinanceScreen() {
       if (timeFilter === 'Year') return diffDays <= 365;
       return true;
     });
-  }, [transactions, timeFilter]);
+  }, [combinedTransactions, timeFilter]);
 
   const totalIncome = filteredTxs.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount), 0);
   const totalExpense = filteredTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount), 0);
@@ -198,8 +251,11 @@ export default function FinanceScreen() {
     if(!debtAmount || isNaN(Number(debtAmount))) return Alert.alert('Error', 'Valid amount required.');
     if(!debtTo) return Alert.alert('Error', 'To whom is required.');
 
-    await addDebt(email, debtTo, Number(debtAmount), debtDesc, debtDueDate, debtGivenDate, debtInterest);
-    setDebtTo(''); setDebtAmount(''); setDebtDesc(''); setDebtDueDate(''); setDebtInterest('none');
+    const rate = debtInterest !== 'none' ? Number(debtInterestRate) : 0;
+    await addDebt(email, debtTo, Number(debtAmount), debtDesc, debtDueDate, debtGivenDate, debtInterest, rate);
+    
+    setDebtTo(''); setDebtAmount(''); setDebtDesc(''); setDebtDueDate(''); 
+    setDebtInterest('none'); setDebtInterestRate('');
     setIsCreatingDebt(false); Keyboard.dismiss(); loadData();
   };
 
@@ -226,9 +282,11 @@ export default function FinanceScreen() {
     if(!email || !editingDebt) return;
     if(!debtEAmount || isNaN(Number(debtEAmount))) return Alert.alert('Error', 'Valid amount required.');
     if(!debtETo) return Alert.alert('Error', 'To whom is required.');
+    
+    const rate = debtEInterest !== 'none' ? Number(debtEInterestRate) : 0;
     await updateDebt(email, editingDebt.id, {
       to_whom: debtETo, amount: Number(debtEAmount), description: debtEDesc, 
-      amount_given_date: debtEGivenDate, due_date: debtEDueDate, interest_type: debtEInterest
+      amount_given_date: debtEGivenDate, due_date: debtEDueDate, interest_type: debtEInterest, interest_rate: rate
     });
     setEditingDebt(null); loadData();
   }
@@ -267,7 +325,8 @@ export default function FinanceScreen() {
   const openEditDebt = (d: Debt) => {
      setDebtETo(d.to_whom); setDebtEAmount(d.amount.toString()); setDebtEDesc(d.description || '');
      setDebtEGivenDate(d.amount_given_date); setDebtEDueDate(d.due_date || ''); 
-     setDebtEInterest(d.interest_type); setEditingDebt(d);
+     setDebtEInterest(d.interest_type); setDebtEInterestRate(d.interest_rate ? d.interest_rate.toString() : '');
+     setEditingDebt(d);
   }
   const openEditGoal = (g: FinanceGoal) => {
      setGoalETitle(g.title); setGoalEDesc(g.description || ''); setGoalETarget(g.target_amount.toString());
@@ -325,6 +384,11 @@ export default function FinanceScreen() {
               </TouchableOpacity>
             ))}
           </View>
+
+          {debtInterest !== 'none' && (
+            <TextInput style={styles.input} placeholder="Interest Rate % (per yr)" keyboardType="numeric" value={debtInterestRate} onChangeText={setDebtInterestRate} />
+          )}
+
           <Text style={styles.selectorLabel}>Given Date:</Text>
           <TouchableOpacity style={styles.input} onPress={()=>setShowDatePicker('debtGiven')}>
             <Text style={{color: '#334155'}}>{debtGivenDate}</Text>
@@ -466,37 +530,44 @@ export default function FinanceScreen() {
 
   const renderTransactions = () => (
     <FlatList
-      data={transactions}
+      data={combinedTransactions}
       keyExtractor={t=>t.id}
       ListHeaderComponent={renderTxCard()}
       contentContainerStyle={{padding: 16, paddingBottom: 100}}
       ListEmptyComponent={<Text style={{textAlign:'center', color:'#94A3B8', marginTop: 40}}>No transactions found.</Text>}
-      renderItem={({item}) => (
-        <View style={styles.card}>
-          <View style={{flex:1}}>
-            <Text style={{fontSize:16, fontWeight:'700', color: '#1E293B'}}>{item.category}</Text>
-            {item.note ? <Text style={{fontSize:13, color:'#64748B', marginTop:2}}>{item.note}</Text> : null}
-            <Text style={{fontSize:12, color:'#94A3B8', marginTop:4}}>{item.date}</Text>
-          </View>
-          <View style={{alignItems:'flex-end'}}>
-            <Text style={{fontSize:16, fontWeight:'800', color: item.type==='income'?'#10B981':'#EF4444'}}>
-              {item.type === 'income' ? '+' : '-'}${item.amount}
-            </Text>
-            <View style={{flexDirection: 'row', gap: 12, marginTop: 8}}>
-              <TouchableOpacity onPress={()=> openEditTx(item)}>
-                <Ionicons name="pencil-outline" size={18} color="#64748B"/>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={()=> {
-                Alert.alert('Delete', 'Delete transaction?', [
-                  {text:'Cancel'}, {text:'Delete', style:'destructive', onPress:() => { deleteTransaction(email!, item.id); loadData(); }}
-                ]);
-              }}>
-                <Ionicons name="trash-outline" size={18} color="#EF4444"/>
-              </TouchableOpacity>
+      renderItem={({item}) => {
+        const isSynthetic = item.id.startsWith('debt_');
+        return (
+          <View style={[styles.card, isSynthetic && {borderLeftWidth: 4, borderLeftColor: item.type==='income'?'#10B981':'#EF4444'}]}>
+            <View style={{flex:1}}>
+              <Text style={{fontSize:16, fontWeight:'700', color: '#1E293B'}}>
+                {item.category} {isSynthetic && ' (Auto)'}
+              </Text>
+              {item.note ? <Text style={{fontSize:13, color:'#64748B', marginTop:2}}>{item.note}</Text> : null}
+              <Text style={{fontSize:12, color:'#94A3B8', marginTop:4}}>{item.date}</Text>
+            </View>
+            <View style={{alignItems:'flex-end'}}>
+              <Text style={{fontSize:16, fontWeight:'800', color: item.type==='income'?'#10B981':'#EF4444'}}>
+                {item.type === 'income' ? '+' : '-'}${Number(item.amount).toFixed(2)}
+              </Text>
+              {!isSynthetic && (
+                <View style={{flexDirection: 'row', gap: 12, marginTop: 8}}>
+                  <TouchableOpacity onPress={()=> openEditTx(item)}>
+                    <Ionicons name="pencil-outline" size={18} color="#64748B"/>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={()=> {
+                    Alert.alert('Delete', 'Delete transaction?', [
+                      {text:'Cancel'}, {text:'Delete', style:'destructive', onPress:() => { deleteTransaction(email!, item.id); loadData(); }}
+                    ]);
+                  }}>
+                    <Ionicons name="trash-outline" size={18} color="#EF4444"/>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           </View>
-        </View>
-      )}
+        );
+      }}
     />
   );
 
@@ -507,40 +578,48 @@ export default function FinanceScreen() {
       ListHeaderComponent={renderDebtCard()}
       contentContainerStyle={{padding: 16, paddingBottom: 100}}
       ListEmptyComponent={<Text style={{textAlign:'center', color:'#94A3B8', marginTop: 40}}>No debts tracked.</Text>}
-      renderItem={({item}) => (
-        <View style={[styles.card, item.given_back && {opacity: 0.7}]}>
-          <View style={{flex:1}}>
-            <Text style={{fontSize:17, fontWeight:'800', color: '#1E293B'}}>{item.to_whom}</Text>
-            {item.description ? <Text style={{fontSize:13, color:'#64748B', marginTop:2}}>{item.description}</Text> : null}
-            <Text style={{fontSize:12, color:'#94A3B8', marginTop:4}}>Given: {item.amount_given_date} {item.due_date ? `| Due: ${item.due_date}` : ''}</Text>
-            <Text style={{fontSize:12, color:'#3B82F6', marginTop:2, fontWeight:'600'}}>Interest: {item.interest_type}</Text>
-            {item.given_back && <Text style={{fontSize:12, color:'#10B981', marginTop:4, fontWeight:'700'}}>✓ Returned on {item.date_given_back}</Text>}
-          </View>
-          <View style={{alignItems:'flex-end'}}>
-            <Text style={{fontSize:18, fontWeight:'800', color: '#F59E0B'}}>${item.amount}</Text>
-            <View style={{flexDirection:'row', alignItems:'center', marginTop: 8}}>
-              <Text style={{fontSize:11, color:'#64748B', marginRight:4}}>Paid?</Text>
-              <Switch 
-                value={item.given_back} 
-                onValueChange={()=>toggleDebtGivenBack(item)}
-                trackColor={{false:'#E2E8F0', true:'#10B981'}}
-              />
+      renderItem={({item}) => {
+        const calculatedAmount = calcDebtAmount(item);
+        return (
+          <View style={[styles.card, item.given_back && {opacity: 0.7}]}>
+            <View style={{flex:1}}>
+              <Text style={{fontSize:17, fontWeight:'800', color: '#1E293B'}}>{item.to_whom}</Text>
+              {item.description ? <Text style={{fontSize:13, color:'#64748B', marginTop:2}}>{item.description}</Text> : null}
+              <Text style={{fontSize:12, color:'#94A3B8', marginTop:4}}>Given: {item.amount_given_date} {item.due_date ? `| Due: ${item.due_date}` : ''}</Text>
+              <Text style={{fontSize:12, color:'#3B82F6', marginTop:2, fontWeight:'600'}}>
+                Interest: {item.interest_type} {item.interest_rate ? `(${item.interest_rate}% / yr)` : ''}
+              </Text>
+              {item.given_back && <Text style={{fontSize:12, color:'#10B981', marginTop:4, fontWeight:'700'}}>✓ Returned on {item.date_given_back}</Text>}
             </View>
-            <View style={{flexDirection: 'row', gap: 12, marginTop: 8}}>
-              <TouchableOpacity onPress={()=> openEditDebt(item)}>
-                <Ionicons name="pencil-outline" size={18} color="#64748B"/>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={()=> {
-                Alert.alert('Delete', 'Delete debt record?', [
-                  {text:'Cancel'}, {text:'Delete', style:'destructive', onPress:() => { deleteDebt(email!, item.id); loadData(); }}
-                ]);
-              }}>
-                <Ionicons name="trash-outline" size={18} color="#EF4444"/>
-              </TouchableOpacity>
+            <View style={{alignItems:'flex-end'}}>
+              <Text style={{fontSize:18, fontWeight:'800', color: '#F59E0B'}}>${calculatedAmount.toFixed(2)}</Text>
+              {item.interest_type !== 'none' && (
+                <Text style={{fontSize:10, color:'#94A3B8', marginTop:2}}>Base: ${item.amount}</Text>
+              )}
+              <View style={{flexDirection:'row', alignItems:'center', marginTop: 8}}>
+                <Text style={{fontSize:11, color:'#64748B', marginRight:4}}>Paid?</Text>
+                <Switch 
+                  value={item.given_back} 
+                  onValueChange={()=>toggleDebtGivenBack(item)}
+                  trackColor={{false:'#E2E8F0', true:'#10B981'}}
+                />
+              </View>
+              <View style={{flexDirection: 'row', gap: 12, marginTop: 8}}>
+                <TouchableOpacity onPress={()=> openEditDebt(item)}>
+                  <Ionicons name="pencil-outline" size={18} color="#64748B"/>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={()=> {
+                  Alert.alert('Delete', 'Delete debt record?', [
+                    {text:'Cancel'}, {text:'Delete', style:'destructive', onPress:() => { deleteDebt(email!, item.id); loadData(); }}
+                  ]);
+                }}>
+                  <Ionicons name="trash-outline" size={18} color="#EF4444"/>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-      )}
+        );
+      }}
     />
   );
 
@@ -697,6 +776,11 @@ export default function FinanceScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+
+            {debtEInterest !== 'none' && (
+              <TextInput style={styles.input} placeholder="Interest Rate % (per yr)" keyboardType="numeric" value={debtEInterestRate} onChangeText={setDebtEInterestRate} />
+            )}
+
             <Text style={styles.selectorLabel}>Given Date:</Text>
             <TouchableOpacity style={styles.input} onPress={()=>setShowDatePicker('debtEGiven')}>
               <Text style={{color: '#334155'}}>{debtEGivenDate}</Text>
