@@ -633,40 +633,49 @@ export default function FinanceScreen() {
       renderItem={({item}) => {
         const pctRaw = item.target_amount ? (item.current_amount / item.target_amount) * 100 : 0;
         const pct = Math.min(Math.max(pctRaw, 0), 100).toFixed(1);
+        console.log("Goal item being rendered:", JSON.stringify(item));
         return (
           <View style={styles.card}>
-            <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom: 10}}>
-              <View style={{flex:1, paddingRight:10}}>
-                <Text style={{fontSize:17, fontWeight:'800', color: '#1E293B'}}>{item.title}</Text>
-                {item.description ? <Text style={{fontSize:13, color:'#64748B', marginTop:2}}>{item.description}</Text> : null}
-              </View>
-              <View style={{flexDirection: 'row', gap: 12}}>
+            {/* Top Row: Title + Icons */}
+            <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom: 12}}>
+              <Text style={{fontSize:20, fontWeight:'900', color: '#0F172A', flex: 1}}>{item.title || 'Untitled Goal'}</Text>
+              <View style={{flexDirection: 'row', gap: 16}}>
                 <TouchableOpacity onPress={()=> openEditGoal(item)}>
-                  <Ionicons name="pencil-outline" size={18} color="#64748B"/>
+                  <Ionicons name="pencil-outline" size={20} color="#64748B"/>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={()=> {
                   Alert.alert('Delete', 'Delete goal?', [
                     {text:'Cancel'}, {text:'Delete', style:'destructive', onPress:() => { deleteFinanceGoal(email!, item.id); loadData(); }}
                   ]);
                 }}>
-                  <Ionicons name="trash-outline" size={18} color="#EF4444"/>
+                  <Ionicons name="trash-outline" size={20} color="#EF4444"/>
                 </TouchableOpacity>
               </View>
             </View>
-            
-            <View style={{flexDirection:'row', justifyContent:'space-between', marginBottom: 4}}>
-              <Text style={{fontSize:13, fontWeight:'600', color:'#475569'}}>${item.current_amount} of ${item.target_amount}</Text>
-              <Text style={{fontSize:13, fontWeight:'800', color: '#3B82F6'}}>{pct}%</Text>
+
+            {/* Percentage Above Bar aligned Right */}
+            <View style={{flexDirection:'row', justifyContent:'flex-end', marginBottom: 6}}>
+              <Text style={{fontSize:16, fontWeight:'900', color: '#3B82F6'}}>{pct}%</Text>
             </View>
-            
-            <View style={{height:10, backgroundColor:'#E2E8F0', borderRadius:5, overflow:'hidden', marginBottom: 12}}>
+
+            {/* Progress Bar */}
+            <View style={{height:12, backgroundColor:'#E2E8F0', borderRadius:6, overflow:'hidden', marginBottom: 10}}>
               <View style={{height:'100%', backgroundColor:'#3B82F6', width:`${pct}%` as any}} />
             </View>
 
-            <TouchableOpacity style={{backgroundColor:'#EFF6FF', paddingVertical:8, borderRadius:8, alignItems:'center'}}
+            {/* Description & Saved Amount strictly below the % bar */}
+            <View style={{flexDirection:'column', marginBottom: 16}}>
+              <Text style={{fontSize:15, fontWeight:'800', color:'#475569'}}>
+                Saved: <Text style={{color: '#10B981'}}>${item.current_amount}</Text> <Text style={{fontWeight:'500', color:'#94A3B8'}}>of ${item.target_amount}</Text>
+              </Text>
+              {item.description ? <Text style={{fontSize:14, color:'#64748B', marginTop:6}}>{item.description}</Text> : null}
+              <Text style={{fontSize:12, color:'#94A3B8', marginTop: 4}}>Started: {item.created_at ? item.created_at.split('T')[0] : 'Today'}</Text>
+            </View>
+
+            <TouchableOpacity style={{backgroundColor:'#EFF6FF', paddingVertical:12, borderRadius:10, alignItems:'center'}}
               onPress={() => { setSelectedGoal(item); setShowGoalUpdateModal(true); }}
             >
-              <Text style={{color:'#3B82F6', fontWeight:'700'}}>Add / Take Money</Text>
+              <Text style={{color:'#3B82F6', fontWeight:'800', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5}}>Update Balance</Text>
             </TouchableOpacity>
           </View>
         );
@@ -842,7 +851,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset:{width:0, height:2}, shadowOpacity:0.04, shadowRadius:8, elevation:2, flexDirection: 'row', justifyContent: 'space-between' },
 
   input: { backgroundColor: '#F8FAFC', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: '#334155', borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 12 },
-  titleInput: { fontSize: 18, fontWeight: '700', color: '#0F172A', marginBottom: 12, paddingVertical: 4 },
+  titleInput: { backgroundColor: '#FFF', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, fontSize: 18, fontWeight: '700', color: '#0F172A', borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 12 },
   selectorLabel: { fontSize: 13, fontWeight: '600', color: '#64748B', marginBottom: 8 },
 
   createCard: { backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#3B82F6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3, overflow: 'hidden' },
