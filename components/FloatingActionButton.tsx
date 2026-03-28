@@ -20,6 +20,7 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
     { id: 'calculator', label: 'Calculator', icon: 'calculator', tint: '#FFF4E8' },
     { id: 'tasks', label: 'Tasks', icon: 'checkbox', tint: '#F5EDFF' },
     { id: 'skills', label: 'Skills', icon: 'school', tint: '#FFEFF4' },
+    { id: 'schedule', label: 'Schedule', icon: 'calendar', tint: '#E0F2FE' },
     { id: 'profile', label: 'Profile', icon: 'person', tint: '#EAF2FF' },
   ];
 
@@ -115,6 +116,7 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
       calculator: '/calculator',
       tasks: '/tasks',
       skills: '/skills',
+      schedule: '/schedule',
       profile: '/profile',
     };
 
