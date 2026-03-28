@@ -37,7 +37,7 @@ export default function CalculatorScreen() {
   const email = user?.primaryEmailAddress?.emailAddress;
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<'basic' | 'interest'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'interest' | 'history'>('basic');
 
   // Interest Calculator States
   const [calcType, setCalcType] = useState<CalculationType>('simple_interest');
@@ -64,8 +64,12 @@ export default function CalculatorScreen() {
   const [basicSaving, setBasicSaving] = useState(false);
 
   // Filter states
-  const [historyFilterType, setHistoryFilterType] = useState<'all' | 'simple_interest' | 'compound_interest'>('all');
-  const [historyFilterDate, setHistoryFilterDate] = useState<'all' | 'today' | 'week' | 'month'>('all');
+  const [historyFilterType, setHistoryFilterType] = useState<'all' | 'simple_interest' | 'compound_interest' | 'basic_calculation'>('all');
+  const [historyFilterDate, setHistoryFilterDate] = useState<'all' | 'today' | 'week' | 'custom'>('all');
+  const [filterDateStart, setFilterDateStart] = useState<Date | null>(null);
+  const [filterDateEnd, setFilterDateEnd] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [datePickerMode, setDatePickerMode] = useState<'start' | 'end'>('start');
 
   useEffect(() => {
     if (!email) {
@@ -113,6 +117,42 @@ export default function CalculatorScreen() {
     return histories.filter((group) => !group.entries.some((entry) => (entry.type as any) === 'basic_calculation'));
   }, [histories]);
 
+  const allCombinedHistories = useMemo(() => {
+    const combined = histories.filter((group) => {
+      // Filter by calculation type
+      if (historyFilterType !== 'all') {
+        const groupType = group.entries[0]?.type;
+        if (groupType !== historyFilterType) return false;
+      }
+
+      // Filter by date
+      if (historyFilterDate !== 'all') {
+        const groupDate = new Date(group.updated_at);
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const groupDay = new Date(groupDate.getFullYear(), groupDate.getMonth(), groupDate.getDate());
+
+        if (historyFilterDate === 'today') {
+          if (groupDay.getTime() !== today.getTime()) return false;
+        } else if (historyFilterDate === 'week') {
+          const weekAgo = new Date(today);
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          if (groupDay < weekAgo) return false;
+        } else if (historyFilterDate === 'custom') {
+          if (filterDateStart && filterDateEnd) {
+            const startDay = new Date(filterDateStart.getFullYear(), filterDateStart.getMonth(), filterDateStart.getDate());
+            const endDay = new Date(filterDateEnd.getFullYear(), filterDateEnd.getMonth(), filterDateEnd.getDate());
+            if (groupDay < startDay || groupDay > endDay) return false;
+          }
+        }
+      }
+
+      return true;
+    });
+    combined.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+    return combined;
+  }, [histories, historyFilterType, historyFilterDate, filterDateStart, filterDateEnd]);
+
   const filteredHistories = useMemo(() => {
     return interestHistories.filter((group) => {
       // Filter by calculation type
@@ -134,10 +174,6 @@ export default function CalculatorScreen() {
           const weekAgo = new Date(today);
           weekAgo.setDate(weekAgo.getDate() - 7);
           if (groupDay < weekAgo) return false;
-        } else if (historyFilterDate === 'month') {
-          const monthAgo = new Date(today);
-          monthAgo.setDate(monthAgo.getDate() - 30);
-          if (groupDay < monthAgo) return false;
         }
       }
 
@@ -479,14 +515,29 @@ export default function CalculatorScreen() {
             Interest (SI/CI)
           </Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'history' && styles.tabActive]}
+          onPress={() => setActiveTab('history')}
+        >
+          <Ionicons
+            name="list-outline"
+            size={18}
+            color={activeTab === 'history' ? '#FFFFFF' : '#64748B'}
+            style={{ marginRight: 8 }}
+          />
+          <Text style={[styles.tabText, activeTab === 'history' && styles.tabTextActive]}>
+            History
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Basic Calculator Tab */}
       {activeTab === 'basic' && (
         <FlatList
-          data={basicHistories}
-          keyExtractor={(item) => item.id}
-          renderItem={renderHistoryGroup}
+          data={[]}
+          keyExtractor={() => 'basic'}
+          renderItem={() => null}
           contentContainerStyle={styles.listContent}
           ListHeaderComponent={
             <View style={styles.basicCalculatorWrapper}>
@@ -583,21 +634,15 @@ export default function CalculatorScreen() {
               </View>
             </View>
           }
-          ListEmptyComponent={
-            <View style={styles.centerWrap}>
-              <Ionicons name="calculator-outline" size={56} color="#CBD5E1" />
-              <Text style={styles.emptyText}>No calculation history yet.</Text>
-            </View>
-          }
         />
       )}
 
       {/* Interest Calculator Tab */}
       {activeTab === 'interest' && (
         <FlatList
-          data={filteredHistories}
-          keyExtractor={(item) => item.id}
-          renderItem={renderHistoryGroup}
+          data={[]}
+          keyExtractor={() => 'interest'}
+          renderItem={() => null}
           contentContainerStyle={styles.listContent}
           ListHeaderComponent={
             <View>
@@ -697,6 +742,219 @@ export default function CalculatorScreen() {
               </View>
             </View>
           }
+        />
+      )}
+
+      {/* History Tab */}
+      {activeTab === 'history' && (
+        <FlatList
+          data={allCombinedHistories}
+          keyExtractor={(item) => item.id}
+          renderItem={renderHistoryGroup}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={
+            <View>
+              <Text style={styles.sectionTitle}>All Calculation History</Text>
+              <Text style={styles.sectionSubtitle}>View all your calculations in one place</Text>
+
+              {/* Filter by Type */}
+              <View style={styles.filterContainer}>
+                <Text style={styles.filterLabel}>Filter by Type</Text>
+                <View style={styles.filterRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.filterBtn,
+                      historyFilterType === 'all' && styles.filterBtnActive,
+                    ]}
+                    onPress={() => setHistoryFilterType('all')}
+                  >
+                    <Text
+                      style={[
+                        styles.filterBtnText,
+                        historyFilterType === 'all' && styles.filterBtnTextActive,
+                      ]}
+                    >
+                      All
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.filterBtn,
+                      historyFilterType === 'basic_calculation' && styles.filterBtnActive,
+                    ]}
+                    onPress={() => setHistoryFilterType('basic_calculation')}
+                  >
+                    <Text
+                      style={[
+                        styles.filterBtnText,
+                        historyFilterType === 'basic_calculation' && styles.filterBtnTextActive,
+                      ]}
+                    >
+                      Basic
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.filterBtn,
+                      historyFilterType === 'simple_interest' && styles.filterBtnActive,
+                    ]}
+                    onPress={() => setHistoryFilterType('simple_interest')}
+                  >
+                    <Text
+                      style={[
+                        styles.filterBtnText,
+                        historyFilterType === 'simple_interest' && styles.filterBtnTextActive,
+                      ]}
+                    >
+                      Simple
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.filterBtn,
+                      historyFilterType === 'compound_interest' && styles.filterBtnActive,
+                    ]}
+                    onPress={() => setHistoryFilterType('compound_interest')}
+                  >
+                    <Text
+                      style={[
+                        styles.filterBtnText,
+                        historyFilterType === 'compound_interest' && styles.filterBtnTextActive,
+                      ]}
+                    >
+                      Compound
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Filter by Date */}
+              <View style={styles.filterContainer}>
+                <Text style={styles.filterLabel}>Filter by Date</Text>
+                <View style={styles.filterRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.filterBtn,
+                      historyFilterDate === 'all' && styles.filterBtnActive,
+                    ]}
+                    onPress={() => {
+                      setHistoryFilterDate('all');
+                      setFilterDateStart(null);
+                      setFilterDateEnd(null);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.filterBtnText,
+                        historyFilterDate === 'all' && styles.filterBtnTextActive,
+                      ]}
+                    >
+                      All Time
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.filterBtn,
+                      historyFilterDate === 'today' && styles.filterBtnActive,
+                    ]}
+                    onPress={() => {
+                      setHistoryFilterDate('today');
+                      setFilterDateStart(null);
+                      setFilterDateEnd(null);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.filterBtnText,
+                        historyFilterDate === 'today' && styles.filterBtnTextActive,
+                      ]}
+                    >
+                      Today
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.filterBtn,
+                      historyFilterDate === 'week' && styles.filterBtnActive,
+                    ]}
+                    onPress={() => {
+                      setHistoryFilterDate('week');
+                      setFilterDateStart(null);
+                      setFilterDateEnd(null);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.filterBtnText,
+                        historyFilterDate === 'week' && styles.filterBtnTextActive,
+                      ]}
+                    >
+                      Week
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.filterBtn,
+                      historyFilterDate === 'custom' && styles.filterBtnActive,
+                    ]}
+                    onPress={() => setHistoryFilterDate('custom')}
+                  >
+                    <Ionicons
+                      name="calendar-outline"
+                      size={16}
+                      color={historyFilterDate === 'custom' ? '#FFFFFF' : '#64748B'}
+                      style={{ marginRight: 4 }}
+                    />
+                    <Text
+                      style={[
+                        styles.filterBtnText,
+                        historyFilterDate === 'custom' && styles.filterBtnTextActive,
+                      ]}
+                    >
+                      Custom
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Custom Date Picker */}
+                {historyFilterDate === 'custom' && (
+                  <View style={styles.customDateContainer}>
+                    <TouchableOpacity
+                      style={styles.dateInputBtn}
+                      onPress={() => {
+                        setDatePickerMode('start');
+                        setShowDatePicker(true);
+                      }}
+                    >
+                      <Ionicons name="calendar" size={18} color="#1D4ED8" />
+                      <Text style={styles.dateInputBtnText}>
+                        Start: {filterDateStart ? filterDateStart.toLocaleDateString() : 'Select date'}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.dateInputBtn}
+                      onPress={() => {
+                        setDatePickerMode('end');
+                        setShowDatePicker(true);
+                      }}
+                    >
+                      <Ionicons name="calendar" size={18} color="#1D4ED8" />
+                      <Text style={styles.dateInputBtnText}>
+                        End: {filterDateEnd ? filterDateEnd.toLocaleDateString() : 'Select date'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            </View>
+          }
           ListEmptyComponent={
             loading ? (
               <View style={styles.centerWrap}>
@@ -704,8 +962,8 @@ export default function CalculatorScreen() {
               </View>
             ) : (
               <View style={styles.centerWrap}>
-                <Ionicons name="trending-up-outline" size={56} color="#CBD5E1" />
-                <Text style={styles.emptyText}>No interest calculation history yet.</Text>
+                <Ionicons name="document-text-outline" size={56} color="#CBD5E1" />
+                <Text style={styles.emptyText}>No calculation history yet.</Text>
               </View>
             )
           }
@@ -740,6 +998,111 @@ export default function CalculatorScreen() {
                 ) : (
                   <Text style={styles.modalSaveText}>Save</Text>
                 )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Date Picker Modal */}
+      <Modal
+        visible={showDatePicker}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowDatePicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.datePickerModal}>
+            <View style={styles.datePickerHeader}>
+              <Text style={styles.datePickerTitle}>
+                {datePickerMode === 'start' ? 'Select Start Date' : 'Select End Date'}
+              </Text>
+              <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                <Ionicons name="close" size={24} color="#0F172A" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.datePickerContent}>
+              <View style={styles.monthYearSelector}>
+                <TouchableOpacity
+                  style={styles.monthNavBtn}
+                  onPress={() => {
+                    const currentDate = datePickerMode === 'start' ? (filterDateStart || new Date()) : (filterDateEnd || new Date());
+                    const newDate = new Date(currentDate);
+                    newDate.setMonth(newDate.getMonth() - 1);
+                    if (datePickerMode === 'start') {
+                      setFilterDateStart(newDate);
+                    } else {
+                      setFilterDateEnd(newDate);
+                    }
+                  }}
+                >
+                  <Text style={styles.monthNavBtnText}>←</Text>
+                </TouchableOpacity>
+
+                <Text style={styles.monthYearText}>
+                  {(datePickerMode === 'start' ? (filterDateStart || new Date()) : (filterDateEnd || new Date())).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
+                </Text>
+
+                <TouchableOpacity
+                  style={styles.monthNavBtn}
+                  onPress={() => {
+                    const currentDate = datePickerMode === 'start' ? (filterDateStart || new Date()) : (filterDateEnd || new Date());
+                    const newDate = new Date(currentDate);
+                    newDate.setMonth(newDate.getMonth() + 1);
+                    if (datePickerMode === 'start') {
+                      setFilterDateStart(newDate);
+                    } else {
+                      setFilterDateEnd(newDate);
+                    }
+                  }}
+                >
+                  <Text style={styles.monthNavBtnText}>→</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Simple Date Input */}
+              <View style={styles.dateInputWrapper}>
+                <Text style={styles.dateInputLabel}>Quick Select</Text>
+                <TextInput
+                  style={styles.dateInput}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor="#94A3B8"
+                  value={
+                    datePickerMode === 'start'
+                      ? filterDateStart?.toISOString().split('T')[0] || ''
+                      : filterDateEnd?.toISOString().split('T')[0] || ''
+                  }
+                  onChangeText={(text) => {
+                    try {
+                      const date = new Date(text + 'T00:00:00');
+                      if (!isNaN(date.getTime())) {
+                        if (datePickerMode === 'start') {
+                          setFilterDateStart(date);
+                        } else {
+                          setFilterDateEnd(date);
+                        }
+                      }
+                    } catch (e) {
+                      // Invalid date format
+                    }
+                  }}
+                />
+              </View>
+            </View>
+
+            <View style={styles.datePickerActions}>
+              <TouchableOpacity
+                style={styles.datePickerCancelBtn}
+                onPress={() => setShowDatePicker(false)}
+              >
+                <Text style={styles.datePickerCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.datePickerConfirmBtn}
+                onPress={() => setShowDatePicker(false)}
+              >
+                <Text style={styles.datePickerConfirmText}>Done</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -786,14 +1149,15 @@ const styles = StyleSheet.create({
   tab: {
     flex: 1,
     flexDirection: 'row',
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 12,
-    borderRadius: 10,
+    borderRadius: 12,
     backgroundColor: '#F1F5F9',
     borderWidth: 1,
     borderColor: '#E2E8F0',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
   },
   tabActive: {
     backgroundColor: '#1D4ED8',
@@ -843,7 +1207,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    padding: 14,
+    padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -853,17 +1217,19 @@ const styles = StyleSheet.create({
   },
   segmentRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
+    gap: 10,
+    marginBottom: 14,
+    alignItems: 'center',
   },
   segmentBtn: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 10,
     backgroundColor: '#F1F5F9',
     borderWidth: 1,
     borderColor: '#E2E8F0',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   segmentBtnActive: {
     backgroundColor: '#1D4ED8',
@@ -1098,16 +1464,25 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   filterContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     backgroundColor: '#F8FAFC',
     borderBottomWidth: 1,
     borderBottomColor: '#E2E8F0',
+    marginBottom: 4,
+  },
+  filterLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 8,
   },
   filterRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 8,
+    gap: 10,
+    marginBottom: 10,
+    flexWrap: 'wrap',
+    alignItems: 'center',
   },
   filterBtn: {
     paddingHorizontal: 12,
@@ -1116,6 +1491,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
   },
   filterBtnActive: {
     backgroundColor: '#1D4ED8',
@@ -1128,5 +1507,130 @@ const styles = StyleSheet.create({
   },
   filterBtnTextActive: {
     color: '#FFFFFF',
+  },
+  customDateContainer: {
+    marginTop: 12,
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  dateInputBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: 10,
+  },
+  dateInputBtnText: {
+    fontSize: 13,
+    color: '#0F172A',
+    fontWeight: '600',
+    flex: 1,
+  },
+  datePickerModal: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    marginTop: 'auto',
+    paddingTop: 16,
+  },
+  datePickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  datePickerTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  datePickerContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    gap: 16,
+  },
+  monthYearSelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    gap: 8,
+  },
+  monthNavBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  monthNavBtnText: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1D4ED8',
+  },
+  monthYearText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  dateInputWrapper: {
+    gap: 6,
+  },
+  dateInputLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  dateInput: {
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#0F172A',
+    backgroundColor: '#FFFFFF',
+  },
+  datePickerActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  datePickerCancelBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  datePickerCancelText: {
+    color: '#64748B',
+    fontWeight: '700',
+  },
+  datePickerConfirmBtn: {
+    backgroundColor: '#1D4ED8',
+    borderRadius: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  datePickerConfirmText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
 });
