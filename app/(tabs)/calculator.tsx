@@ -1,6 +1,7 @@
 import FloatingActionButton from '@/components/FloatingActionButton';
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -66,10 +67,8 @@ export default function CalculatorScreen() {
   // Filter states
   const [historyFilterType, setHistoryFilterType] = useState<'all' | 'simple_interest' | 'compound_interest' | 'basic_calculation'>('all');
   const [historyFilterDate, setHistoryFilterDate] = useState<'all' | 'today' | 'week' | 'custom'>('all');
-  const [filterDateStart, setFilterDateStart] = useState<Date | null>(null);
-  const [filterDateEnd, setFilterDateEnd] = useState<Date | null>(null);
+  const [filterDate, setFilterDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [datePickerMode, setDatePickerMode] = useState<'start' | 'end'>('start');
 
   useEffect(() => {
     if (!email) {
@@ -139,10 +138,9 @@ export default function CalculatorScreen() {
           weekAgo.setDate(weekAgo.getDate() - 7);
           if (groupDay < weekAgo) return false;
         } else if (historyFilterDate === 'custom') {
-          if (filterDateStart && filterDateEnd) {
-            const startDay = new Date(filterDateStart.getFullYear(), filterDateStart.getMonth(), filterDateStart.getDate());
-            const endDay = new Date(filterDateEnd.getFullYear(), filterDateEnd.getMonth(), filterDateEnd.getDate());
-            if (groupDay < startDay || groupDay > endDay) return false;
+          if (filterDate) {
+            const selectedDay = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate());
+            if (groupDay.getTime() !== selectedDay.getTime()) return false;
           }
         }
       }
@@ -151,7 +149,7 @@ export default function CalculatorScreen() {
     });
     combined.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
     return combined;
-  }, [histories, historyFilterType, historyFilterDate, filterDateStart, filterDateEnd]);
+  }, [histories, historyFilterType, historyFilterDate, filterDate]);
 
   const filteredHistories = useMemo(() => {
     return interestHistories.filter((group) => {
@@ -842,8 +840,6 @@ export default function CalculatorScreen() {
                     ]}
                     onPress={() => {
                       setHistoryFilterDate('all');
-                      setFilterDateStart(null);
-                      setFilterDateEnd(null);
                     }}
                   >
                     <Text
@@ -863,8 +859,6 @@ export default function CalculatorScreen() {
                     ]}
                     onPress={() => {
                       setHistoryFilterDate('today');
-                      setFilterDateStart(null);
-                      setFilterDateEnd(null);
                     }}
                   >
                     <Text
@@ -884,8 +878,6 @@ export default function CalculatorScreen() {
                     ]}
                     onPress={() => {
                       setHistoryFilterDate('week');
-                      setFilterDateStart(null);
-                      setFilterDateEnd(null);
                     }}
                   >
                     <Text
@@ -903,7 +895,10 @@ export default function CalculatorScreen() {
                       styles.filterBtn,
                       historyFilterDate === 'custom' && styles.filterBtnActive,
                     ]}
-                    onPress={() => setHistoryFilterDate('custom')}
+                    onPress={() => {
+                      setHistoryFilterDate('custom');
+                      setShowDatePicker(true);
+                    }}
                   >
                     <Ionicons
                       name="calendar-outline"
@@ -922,36 +917,7 @@ export default function CalculatorScreen() {
                   </TouchableOpacity>
                 </View>
 
-                {/* Custom Date Picker */}
-                {historyFilterDate === 'custom' && (
-                  <View style={styles.customDateContainer}>
-                    <TouchableOpacity
-                      style={styles.dateInputBtn}
-                      onPress={() => {
-                        setDatePickerMode('start');
-                        setShowDatePicker(true);
-                      }}
-                    >
-                      <Ionicons name="calendar" size={18} color="#1D4ED8" />
-                      <Text style={styles.dateInputBtnText}>
-                        Start: {filterDateStart ? filterDateStart.toLocaleDateString() : 'Select date'}
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={styles.dateInputBtn}
-                      onPress={() => {
-                        setDatePickerMode('end');
-                        setShowDatePicker(true);
-                      }}
-                    >
-                      <Ionicons name="calendar" size={18} color="#1D4ED8" />
-                      <Text style={styles.dateInputBtnText}>
-                        End: {filterDateEnd ? filterDateEnd.toLocaleDateString() : 'Select date'}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
+                {/* Date picker will open when Custom is tapped */}
               </View>
             </View>
           }
@@ -1004,110 +970,37 @@ export default function CalculatorScreen() {
         </View>
       </Modal>
 
-      {/* Date Picker Modal */}
-      <Modal
-        visible={showDatePicker}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setShowDatePicker(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.datePickerModal}>
-            <View style={styles.datePickerHeader}>
-              <Text style={styles.datePickerTitle}>
-                {datePickerMode === 'start' ? 'Select Start Date' : 'Select End Date'}
-              </Text>
-              <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                <Ionicons name="close" size={24} color="#0F172A" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.datePickerContent}>
-              <View style={styles.monthYearSelector}>
-                <TouchableOpacity
-                  style={styles.monthNavBtn}
-                  onPress={() => {
-                    const currentDate = datePickerMode === 'start' ? (filterDateStart || new Date()) : (filterDateEnd || new Date());
-                    const newDate = new Date(currentDate);
-                    newDate.setMonth(newDate.getMonth() - 1);
-                    if (datePickerMode === 'start') {
-                      setFilterDateStart(newDate);
-                    } else {
-                      setFilterDateEnd(newDate);
-                    }
-                  }}
-                >
-                  <Text style={styles.monthNavBtnText}>←</Text>
-                </TouchableOpacity>
-
-                <Text style={styles.monthYearText}>
-                  {(datePickerMode === 'start' ? (filterDateStart || new Date()) : (filterDateEnd || new Date())).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
-                </Text>
-
-                <TouchableOpacity
-                  style={styles.monthNavBtn}
-                  onPress={() => {
-                    const currentDate = datePickerMode === 'start' ? (filterDateStart || new Date()) : (filterDateEnd || new Date());
-                    const newDate = new Date(currentDate);
-                    newDate.setMonth(newDate.getMonth() + 1);
-                    if (datePickerMode === 'start') {
-                      setFilterDateStart(newDate);
-                    } else {
-                      setFilterDateEnd(newDate);
-                    }
-                  }}
-                >
-                  <Text style={styles.monthNavBtnText}>→</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Simple Date Input */}
-              <View style={styles.dateInputWrapper}>
-                <Text style={styles.dateInputLabel}>Quick Select</Text>
-                <TextInput
-                  style={styles.dateInput}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor="#94A3B8"
-                  value={
-                    datePickerMode === 'start'
-                      ? filterDateStart?.toISOString().split('T')[0] || ''
-                      : filterDateEnd?.toISOString().split('T')[0] || ''
-                  }
-                  onChangeText={(text) => {
-                    try {
-                      const date = new Date(text + 'T00:00:00');
-                      if (!isNaN(date.getTime())) {
-                        if (datePickerMode === 'start') {
-                          setFilterDateStart(date);
-                        } else {
-                          setFilterDateEnd(date);
-                        }
-                      }
-                    } catch (e) {
-                      // Invalid date format
-                    }
-                  }}
-                />
-              </View>
-            </View>
-
-            <View style={styles.datePickerActions}>
-              <TouchableOpacity
-                style={styles.datePickerCancelBtn}
-                onPress={() => setShowDatePicker(false)}
-              >
-                <Text style={styles.datePickerCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.datePickerConfirmBtn}
-                onPress={() => setShowDatePicker(false)}
-              >
-                <Text style={styles.datePickerConfirmText}>Done</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+      {showDatePicker && Platform.OS === 'ios' && (
+        <View style={styles.datePickerIOSContainer}>
+          <DateTimePicker
+            value={filterDate}
+            mode="date"
+            display="spinner"
+            onChange={(event: DateTimePickerEvent, date?: Date) => {
+              if (date) {
+                setFilterDate(date);
+                setHistoryFilterDate('custom');
+              }
+            }}
+            textColor="#0F172A"
+          />
         </View>
-      </Modal>
+      )}
+
+      {showDatePicker && Platform.OS !== 'ios' && (
+        <DateTimePicker
+          value={filterDate}
+          mode="date"
+          display="default"
+          onChange={(event: DateTimePickerEvent, date?: Date) => {
+            setShowDatePicker(false);
+            if (date) {
+              setFilterDate(date);
+              setHistoryFilterDate('custom');
+            }
+          }}
+        />
+      )}
 
       <FloatingActionButton />
     </KeyboardAvoidingView>
@@ -1532,6 +1425,15 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     fontWeight: '600',
     flex: 1,
+  },
+  datePickerIOSContainer: {
+    backgroundColor: '#F8FAFC',
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginHorizontal: 16,
+    marginBottom: 16,
   },
   datePickerModal: {
     backgroundColor: '#FFFFFF',
