@@ -36,6 +36,10 @@ export default function CalculatorScreen() {
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress;
 
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'basic' | 'interest'>('basic');
+
+  // Interest Calculator States
   const [calcType, setCalcType] = useState<CalculationType>('simple_interest');
   const [title, setTitle] = useState('');
   const [principal, setPrincipal] = useState('');
@@ -51,6 +55,8 @@ export default function CalculatorScreen() {
   const [renameTargetId, setRenameTargetId] = useState('');
   const [renameTitle, setRenameTitle] = useState('');
   const [renaming, setRenaming] = useState(false);
+
+  // Basic Calculator States
   const [basicExpression, setBasicExpression] = useState('');
   const [basicResult, setBasicResult] = useState<number | null>(null);
 
@@ -344,334 +350,386 @@ export default function CalculatorScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-
-
       <View style={styles.headerArea}>
-        <Text style={styles.pageTitle}>Finance Calculator</Text>
-        <Text style={styles.pageSubTitle}>Simple Interest + Compound Interest with history</Text>
+        <Text style={styles.pageTitle}>Calculator</Text>
+        <Text style={styles.pageSubTitle}>Simple & Compound Interest or Basic Calculations</Text>
       </View>
 
-      <FlatList
-        data={filteredHistories}
-        keyExtractor={(item) => item.id}
-        renderItem={renderHistoryGroup}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={
-          <View>
-            {/* History Filters */}
-            <View style={styles.filterContainer}>
-              <View style={styles.filterRow}>
-                <TouchableOpacity
-                  style={[
-                    styles.filterBtn,
-                    historyFilterType === 'all' && styles.filterBtnActive,
-                  ]}
-                  onPress={() => setHistoryFilterType('all')}
-                >
-                  <Text
-                    style={[
-                      styles.filterBtnText,
-                      historyFilterType === 'all' && styles.filterBtnTextActive,
-                    ]}
-                  >
-                    All Types
-                  </Text>
-                </TouchableOpacity>
+      {/* Tab Navigation */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'basic' && styles.tabActive]}
+          onPress={() => setActiveTab('basic')}
+        >
+          <Ionicons
+            name="calculator-outline"
+            size={18}
+            color={activeTab === 'basic' ? '#FFFFFF' : '#64748B'}
+            style={{ marginRight: 8 }}
+          />
+          <Text style={[styles.tabText, activeTab === 'basic' && styles.tabTextActive]}>
+            Basic
+          </Text>
+        </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={[
-                    styles.filterBtn,
-                    historyFilterType === 'simple_interest' && styles.filterBtnActive,
-                  ]}
-                  onPress={() => setHistoryFilterType('simple_interest')}
-                >
-                  <Text
-                    style={[
-                      styles.filterBtnText,
-                      historyFilterType === 'simple_interest' && styles.filterBtnTextActive,
-                    ]}
-                  >
-                    Simple
-                  </Text>
-                </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'interest' && styles.tabActive]}
+          onPress={() => setActiveTab('interest')}
+        >
+          <Ionicons
+            name="trending-up-outline"
+            size={18}
+            color={activeTab === 'interest' ? '#FFFFFF' : '#64748B'}
+            style={{ marginRight: 8 }}
+          />
+          <Text style={[styles.tabText, activeTab === 'interest' && styles.tabTextActive]}>
+            Interest (SI/CI)
+          </Text>
+        </TouchableOpacity>
+      </View>
 
-                <TouchableOpacity
-                  style={[
-                    styles.filterBtn,
-                    historyFilterType === 'compound_interest' && styles.filterBtnActive,
-                  ]}
-                  onPress={() => setHistoryFilterType('compound_interest')}
-                >
-                  <Text
-                    style={[
-                      styles.filterBtnText,
-                      historyFilterType === 'compound_interest' && styles.filterBtnTextActive,
-                    ]}
-                  >
-                    Compound
-                  </Text>
-                </TouchableOpacity>
-              </View>
+      {/* Basic Calculator Tab */}
+      {activeTab === 'basic' && (
+        <FlatList
+          data={[]}
+          keyExtractor={() => 'basic'}
+          renderItem={() => null}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={
+            <View style={styles.basicCalculatorWrapper}>
+              <Text style={styles.sectionTitle}>Basic Calculator</Text>
+              <Text style={styles.sectionSubtitle}>Perform quick arithmetic calculations</Text>
 
-              <View style={styles.filterRow}>
-                <TouchableOpacity
-                  style={[
-                    styles.filterBtn,
-                    historyFilterDate === 'all' && styles.filterBtnActive,
-                  ]}
-                  onPress={() => setHistoryFilterDate('all')}
-                >
-                  <Text
-                    style={[
-                      styles.filterBtnText,
-                      historyFilterDate === 'all' && styles.filterBtnTextActive,
-                    ]}
-                  >
-                    All Time
-                  </Text>
-                </TouchableOpacity>
+              <View style={styles.formCard}>
+                <TextInput
+                  style={styles.input}
+                  value={basicExpression}
+                  onChangeText={setBasicExpression}
+                  placeholder="Enter expression (Example: 25+5*2-10/2)"
+                  placeholderTextColor="#94A3B8"
+                />
 
-                <TouchableOpacity
-                  style={[
-                    styles.filterBtn,
-                    historyFilterDate === 'today' && styles.filterBtnActive,
-                  ]}
-                  onPress={() => setHistoryFilterDate('today')}
-                >
-                  <Text
-                    style={[
-                      styles.filterBtnText,
-                      historyFilterDate === 'today' && styles.filterBtnTextActive,
-                    ]}
-                  >
-                    Today
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.filterBtn,
-                    historyFilterDate === 'week' && styles.filterBtnActive,
-                  ]}
-                  onPress={() => setHistoryFilterDate('week')}
-                >
-                  <Text
-                    style={[
-                      styles.filterBtnText,
-                      historyFilterDate === 'week' && styles.filterBtnTextActive,
-                    ]}
-                  >
-                    Week
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.filterBtn,
-                    historyFilterDate === 'month' && styles.filterBtnActive,
-                  ]}
-                  onPress={() => setHistoryFilterDate('month')}
-                >
-                  <Text
-                    style={[
-                      styles.filterBtnText,
-                      historyFilterDate === 'month' && styles.filterBtnTextActive,
-                    ]}
-                  >
-                    Month
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            <View style={styles.formCard}>
-            <View style={styles.segmentRow}>
-              <TouchableOpacity
-                style={[styles.segmentBtn, calcType === 'simple_interest' && styles.segmentBtnActive]}
-                onPress={() => setCalcType('simple_interest')}
-              >
-                <Text
-                  style={[
-                    styles.segmentBtnText,
-                    calcType === 'simple_interest' && styles.segmentBtnTextActive,
-                  ]}
-                >
-                  Simple Interest
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.segmentBtn, calcType === 'compound_interest' && styles.segmentBtnActive]}
-                onPress={() => setCalcType('compound_interest')}
-              >
-                <Text
-                  style={[
-                    styles.segmentBtnText,
-                    calcType === 'compound_interest' && styles.segmentBtnTextActive,
-                  ]}
-                >
-                  Compound Interest
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <TextInput
-              style={styles.input}
-              value={title}
-              onChangeText={setTitle}
-              placeholder="History Title (Example: Home Loan)"
-              placeholderTextColor="#94A3B8"
-            />
-            <TextInput
-              style={styles.input}
-              value={principal}
-              onChangeText={setPrincipal}
-              keyboardType="numeric"
-              placeholder="Principal Amount"
-              placeholderTextColor="#94A3B8"
-            />
-            <TextInput
-              style={styles.input}
-              value={rate}
-              onChangeText={setRate}
-              keyboardType="numeric"
-              placeholder="Rate (% per year)"
-              placeholderTextColor="#94A3B8"
-            />
-            <TextInput
-              style={styles.input}
-              value={time}
-              onChangeText={setTime}
-              keyboardType="numeric"
-              placeholder="Time (years)"
-              placeholderTextColor="#94A3B8"
-            />
-
-            {calcType === 'compound_interest' && (
-              <TextInput
-                style={styles.input}
-                value={compoundsPerYear}
-                onChangeText={setCompoundsPerYear}
-                keyboardType="numeric"
-                placeholder="Compounds Per Year (N)"
-                placeholderTextColor="#94A3B8"
-              />
-            )}
-
-            <TouchableOpacity style={styles.calculateBtn} onPress={handleCalculateAndSave} disabled={saving}>
-              {saving ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Text style={styles.calculateBtnText}>Calculate & Save</Text>
-              )}
-            </TouchableOpacity>
-
-            {result && (
-              <View style={styles.resultCard}>
-                <Text style={styles.resultLabel}>Interest</Text>
-                <Text style={styles.resultValue}>{result.interest.toFixed(2)}</Text>
-
-                <Text style={[styles.resultLabel, { marginTop: 8 }]}>Total Amount</Text>
-                <Text style={styles.resultValue}>{result.totalAmount.toFixed(2)}</Text>
-              </View>
-            )}
-
-            <View style={styles.basicCard}>
-              <Text style={styles.basicTitle}>Basic Calculator</Text>
-
-              <TextInput
-                style={styles.input}
-                value={basicExpression}
-                onChangeText={setBasicExpression}
-                placeholder="Enter expression (Example: 25+5*2-10/2)"
-                placeholderTextColor="#94A3B8"
-              />
-
-              <View style={styles.operatorRow}>
-                {['7', '8', '9', '/'].map((token) => (
-                  <TouchableOpacity
-                    key={token}
-                    style={styles.operatorBtn}
-                    onPress={() => appendToExpression(token)}
-                  >
-                    <Text style={styles.operatorBtnText}>{token}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <View style={styles.operatorRow}>
-                {['4', '5', '6', '*'].map((token) => (
-                  <TouchableOpacity
-                    key={token}
-                    style={styles.operatorBtn}
-                    onPress={() => appendToExpression(token)}
-                  >
-                    <Text style={styles.operatorBtnText}>{token}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <View style={styles.operatorRow}>
-                {['1', '2', '3', '-'].map((token) => (
-                  <TouchableOpacity
-                    key={token}
-                    style={styles.operatorBtn}
-                    onPress={() => appendToExpression(token)}
-                  >
-                    <Text style={styles.operatorBtnText}>{token}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <View style={styles.operatorRow}>
-                {['0', '.', '+'].map((token) => (
-                  <TouchableOpacity
-                    key={token}
-                    style={styles.operatorBtn}
-                    onPress={() => appendToExpression(token)}
-                  >
-                    <Text style={styles.operatorBtnText}>{token}</Text>
-                  </TouchableOpacity>
-                ))}
-
-                <TouchableOpacity style={[styles.operatorBtn, styles.equalsBtn]} onPress={handleBasicCalculation}>
-                  <Text style={[styles.operatorBtnText, styles.equalsBtnText]}>=</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.operatorRow}>
-                <TouchableOpacity style={[styles.operatorBtn, styles.utilityBtn]} onPress={clearExpression}>
-                  <Text style={styles.utilityBtnText}>C</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={[styles.operatorBtn, styles.utilityBtn]} onPress={backspaceExpression}>
-                  <Text style={styles.utilityBtnText}>DEL</Text>
-                </TouchableOpacity>
-              </View>
-
-              {basicResult !== null && (
-                <View style={styles.basicResultWrap}>
-                  <Text style={styles.basicResultLabel}>Result</Text>
-                  <Text style={styles.basicResultValue}>{basicResult}</Text>
+                <View style={styles.operatorRow}>
+                  {['7', '8', '9', '/'].map((token) => (
+                    <TouchableOpacity
+                      key={token}
+                      style={styles.operatorBtn}
+                      onPress={() => appendToExpression(token)}
+                    >
+                      <Text style={styles.operatorBtnText}>{token}</Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
-              )}
+
+                <View style={styles.operatorRow}>
+                  {['4', '5', '6', '*'].map((token) => (
+                    <TouchableOpacity
+                      key={token}
+                      style={styles.operatorBtn}
+                      onPress={() => appendToExpression(token)}
+                    >
+                      <Text style={styles.operatorBtnText}>{token}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <View style={styles.operatorRow}>
+                  {['1', '2', '3', '-'].map((token) => (
+                    <TouchableOpacity
+                      key={token}
+                      style={styles.operatorBtn}
+                      onPress={() => appendToExpression(token)}
+                    >
+                      <Text style={styles.operatorBtnText}>{token}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <View style={styles.operatorRow}>
+                  {['0', '.', '+'].map((token) => (
+                    <TouchableOpacity
+                      key={token}
+                      style={styles.operatorBtn}
+                      onPress={() => appendToExpression(token)}
+                    >
+                      <Text style={styles.operatorBtnText}>{token}</Text>
+                    </TouchableOpacity>
+                  ))}
+
+                  <TouchableOpacity style={[styles.operatorBtn, styles.equalsBtn]} onPress={handleBasicCalculation}>
+                    <Text style={[styles.operatorBtnText, styles.equalsBtnText]}>=</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.operatorRow}>
+                  <TouchableOpacity style={[styles.operatorBtn, styles.clearBtn]} onPress={clearExpression}>
+                    <Ionicons name="refresh-outline" size={18} color="#FFFFFF" style={{ marginRight: 4 }} />
+                    <Text style={[styles.utilityBtnText, { color: '#FFFFFF' }]}>Clear</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity style={[styles.operatorBtn, styles.deleteBtn]} onPress={backspaceExpression}>
+                    <Ionicons name="backspace-outline" size={18} color="#FFFFFF" style={{ marginRight: 4 }} />
+                    <Text style={[styles.utilityBtnText, { color: '#FFFFFF' }]}>Delete</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {basicResult !== null && (
+                  <View style={styles.basicResultWrap}>
+                    <Text style={styles.basicResultLabel}>Result</Text>
+                    <Text style={styles.basicResultValue}>{basicResult}</Text>
+                  </View>
+                )}
+              </View>
             </View>
+          }
+        />
+      )}
+
+      {/* Interest Calculator Tab */}
+      {activeTab === 'interest' && (
+        <FlatList
+          data={filteredHistories}
+          keyExtractor={(item) => item.id}
+          renderItem={renderHistoryGroup}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={
+            <View>
+              {/* History Filters */}
+              <View style={styles.filterContainer}>
+                <View style={styles.filterRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.filterBtn,
+                      historyFilterType === 'all' && styles.filterBtnActive,
+                    ]}
+                    onPress={() => setHistoryFilterType('all')}
+                  >
+                    <Text
+                      style={[
+                        styles.filterBtnText,
+                        historyFilterType === 'all' && styles.filterBtnTextActive,
+                      ]}
+                    >
+                      All Types
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.filterBtn,
+                      historyFilterType === 'simple_interest' && styles.filterBtnActive,
+                    ]}
+                    onPress={() => setHistoryFilterType('simple_interest')}
+                  >
+                    <Text
+                      style={[
+                        styles.filterBtnText,
+                        historyFilterType === 'simple_interest' && styles.filterBtnTextActive,
+                      ]}
+                    >
+                      Simple
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.filterBtn,
+                      historyFilterType === 'compound_interest' && styles.filterBtnActive,
+                    ]}
+                    onPress={() => setHistoryFilterType('compound_interest')}
+                  >
+                    <Text
+                      style={[
+                        styles.filterBtnText,
+                        historyFilterType === 'compound_interest' && styles.filterBtnTextActive,
+                      ]}
+                    >
+                      Compound
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.filterRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.filterBtn,
+                      historyFilterDate === 'all' && styles.filterBtnActive,
+                    ]}
+                    onPress={() => setHistoryFilterDate('all')}
+                  >
+                    <Text
+                      style={[
+                        styles.filterBtnText,
+                        historyFilterDate === 'all' && styles.filterBtnTextActive,
+                      ]}
+                    >
+                      All Time
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.filterBtn,
+                      historyFilterDate === 'today' && styles.filterBtnActive,
+                    ]}
+                    onPress={() => setHistoryFilterDate('today')}
+                  >
+                    <Text
+                      style={[
+                        styles.filterBtnText,
+                        historyFilterDate === 'today' && styles.filterBtnTextActive,
+                      ]}
+                    >
+                      Today
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.filterBtn,
+                      historyFilterDate === 'week' && styles.filterBtnActive,
+                    ]}
+                    onPress={() => setHistoryFilterDate('week')}
+                  >
+                    <Text
+                      style={[
+                        styles.filterBtnText,
+                        historyFilterDate === 'week' && styles.filterBtnTextActive,
+                      ]}
+                    >
+                      Week
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.filterBtn,
+                      historyFilterDate === 'month' && styles.filterBtnActive,
+                    ]}
+                    onPress={() => setHistoryFilterDate('month')}
+                  >
+                    <Text
+                      style={[
+                        styles.filterBtnText,
+                        historyFilterDate === 'month' && styles.filterBtnTextActive,
+                      ]}
+                    >
+                      Month
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.formCard}>
+                <Text style={styles.interestFormTitle}>Calculate Interest</Text>
+                
+                <View style={styles.segmentRow}>
+                  <TouchableOpacity
+                    style={[styles.segmentBtn, calcType === 'simple_interest' && styles.segmentBtnActive]}
+                    onPress={() => setCalcType('simple_interest')}
+                  >
+                    <Text
+                      style={[
+                        styles.segmentBtnText,
+                        calcType === 'simple_interest' && styles.segmentBtnTextActive,
+                      ]}
+                    >
+                      Simple Interest
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.segmentBtn, calcType === 'compound_interest' && styles.segmentBtnActive]}
+                    onPress={() => setCalcType('compound_interest')}
+                  >
+                    <Text
+                      style={[
+                        styles.segmentBtnText,
+                        calcType === 'compound_interest' && styles.segmentBtnTextActive,
+                      ]}
+                    >
+                      Compound Interest
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TextInput
+                  style={styles.input}
+                  value={title}
+                  onChangeText={setTitle}
+                  placeholder="History Title (Example: Home Loan)"
+                  placeholderTextColor="#94A3B8"
+                />
+                <TextInput
+                  style={styles.input}
+                  value={principal}
+                  onChangeText={setPrincipal}
+                  keyboardType="numeric"
+                  placeholder="Principal Amount"
+                  placeholderTextColor="#94A3B8"
+                />
+                <TextInput
+                  style={styles.input}
+                  value={rate}
+                  onChangeText={setRate}
+                  keyboardType="numeric"
+                  placeholder="Rate (% per year)"
+                  placeholderTextColor="#94A3B8"
+                />
+                <TextInput
+                  style={styles.input}
+                  value={time}
+                  onChangeText={setTime}
+                  keyboardType="numeric"
+                  placeholder="Time (years)"
+                  placeholderTextColor="#94A3B8"
+                />
+
+                {calcType === 'compound_interest' && (
+                  <TextInput
+                    style={styles.input}
+                    value={compoundsPerYear}
+                    onChangeText={setCompoundsPerYear}
+                    keyboardType="numeric"
+                    placeholder="Compounds Per Year (N)"
+                    placeholderTextColor="#94A3B8"
+                  />
+                )}
+
+                <TouchableOpacity style={styles.calculateBtn} onPress={handleCalculateAndSave} disabled={saving}>
+                  {saving ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.calculateBtnText}>Calculate & Save</Text>
+                  )}
+                </TouchableOpacity>
+
+                {result && (
+                  <View style={styles.resultCard}>
+                    <Text style={styles.resultLabel}>Interest</Text>
+                    <Text style={styles.resultValue}>{result.interest.toFixed(2)}</Text>
+
+                    <Text style={[styles.resultLabel, { marginTop: 8 }]}>Total Amount</Text>
+                    <Text style={styles.resultValue}>{result.totalAmount.toFixed(2)}</Text>
+                  </View>
+                )}
+              </View>
             </View>
-          </View>
-        }
-        ListEmptyComponent={
-          loading ? (
-            <View style={styles.centerWrap}>
-              <ActivityIndicator size="large" color="#1D4ED8" />
-            </View>
-          ) : (
-            <View style={styles.centerWrap}>
-              <Ionicons name="calculator-outline" size={56} color="#CBD5E1" />
-              <Text style={styles.emptyText}>No calculation history yet.</Text>
-            </View>
-          )
-        }
-      />
+          }
+          ListEmptyComponent={
+            loading ? (
+              <View style={styles.centerWrap}>
+                <ActivityIndicator size="large" color="#1D4ED8" />
+              </View>
+            ) : (
+              <View style={styles.centerWrap}>
+                <Ionicons name="trending-up-outline" size={56} color="#CBD5E1" />
+                <Text style={styles.emptyText}>No interest calculation history yet.</Text>
+              </View>
+            )
+          }
+        />
+      )}
 
       <Modal
         visible={renameVisible}
@@ -719,7 +777,7 @@ const styles = StyleSheet.create({
   },
   headerArea: {
     paddingHorizontal: 20,
-    marginTop: 20,
+    marginTop: 16,
     marginBottom: 12,
   },
   pageTitle: {
@@ -733,8 +791,70 @@ const styles = StyleSheet.create({
     color: '#64748B',
     fontWeight: '500',
   },
+  
+  // Tab Navigation Styles
+  tabContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    gap: 10,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabActive: {
+    backgroundColor: '#1D4ED8',
+    borderColor: '#1D4ED8',
+  },
+  tabText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  tabTextActive: {
+    color: '#FFFFFF',
+  },
+
+  // Section Titles
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    color: '#64748B',
+    fontWeight: '500',
+    marginBottom: 12,
+  },
+  interestFormTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 12,
+  },
+
+  // Basic Calculator Wrapper
+  basicCalculatorWrapper: {
+    paddingHorizontal: 0,
+  },
+
   listContent: {
     paddingHorizontal: 16,
+    paddingVertical: 12,
     paddingBottom: 120,
   },
   formCard: {
@@ -744,6 +864,11 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     padding: 14,
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
   segmentRow: {
     flexDirection: 'row',
@@ -788,6 +913,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: 'center',
+    shadowColor: '#1D4ED8',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   calculateBtnText: {
     color: '#FFFFFF',
@@ -813,24 +943,10 @@ const styles = StyleSheet.create({
     color: '#1D4ED8',
     fontWeight: '800',
   },
-  basicCard: {
-    marginTop: 12,
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  basicTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 10,
-  },
   operatorRow: {
     flexDirection: 'row',
     gap: 8,
-    marginTop: 2,
+    marginTop: 8,
   },
   operatorBtn: {
     flex: 1,
@@ -838,8 +954,9 @@ const styles = StyleSheet.create({
     borderColor: '#CBD5E1',
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    paddingVertical: 10,
+    paddingVertical: 12,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   operatorBtnText: {
     fontSize: 16,
@@ -847,15 +964,21 @@ const styles = StyleSheet.create({
     color: '#334155',
   },
   equalsBtn: {
-    backgroundColor: '#0F172A',
-    borderColor: '#0F172A',
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
   },
   equalsBtnText: {
     color: '#FFFFFF',
   },
-  utilityBtn: {
-    backgroundColor: '#E2E8F0',
-    borderColor: '#CBD5E1',
+  clearBtn: {
+    backgroundColor: '#EF4444',
+    borderColor: '#EF4444',
+    flexDirection: 'row',
+  },
+  deleteBtn: {
+    backgroundColor: '#F59E0B',
+    borderColor: '#F59E0B',
+    flexDirection: 'row',
   },
   utilityBtnText: {
     color: '#334155',
@@ -863,23 +986,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   basicResultWrap: {
-    marginTop: 10,
-    borderRadius: 10,
-    padding: 10,
-    backgroundColor: '#ECFEFF',
+    marginTop: 12,
+    borderRadius: 12,
+    padding: 12,
+    backgroundColor: '#ECFDF5',
     borderWidth: 1,
-    borderColor: '#A5F3FC',
+    borderColor: '#A7F3D0',
   },
   basicResultLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#0E7490',
+    color: '#065F46',
   },
   basicResultValue: {
-    marginTop: 2,
-    fontSize: 20,
+    marginTop: 4,
+    fontSize: 24,
     fontWeight: '800',
-    color: '#155E75',
+    color: '#10B981',
   },
   historyCard: {
     backgroundColor: '#FFFFFF',
@@ -888,6 +1011,11 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     marginBottom: 12,
     padding: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   historyHeader: {
     flexDirection: 'row',
