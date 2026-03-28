@@ -3,14 +3,14 @@ import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, FlatList,
-  Keyboard, KeyboardAvoidingView, Modal, Platform,
-  ScrollView, StyleSheet, Text, TextInput,
-  TouchableOpacity, View,
+    ActivityIndicator, Alert, FlatList,
+    Keyboard, KeyboardAvoidingView, Modal, Platform,
+    ScrollView, StyleSheet, Text, TextInput,
+    TouchableOpacity, View,
 } from 'react-native';
 import {
-  Skill, SkillLevel, SkillTask,
-  addSkill, deleteSkill, getSkills, updateSkill,
+    Skill, SkillLevel, SkillTask,
+    addSkill, deleteSkill, getSkills, updateSkill,
 } from '../../lib/skills-service';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -30,6 +30,9 @@ export default function SkillsScreen() {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // ── Filter state ──
+  const [levelFilter, setLevelFilter] = useState<SkillLevel | 'all'>('all');
 
   // ── Create Skill state ──
   const [isCreating, setIsCreating] = useState(false);
@@ -72,6 +75,12 @@ export default function SkillsScreen() {
   };
 
   const handleRefresh = () => { setRefreshing(true); loadSkills(); };
+
+  // ── Get filtered skills ──
+  const getFilteredSkills = () => {
+    if (levelFilter === 'all') return skills;
+    return skills.filter(skill => skill.level === levelFilter);
+  };
 
   // ── Create subtask helpers ──
   const addNewTask = () => {
@@ -162,7 +171,34 @@ export default function SkillsScreen() {
   // ─── Render ──────────────────────────────────────────────────────────────
 
   const renderListHeader = () => (
-    <View style={styles.createCard}>
+    <View>
+      {/* Filter Section */}
+      <View style={styles.filterSection}>
+        <Text style={styles.filterLabel}>Filter by Level</Text>
+        <View style={styles.filterRow}>
+          <TouchableOpacity
+            style={[styles.filterChip, levelFilter === 'all' && styles.filterChipActive]}
+            onPress={() => setLevelFilter('all')}
+          >
+            <Text style={[styles.filterChipText, levelFilter === 'all' && styles.filterChipTextActive]}>All</Text>
+          </TouchableOpacity>
+
+          {(['beginner', 'intermediate', 'advanced'] as SkillLevel[]).map(l => (
+            <TouchableOpacity
+              key={l}
+              style={[styles.filterChip, levelFilter === l && styles.filterChipActive]}
+              onPress={() => setLevelFilter(l)}
+            >
+              <Text style={[styles.filterChipText, levelFilter === l && styles.filterChipTextActive]}>
+                {LEVEL_CONFIG[l].label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* Create Skill Card */}
+      <View style={styles.createCard}>
       {isCreating ? (
         <View style={styles.createExpanded}>
           <TextInput
@@ -230,6 +266,7 @@ export default function SkillsScreen() {
           <Text style={styles.createCollapsedText}>Track a new skill…</Text>
         </TouchableOpacity>
       )}
+      </View>
     </View>
   );
 
@@ -291,7 +328,7 @@ export default function SkillsScreen() {
         <View style={styles.center}><ActivityIndicator size="large" color="#7E22CE" /></View>
       ) : (
         <FlatList
-          data={skills}
+          data={getFilteredSkills()}
           keyExtractor={item => item.id}
           renderItem={renderSkill}
           ListHeaderComponent={renderListHeader()}
@@ -459,4 +496,13 @@ const styles = StyleSheet.create({
   saveHeaderText: { fontSize: 16, fontWeight: '700', color: '#7E22CE' },
   modalBody: { padding: 20, flex: 1 },
   titleInput: { fontSize: 22, fontWeight: '700', color: '#0F172A', marginBottom: 18, borderBottomWidth: 1, borderBottomColor: '#E2E8F0', paddingBottom: 8 },
+
+  // Filter Section
+  filterSection: { paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#F8FAFC', marginBottom: 12, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
+  filterLabel: { fontSize: 12, fontWeight: '700', color: '#64748B', marginBottom: 10, textTransform: 'uppercase' },
+  filterRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', alignItems: 'center' },
+  filterChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0' },
+  filterChipActive: { backgroundColor: '#7E22CE', borderColor: '#7E22CE' },
+  filterChipText: { fontSize: 13, fontWeight: '600', color: '#64748B', textTransform: 'capitalize' },
+  filterChipTextActive: { color: '#FFFFFF' },
 });
