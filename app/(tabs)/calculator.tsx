@@ -354,7 +354,29 @@ export default function CalculatorScreen() {
     }
 
     try {
-      const output = Function(`"use strict"; return (${expression})`)();
+      // Replace ^ with ** for power operations
+      let processedExpression = expression.replace(/\^/g, '**');
+      
+      // Handle sqrt function
+      processedExpression = processedExpression.replace(/sqrt\(/g, 'Math.sqrt(');
+      
+      // Create a scope with Math functions for safer evaluation
+      const mathScope = {
+        Math: Math,
+        sqrt: Math.sqrt,
+        sin: Math.sin,
+        cos: Math.cos,
+        tan: Math.tan,
+        log10: Math.log10,
+        log: Math.log,
+        ln: Math.log,
+        abs: Math.abs,
+        pow: Math.pow,
+      };
+      
+      const output = Function(...Object.keys(mathScope), `"use strict"; return (${processedExpression})`)(
+        ...Object.values(mathScope)
+      );
 
       if (!Number.isFinite(output)) {
         Alert.alert('Invalid Operation', 'Please check your expression.');
@@ -612,6 +634,16 @@ export default function CalculatorScreen() {
                 </View>
 
                 <View style={styles.operatorRow}>
+                  {['(', ')'].map((token) => (
+                    <TouchableOpacity
+                      key={token}
+                      style={styles.operatorBtn}
+                      onPress={() => appendToExpression(token)}
+                    >
+                      <Text style={styles.operatorBtnText}>{token}</Text>
+                    </TouchableOpacity>
+                  ))}
+
                   <TouchableOpacity style={[styles.operatorBtn, styles.clearBtn]} onPress={clearExpression}>
                     <Ionicons name="refresh-outline" size={18} color="#FFFFFF" style={{ marginRight: 4 }} />
                     <Text style={[styles.utilityBtnText, { color: '#FFFFFF' }]}>Clear</Text>
@@ -621,6 +653,54 @@ export default function CalculatorScreen() {
                     <Ionicons name="backspace-outline" size={18} color="#FFFFFF" style={{ marginRight: 4 }} />
                     <Text style={[styles.utilityBtnText, { color: '#FFFFFF' }]}>Delete</Text>
                   </TouchableOpacity>
+                </View>
+
+                <View style={styles.operatorRow}>
+                  {['π', 'x²', '√', '^', '%'].map((token) => (
+                    <TouchableOpacity
+                      key={token}
+                      style={styles.operatorBtn}
+                      onPress={() => {
+                        if (token === 'π') {
+                          appendToExpression(Math.PI.toString());
+                        } else if (token === 'x²') {
+                          appendToExpression('**2');
+                        } else if (token === '√') {
+                          appendToExpression('sqrt(');
+                        } else if (token === '^') {
+                          appendToExpression('^');
+                        } else if (token === '%') {
+                          appendToExpression('%');
+                        }
+                      }}
+                    >
+                      <Text style={styles.operatorBtnText}>{token}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <View style={styles.operatorRow}>
+                  {['log', 'sin', 'cos', 'tan', '1/x'].map((token) => (
+                    <TouchableOpacity
+                      key={token}
+                      style={styles.operatorBtn}
+                      onPress={() => {
+                        if (token === 'log') {
+                          appendToExpression('Math.log10(');
+                        } else if (token === 'sin') {
+                          appendToExpression('Math.sin(');
+                        } else if (token === 'cos') {
+                          appendToExpression('Math.cos(');
+                        } else if (token === 'tan') {
+                          appendToExpression('Math.tan(');
+                        } else if (token === '1/x') {
+                          appendToExpression('1/');
+                        }
+                      }}
+                    >
+                      <Text style={styles.operatorBtnText}>{token}</Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
 
                 {basicResult !== null && (
