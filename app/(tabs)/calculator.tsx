@@ -59,6 +59,9 @@ export default function CalculatorScreen() {
   // Basic Calculator States
   const [basicExpression, setBasicExpression] = useState('');
   const [basicResult, setBasicResult] = useState<number | null>(null);
+  const [basicTitle, setBasicTitle] = useState('');
+  const [basicHistories, setBasicHistories] = useState<CalculationHistoryGroup[]>([]);
+  const [basicSaving, setBasicSaving] = useState(false);
 
   // Filter states
   const [historyFilterType, setHistoryFilterType] = useState<'all' | 'simple_interest' | 'compound_interest'>('all');
@@ -70,6 +73,7 @@ export default function CalculatorScreen() {
       return;
     }
     loadHistory();
+    loadBasicHistory();
   }, [email]);
 
   const loadHistory = async () => {
@@ -85,6 +89,18 @@ export default function CalculatorScreen() {
     }
   };
 
+  const loadBasicHistory = async () => {
+    if (!email) return;
+    try {
+      const fetched = await getCalculationHistory(email);
+      const basicOnly = fetched.filter((group) => group.entries.some((entry) => (entry.type as any) === 'basic_calculation'));
+      basicOnly.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+      setBasicHistories(basicOnly);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const parsedInputs = useMemo(() => {
     const p = Number(principal);
     const r = Number(rate);
@@ -93,8 +109,12 @@ export default function CalculatorScreen() {
     return { p, r, t, n };
   }, [principal, rate, time, compoundsPerYear]);
 
+  const interestHistories = useMemo(() => {
+    return histories.filter((group) => !group.entries.some((entry) => (entry.type as any) === 'basic_calculation'));
+  }, [histories]);
+
   const filteredHistories = useMemo(() => {
-    return histories.filter((group) => {
+    return interestHistories.filter((group) => {
       // Filter by calculation type
       if (historyFilterType !== 'all') {
         const groupType = group.entries[0]?.type;
@@ -123,7 +143,7 @@ export default function CalculatorScreen() {
 
       return true;
     });
-  }, [histories, historyFilterType, historyFilterDate]);
+  }, [interestHistories, historyFilterType, historyFilterDate]);
 
   const handleCalculateAndSave = async () => {
     if (!email) {
@@ -240,6 +260,7 @@ export default function CalculatorScreen() {
             return;
           }
           loadHistory();
+          loadBasicHistory();
         },
       },
     ]);
@@ -259,12 +280,32 @@ export default function CalculatorScreen() {
             return;
           }
           loadHistory();
+          loadBasicHistory();
         },
       },
     ]);
   };
 
-  const handleBasicCalculation = () => {
+  const handleDeleteBasicGroup = (group: CalculationHistoryGroup) => {
+    if (!email) return;
+    Alert.alert('Delete History', `Delete "${group.title}" and all its calculations?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          const ok = await deleteCalculationHistory(email, group.id);
+          if (!ok) {
+            Alert.alert('Error', 'Could not delete history.');
+            return;
+          }
+          loadBasicHistory();
+        },
+      },
+    ]);
+  };
+
+  const handleBasicCalculation = async () => {
     const expression = basicExpression.trim();
 
     if (!expression) {
@@ -286,7 +327,42 @@ export default function CalculatorScreen() {
         return;
       }
 
-      setBasicResult(Number(output.toFixed(4)));
+      const result = Number(output.toFixed(4));
+      setBasicResult(result);
+
+      // Save to history
+      if (email) {
+        const title = basicTitle.trim();
+        if (!title) {
+          Alert.alert('Title Required', 'Please enter a topic/title for this calculation.');
+          return;
+        }
+
+        setBasicSaving(true);
+        try {
+          const ok = await createOrAppendCalculation(email, title, {
+            type: 'basic_calculation' as any,
+            principal: 0,
+            rate: 0,
+            time: 0,
+            interest: 0,
+            total_amount: result,
+            expression: expression,
+          } as any);
+
+          if (ok) {
+            await loadBasicHistory();
+            setBasicTitle('');
+            setBasicExpression('');
+            setBasicResult(null);
+            Alert.alert('Success', 'Calculation saved!');
+          }
+        } catch (error) {
+          console.error(error);
+        } finally {
+          setBasicSaving(false);
+        }
+      }
     } catch {
       Alert.alert('Invalid Expression', 'Please enter a valid arithmetic expression.');
     }
@@ -305,45 +381,62 @@ export default function CalculatorScreen() {
     setBasicExpression((prev) => prev.slice(0, -1));
   };
 
-  const renderHistoryGroup = ({ item }: { item: CalculationHistoryGroup }) => (
-    <View style={styles.historyCard}>
-      <View style={styles.historyHeader}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.historyTitle}>{item.title}</Text>
-          <Text style={styles.historyMeta}>{item.entries.length} calculation(s)</Text>
-        </View>
+  const renderHistoryGroup = ({ item }: { item: CalculationHistoryGroup }) => {
+    const isBasicCalc = item.entries[0]?.type === ('basic_calculation' as any);
 
-        <TouchableOpacity style={styles.iconBtn} onPress={() => handleRenameGroup(item)}>
-          <Ionicons name="create-outline" size={18} color="#1D4ED8" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.iconBtn} onPress={() => handleDeleteGroup(item)}>
-          <Ionicons name="trash-outline" size={18} color="#DC2626" />
-        </TouchableOpacity>
-      </View>
-
-      {(item.entries || []).map((entry) => (
-        <View key={entry.id} style={styles.entryRow}>
+    return (
+      <View style={styles.historyCard}>
+        <View style={styles.historyHeader}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.entryType}>
-              {entry.type === 'simple_interest' ? 'Simple Interest' : 'Compound Interest'}
-            </Text>
-            <Text style={styles.entryText}>
-              P: {entry.principal} | R: {entry.rate}% | T: {entry.time}y
-              {entry.type === 'compound_interest' && entry.compounds_per_year
-                ? ` | N: ${entry.compounds_per_year}`
-                : ''}
-            </Text>
-            <Text style={styles.entryResult}>Interest: {entry.interest} | Total: {entry.total_amount}</Text>
+            <Text style={styles.historyTitle}>{item.title}</Text>
+            <Text style={styles.historyMeta}>{item.entries.length} calculation(s)</Text>
           </View>
 
-          <TouchableOpacity onPress={() => handleDeleteEntry(item.id, entry)}>
-            <Ionicons name="close-circle" size={20} color="#EF4444" />
+          <TouchableOpacity style={styles.iconBtn} onPress={() => handleRenameGroup(item)}>
+            <Ionicons name="create-outline" size={18} color="#1D4ED8" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={() => isBasicCalc ? handleDeleteBasicGroup(item) : handleDeleteGroup(item)}
+          >
+            <Ionicons name="trash-outline" size={18} color="#DC2626" />
           </TouchableOpacity>
         </View>
-      ))}
-    </View>
-  );
+
+        {(item.entries || []).map((entry) => (
+          <View key={entry.id} style={styles.entryRow}>
+            <View style={{ flex: 1 }}>
+              {isBasicCalc ? (
+                <>
+                  <Text style={styles.entryType}>Basic Calculation</Text>
+                  <Text style={styles.entryText}>{(entry as any).expression || 'N/A'}</Text>
+                  <Text style={styles.entryResult}>Result: {entry.total_amount}</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.entryType}>
+                    {entry.type === 'simple_interest' ? 'Simple Interest' : 'Compound Interest'}
+                  </Text>
+                  <Text style={styles.entryText}>
+                    P: {entry.principal} | R: {entry.rate}% | T: {entry.time}y
+                    {entry.type === 'compound_interest' && entry.compounds_per_year
+                      ? ` | N: ${entry.compounds_per_year}`
+                      : ''}
+                  </Text>
+                  <Text style={styles.entryResult}>Interest: {entry.interest} | Total: {entry.total_amount}</Text>
+                </>
+              )}
+            </View>
+
+            <TouchableOpacity onPress={() => handleDeleteEntry(item.id, entry)}>
+              <Ionicons name="close-circle" size={20} color="#EF4444" />
+            </TouchableOpacity>
+          </View>
+        ))}
+      </View>
+    );
+  };
 
   return (
     <KeyboardAvoidingView
@@ -391,9 +484,9 @@ export default function CalculatorScreen() {
       {/* Basic Calculator Tab */}
       {activeTab === 'basic' && (
         <FlatList
-          data={[]}
-          keyExtractor={() => 'basic'}
-          renderItem={() => null}
+          data={basicHistories}
+          keyExtractor={(item) => item.id}
+          renderItem={renderHistoryGroup}
           contentContainerStyle={styles.listContent}
           ListHeaderComponent={
             <View style={styles.basicCalculatorWrapper}>
@@ -401,6 +494,14 @@ export default function CalculatorScreen() {
               <Text style={styles.sectionSubtitle}>Perform quick arithmetic calculations</Text>
 
               <View style={styles.formCard}>
+                <TextInput
+                  style={styles.input}
+                  value={basicTitle}
+                  onChangeText={setBasicTitle}
+                  placeholder="Topic/Title (Example: Monthly Expenses)"
+                  placeholderTextColor="#94A3B8"
+                />
+
                 <TextInput
                   style={styles.input}
                   value={basicExpression}
@@ -456,7 +557,7 @@ export default function CalculatorScreen() {
                     </TouchableOpacity>
                   ))}
 
-                  <TouchableOpacity style={[styles.operatorBtn, styles.equalsBtn]} onPress={handleBasicCalculation}>
+                  <TouchableOpacity style={[styles.operatorBtn, styles.equalsBtn]} onPress={handleBasicCalculation} disabled={basicSaving}>
                     <Text style={[styles.operatorBtnText, styles.equalsBtnText]}>=</Text>
                   </TouchableOpacity>
                 </View>
@@ -480,6 +581,12 @@ export default function CalculatorScreen() {
                   </View>
                 )}
               </View>
+            </View>
+          }
+          ListEmptyComponent={
+            <View style={styles.centerWrap}>
+              <Ionicons name="calculator-outline" size={56} color="#CBD5E1" />
+              <Text style={styles.emptyText}>No calculation history yet.</Text>
             </View>
           }
         />
