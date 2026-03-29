@@ -2,17 +2,32 @@ import FloatingActionButton from '@/components/FloatingActionButton';
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator, Alert, FlatList, KeyboardAvoidingView,
+  ActivityIndicator, Alert,
+  Dimensions,
+  FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
   Modal, Platform, ScrollView, StyleSheet, Switch, Text,
-  TextInput, TouchableOpacity, View, Dimensions, Keyboard
+  TextInput, TouchableOpacity, View
 } from 'react-native';
-import { PieChart, LineChart, BarChart } from 'react-native-chart-kit';
+import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
 import {
-  Transaction, Debt, FinanceGoal, getFinanceData, addTransaction, deleteTransaction, updateTransaction,
-  addDebt, updateDebt, deleteDebt, addFinanceGoal, updateFinanceGoal, deleteFinanceGoal,
-  TransactionType, DebtInterestType
+  addDebt,
+  addFinanceGoal,
+  addTransaction,
+  Debt,
+  DebtInterestType,
+  deleteDebt,
+  deleteFinanceGoal,
+  deleteTransaction,
+  FinanceGoal, getFinanceData,
+  Transaction,
+  TransactionType,
+  updateDebt,
+  updateFinanceGoal,
+  updateTransaction
 } from '../../lib/finance-service';
 
 const screenWidth = Dimensions.get('window').width;
@@ -22,7 +37,7 @@ const isValidDateOnlyString = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(valu
 const todayStr = new Date().toISOString().split('T')[0];
 
 type TabType = 'Overview' | 'Transactions' | 'Debts' | 'Goals';
-type TimeFilter = 'Week' | 'Month' | 'Year' | 'All' | 'Custom';
+type TimeFilter = 'All' | 'Today' | 'Month' | 'Year' | 'Custom';
 type ChartType = 'Pie' | 'Line' | 'Bar';
 
 export default function FinanceScreen() {
@@ -203,7 +218,7 @@ export default function FinanceScreen() {
       const txD = new Date(t.date);
       const diffTime = Math.abs(now.getTime() - txD.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-      if (timeFilter === 'Week') return diffDays <= 7;
+      if (timeFilter === 'Today') return diffDays <= 1;
       if (timeFilter === 'Month') return diffDays <= 30;
       if (timeFilter === 'Year') return diffDays <= 365;
       return true;
@@ -223,7 +238,7 @@ export default function FinanceScreen() {
       const txD = new Date(d.amount_given_date);
       const diffTime = Math.abs(now.getTime() - txD.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-      if (timeFilter === 'Week') return diffDays <= 7;
+      if (timeFilter === 'Today') return diffDays <= 1;
       if (timeFilter === 'Month') return diffDays <= 30;
       if (timeFilter === 'Year') return diffDays <= 365;
       return true;
@@ -243,7 +258,7 @@ export default function FinanceScreen() {
       const txD = new Date(g.created_at);
       const diffTime = Math.abs(now.getTime() - txD.getTime());
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-      if (timeFilter === 'Week') return diffDays <= 7;
+      if (timeFilter === 'Today') return diffDays <= 1;
       if (timeFilter === 'Month') return diffDays <= 30;
       if (timeFilter === 'Year') return diffDays <= 365;
       return true;
@@ -508,7 +523,7 @@ export default function FinanceScreen() {
   const renderOverview = () => (
     <ScrollView contentContainerStyle={{padding:16, paddingBottom: 100}} showsVerticalScrollIndicator={false}>
       <View style={styles.segmentBlock}>
-        {(['Week','Month','Year','All','Custom'] as TimeFilter[]).map(t => (
+        {(['All','Today','Month','Year','Custom'] as TimeFilter[]).map(t => (
           <TouchableOpacity key={t} style={[styles.segmentBtn, timeFilter===t && styles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
             <Text style={[styles.segmentText, timeFilter===t && styles.segmentTextActive]}>{t}</Text>
           </TouchableOpacity>
@@ -605,7 +620,7 @@ export default function FinanceScreen() {
       ListHeaderComponent={
         <>
           <View style={styles.segmentBlock}>
-            {(['Week','Month','Year','All','Custom'] as TimeFilter[]).map(t => (
+            {(['All','Today','Month','Year','Custom'] as TimeFilter[]).map(t => (
               <TouchableOpacity key={t} style={[styles.segmentBtn, timeFilter===t && styles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
                 <Text style={[styles.segmentText, timeFilter===t && styles.segmentTextActive]}>{t}</Text>
               </TouchableOpacity>
@@ -660,7 +675,7 @@ export default function FinanceScreen() {
       ListHeaderComponent={
         <>
           <View style={styles.segmentBlock}>
-            {(['Week','Month','Year','All','Custom'] as TimeFilter[]).map(t => (
+            {(['All','Today','Month','Year','Custom'] as TimeFilter[]).map(t => (
               <TouchableOpacity key={t} style={[styles.segmentBtn, timeFilter===t && styles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
                 <Text style={[styles.segmentText, timeFilter===t && styles.segmentTextActive]}>{t}</Text>
               </TouchableOpacity>
@@ -724,7 +739,7 @@ export default function FinanceScreen() {
       ListHeaderComponent={
         <>
           <View style={styles.segmentBlock}>
-            {(['Week','Month','Year','All','Custom'] as TimeFilter[]).map(t => (
+            {(['All','Today','Month','Year','Custom'] as TimeFilter[]).map(t => (
               <TouchableOpacity key={t} style={[styles.segmentBtn, timeFilter===t && styles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
                 <Text style={[styles.segmentText, timeFilter===t && styles.segmentTextActive]}>{t}</Text>
               </TouchableOpacity>
