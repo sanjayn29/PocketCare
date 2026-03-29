@@ -17,8 +17,7 @@ import {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-type TimeFilter = 'Week' | 'Month' | 'Year' | 'All' | 'Custom';
-const todayStr = new Date().toISOString().split('T')[0];
+type TabView = 'placements' | 'companies';
 
 const STATUS_CONFIG: Record<PlacementStatus, { label: string; color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }> = {
   applied:   { label: 'Applied',   color: '#3B82F6', bg: '#EFF6FF', icon: 'paper-plane' },
@@ -320,11 +319,9 @@ export default function PlacementScreen() {
   const [placements, setPlacements] = useState<Placement[]>([]);
   const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabView>('placements');
   const [filterStatus, setFilterStatus] = useState<PlacementStatus | 'all'>('all');
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>('All');
-  const [customStart, setCustomStart] = useState(todayStr);
-  const [customEnd, setCustomEnd] = useState(todayStr);
-  const [showDatePicker, setShowDatePicker] = useState<'customStart' | 'customEnd' | null>(null);
+  const [companyStatusFilter, setCompanyStatusFilter] = useState<CompanyStatus | 'all'>('all');
 
   // ── Create state ──
   const [isCreating, setIsCreating] = useState(false);
@@ -492,25 +489,21 @@ export default function PlacementScreen() {
     rejected:  placements.filter(p => p.status === 'rejected').length,
   }), [placements]);
 
-  const filterByDate = (dateStr: string) => {
-    if (timeFilter === 'All') return true;
-    if (timeFilter === 'Custom') {
-      const t = new Date(dateStr).getTime();
-      const sTime = new Date(customStart).getTime();
-      const eTime = new Date(customEnd).getTime();
-      return t >= sTime && t <= eTime;
-    }
-    const dTime = new Date(dateStr).getTime();
-    const nowTime = new Date().getTime();
-    const diffDays = Math.ceil(Math.abs(nowTime - dTime) / (1000*60*60*24));
-    if (timeFilter === 'Week') return diffDays <= 7;
-    if (timeFilter === 'Month') return diffDays <= 30;
-    if (timeFilter === 'Year') return diffDays <= 365;
-    return true;
-  };
+  // Filtered placements by application status
+  const filteredPlacements = useMemo(() =>
+    filterStatus === 'all' 
+      ? placements 
+      : placements.filter(p => p.status === filterStatus),
+    [placements, filterStatus]
+  );
 
-  const filtered = (filterStatus === 'all' ? placements : placements.filter(p => p.status === filterStatus))
-    .filter(p => filterByDate(p.date));
+  // Filtered companies by company status
+  const filteredCompanies = useMemo(() => {
+    const withCompanyStatus = placements.filter(p => p.company_status);
+    return companyStatusFilter === 'all'
+      ? withCompanyStatus
+      : withCompanyStatus.filter(p => p.company_status === companyStatusFilter);
+  }, [placements, companyStatusFilter]);
 
   // ── Memoize header so FlatList doesn't remount it ──
   const listHeader = useMemo(() => (
@@ -609,90 +602,116 @@ export default function PlacementScreen() {
         <Text style={styles.pageSubtitle}>Track companies, rounds & status</Text>
       </View>
 
-      {/* ── Filter Bar ── */}
-      <View style={styles.filterRow}>
-        {(['all', 'interview', 'offer', 'rejected'] as const).map(s => {
-          const active = filterStatus === s;
-          const label = s === 'all' ? 'All' : STATUS_CONFIG[s].label;
-          return (
-            <TouchableOpacity
-              key={s}
-              style={[styles.filterChip, active && styles.filterChipActive]}
-              onPress={() => setFilterStatus(s)}
-            >
-              <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
-                {label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+      {/* ── Tab Navigation ── */}
+      <View style={styles.tabRow}>
+        <TouchableOpacity
+          style={[styles.tabBtn, activeTab === 'placements' && styles.tabBtnActive]}
+          onPress={() => setActiveTab('placements')}
+        >
+          <Ionicons name="list" size={18} color={activeTab === 'placements' ? '#3B82F6' : '#94A3B8'} />
+          <Text style={[styles.tabBtnText, activeTab === 'placements' && styles.tabBtnTextActive]}>Placements</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tabBtn, activeTab === 'companies' && styles.tabBtnActive]}
+          onPress={() => setActiveTab('companies')}
+        >
+          <Ionicons name="layers" size={18} color={activeTab === 'companies' ? '#3B82F6' : '#94A3B8'} />
+          <Text style={[styles.tabBtnText, activeTab === 'companies' && styles.tabBtnTextActive]}>Companies</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* ── Time Filter Bar ── */}
-      <View style={styles.timeFilterRow}>
-        {(['Week', 'Month', 'Year', 'All', 'Custom'] as TimeFilter[]).map(t => (
-          <TouchableOpacity
-            key={t}
-            style={[styles.timeFilterBtn, timeFilter === t && styles.timeFilterBtnActive]}
-            onPress={() => setTimeFilter(t)}
-          >
-            <Text style={[styles.timeFilterText, timeFilter === t && styles.timeFilterTextActive]}>{t}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* ── Placements Tab ── */}
+      {activeTab === 'placements' && (
+        <>
+          {/* Filter Bar */}
+          <View style={styles.filterRow}>
+            {(['all', 'interview', 'offer', 'rejected'] as const).map(s => {
+              const active = filterStatus === s;
+              const label = s === 'all' ? 'All' : STATUS_CONFIG[s].label;
+              return (
+                <TouchableOpacity
+                  key={s}
+                  style={[styles.filterChip, active && styles.filterChipActive]}
+                  onPress={() => setFilterStatus(s)}
+                >
+                  <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
 
-      {/* ── Custom Date Filters ── */}
-      {timeFilter === 'Custom' && (
-        <View style={styles.customDateRow}>
-          <TouchableOpacity style={styles.customDateBtn} onPress={() => setShowDatePicker('customStart')}>
-            <Text style={styles.customDateLabel}>Start Date</Text>
-            <Text style={styles.customDateValue}>{customStart}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.customDateBtn} onPress={() => setShowDatePicker('customEnd')}>
-            <Text style={styles.customDateLabel}>End Date</Text>
-            <Text style={styles.customDateValue}>{customEnd}</Text>
-          </TouchableOpacity>
-        </View>
+          {loading ? (
+            <View style={styles.center}><ActivityIndicator size="large" color="#3B82F6" /></View>
+          ) : (
+            <FlatList
+              data={filteredPlacements}
+              keyExtractor={item => item.id}
+              renderItem={renderPlacement}
+              ListHeaderComponent={listHeader}
+              contentContainerStyle={styles.listContent}
+              onRefresh={handleRefresh}
+              refreshing={refreshing}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="none"
+              ListEmptyComponent={
+                <View style={styles.emptyWrap}>
+                  <Ionicons name="briefcase-outline" size={60} color="#CBD5E1" />
+                  <Text style={styles.emptyText}>No applications tracked yet.</Text>
+                </View>
+              }
+            />
+          )}
+        </>
       )}
 
-      {showDatePicker && (
-        <DateTimePicker
-          value={new Date(showDatePicker === 'customStart' ? customStart : customEnd)}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'inline' : 'default'}
-          onChange={(event, selectedDate) => {
-            if (Platform.OS === 'android') setShowDatePicker(null);
-            if (selectedDate) {
-              const dateStr = selectedDate.toISOString().split('T')[0];
-              if (showDatePicker === 'customStart') setCustomStart(dateStr);
-              else setCustomEnd(dateStr);
-            }
-          }}
-          maximumDate={new Date()}
-        />
-      )}
+      {/* ── Companies Tab ── */}
+      {activeTab === 'companies' && (
+        <>
+          {/* Company Status Filter */}
+          <View style={styles.filterRow}>
+            {(['all', 'present', 'completed', 'upcoming'] as const).map(s => {
+              const active = companyStatusFilter === s;
+              const label = s === 'all' ? 'All' : COMPANY_STATUS_CONFIG[s].label;
+              const cfg = s === 'all' ? null : COMPANY_STATUS_CONFIG[s];
+              return (
+                <TouchableOpacity
+                  key={s}
+                  style={[styles.filterChip, active && styles.filterChipActive]}
+                  onPress={() => setCompanyStatusFilter(s as any)}
+                >
+                  <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
 
-      {loading ? (
-        <View style={styles.center}><ActivityIndicator size="large" color="#3B82F6" /></View>
-      ) : (
-        <FlatList
-          data={filtered}
-          keyExtractor={item => item.id}
-          renderItem={renderPlacement}
-          ListHeaderComponent={listHeader}
-          contentContainerStyle={styles.listContent}
-          onRefresh={handleRefresh}
-          refreshing={refreshing}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="none"
-          ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <Ionicons name="briefcase-outline" size={60} color="#CBD5E1" />
-              <Text style={styles.emptyText}>No applications tracked yet.</Text>
-            </View>
-          }
-        />
+          {loading ? (
+            <View style={styles.center}><ActivityIndicator size="large" color="#3B82F6" /></View>
+          ) : (
+            <FlatList
+              data={filteredCompanies}
+              keyExtractor={item => item.id}
+              renderItem={renderPlacement}
+              contentContainerStyle={styles.listContent}
+              onRefresh={handleRefresh}
+              refreshing={refreshing}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="none"
+              ListEmptyComponent={
+                <View style={styles.emptyWrap}>
+                  <Ionicons name="layers-outline" size={60} color="#CBD5E1" />
+                  <Text style={styles.emptyText}>No companies in this category.</Text>
+                </View>
+              }
+            />
+          )}
+        </>
       )}
 
       {/* ── Edit Modal ─────────────────────────────────────────────────────── */}
@@ -780,6 +799,39 @@ const styles = StyleSheet.create({
   pageTitle: { fontSize: 28, fontWeight: '800', color: '#0F172A' },
   pageSubtitle: { fontSize: 13, color: '#64748B', fontWeight: '500', marginTop: 2 },
 
+  // ── Tab Navigation ─────────────────────────────────────────────────────────
+  tabRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginBottom: 16,
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    paddingBottom: 12,
+  },
+  tabBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#F1F5F9',
+  },
+  tabBtnActive: {
+    backgroundColor: '#EFF6FF',
+    borderBottomWidth: 2,
+    borderBottomColor: '#3B82F6',
+  },
+  tabBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  tabBtnTextActive: {
+    color: '#3B82F6',
+  },
+
   // ── Filter Bar ──────────────────────────────────────────────────────────────
   filterRow: {
     flexDirection: 'row',
@@ -807,63 +859,6 @@ const styles = StyleSheet.create({
   },
   filterChipTextActive: {
     color: '#FFFFFF',
-  },
-
-  // ── Time Filter Bar ─────────────────────────────────────────────────────────
-  timeFilterRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 12,
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  timeFilterBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: '#F1F5F9',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  timeFilterBtnActive: {
-    backgroundColor: '#3B82F6',
-    borderColor: '#3B82F6',
-  },
-  timeFilterText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#64748B',
-  },
-  timeFilterTextActive: {
-    color: '#FFFFFF',
-  },
-
-  // ── Custom Date Filters ─────────────────────────────────────────────────────
-  customDateRow: {
-    flexDirection: 'row',
-    gap: 10,
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  customDateBtn: {
-    flex: 1,
-    backgroundColor: '#FFF',
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    alignItems: 'center',
-  },
-  customDateLabel: {
-    fontSize: 12,
-    color: '#64748B',
-    fontWeight: '700',
-  },
-  customDateValue: {
-    fontSize: 14,
-    color: '#0F172A',
-    fontWeight: '700',
-    marginTop: 4,
   },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
