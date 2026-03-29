@@ -10,6 +10,7 @@ import {
   TouchableOpacity, View,
 } from 'react-native';
 import {
+  CompanyStatus,
   Placement, PlacementRound, PlacementStatus,
   addPlacement, deletePlacement, getPlacements, updatePlacement,
 } from '../../lib/placement-service';
@@ -24,6 +25,12 @@ const STATUS_CONFIG: Record<PlacementStatus, { label: string; color: string; bg:
   interview: { label: 'Interview', color: '#F59E0B', bg: '#FFFBEB', icon: 'mic' },
   offer:     { label: 'Offer',     color: '#10B981', bg: '#ECFDF5', icon: 'trophy' },
   rejected:  { label: 'Rejected',  color: '#EF4444', bg: '#FEF2F2', icon: 'close-circle' },
+};
+
+const COMPANY_STATUS_CONFIG: Record<CompanyStatus, { label: string; color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }> = {
+  present:   { label: 'Present',   color: '#8B5CF6', bg: '#FAF5FF', icon: 'checkmark-circle' },
+  completed: { label: 'Completed', color: '#10B981', bg: '#ECFDF5', icon: 'checkmark-done' },
+  upcoming:  { label: 'Upcoming',  color: '#F59E0B', bg: '#FFFBEB', icon: 'calendar' },
 };
 
 const ROUND_RESULT_CONFIG: Record<PlacementRound['result'], { label: string; color: string; bg: string }> = {
@@ -173,6 +180,7 @@ type CreateCardProps = {
   isCreating: boolean; setIsCreating: (v: boolean) => void;
   newCompany: string; setNewCompany: (v: string) => void;
   newStatus: PlacementStatus; setNewStatus: (v: PlacementStatus) => void;
+  newCompanyStatus?: CompanyStatus; setNewCompanyStatus: (v?: CompanyStatus) => void;
   newDate: string; setNewDate: (v: string) => void;
   newStudied: boolean; setNewStudied: (v: boolean) => void;
   newRounds: PlacementRound[];
@@ -191,6 +199,7 @@ const CreateCard = React.memo(({
   isCreating, setIsCreating,
   newCompany, setNewCompany,
   newStatus, setNewStatus,
+  newCompanyStatus, setNewCompanyStatus,
   newDate, setNewDate,
   newStudied, setNewStudied,
   newRounds, removeRoundFromNew,
@@ -224,6 +233,24 @@ const CreateCard = React.memo(({
                 key={s}
                 style={[styles.statusChip, active && { backgroundColor: cfg.color, borderColor: cfg.color }]}
                 onPress={() => setNewStatus(s)}
+              >
+                <Ionicons name={cfg.icon} size={13} color={active ? '#FFF' : cfg.color} style={{ marginRight: 4 }} />
+                <Text style={[styles.statusChipText, active && { color: '#FFF' }]}>{cfg.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <Text style={styles.selectorLabel}>Company Status:</Text>
+        <View style={styles.statusRow}>
+          {(['present', 'completed', 'upcoming'] as CompanyStatus[]).map(s => {
+            const cfg = COMPANY_STATUS_CONFIG[s];
+            const active = newCompanyStatus === s;
+            return (
+              <TouchableOpacity
+                key={s}
+                style={[styles.statusChip, active && { backgroundColor: cfg.color, borderColor: cfg.color }]}
+                onPress={() => setNewCompanyStatus(s)}
               >
                 <Ionicons name={cfg.icon} size={13} color={active ? '#FFF' : cfg.color} style={{ marginRight: 4 }} />
                 <Text style={[styles.statusChipText, active && { color: '#FFF' }]}>{cfg.label}</Text>
@@ -303,6 +330,7 @@ export default function PlacementScreen() {
   const [isCreating, setIsCreating] = useState(false);
   const [newCompany, setNewCompany] = useState('');
   const [newStatus, setNewStatus]   = useState<PlacementStatus>('interview');
+  const [newCompanyStatus, setNewCompanyStatus] = useState<CompanyStatus | undefined>(undefined);
   const [newDate, setNewDate]       = useState('');
   const [newStudied, setNewStudied] = useState(false);
   const [newRounds, setNewRounds]   = useState<PlacementRound[]>([]);
@@ -317,6 +345,7 @@ export default function PlacementScreen() {
   const [editing, setEditing]           = useState<Placement | null>(null);
   const [editCompany, setEditCompany]   = useState('');
   const [editStatus, setEditStatus]     = useState<PlacementStatus>('interview');
+  const [editCompanyStatus, setEditCompanyStatus] = useState<CompanyStatus | undefined>(undefined);
   const [editDate, setEditDate]         = useState('');
   const [editStudied, setEditStudied]   = useState(false);
   const [editRounds, setEditRounds]     = useState<PlacementRound[]>([]);
@@ -380,18 +409,18 @@ export default function PlacementScreen() {
     if (!newDate.trim()) return Alert.alert('Error', 'Date is required (YYYY-MM-DD).');
     setIsSavingNew(true);
     try {
-      await addPlacement(email, newCompany.trim(), newStatus, newDate.trim(), newStudied, newRounds);
-      setNewCompany(''); setNewStatus('interview'); setNewDate('');
+      await addPlacement(email, newCompany.trim(), newStatus, newDate.trim(), newStudied, newRounds, newCompanyStatus);
+      setNewCompany(''); setNewStatus('interview'); setNewCompanyStatus(undefined); setNewDate('');
       setNewStudied(false); setNewRounds([]);
       setRoundTopic(''); setRoundDesc(''); setRoundResult('pending');
       setShowAddRound(false); setIsCreating(false); Keyboard.dismiss();
       loadPlacements();
     } catch { Alert.alert('Error', 'Failed to save placement.'); }
     finally { setIsSavingNew(false); }
-  }, [email, newCompany, newStatus, newDate, newStudied, newRounds]);
+  }, [email, newCompany, newStatus, newCompanyStatus, newDate, newStudied, newRounds]);
 
   const resetCreate = useCallback(() => {
-    setNewCompany(''); setNewStatus('interview'); setNewDate('');
+    setNewCompany(''); setNewStatus('interview'); setNewCompanyStatus(undefined); setNewDate('');
     setNewStudied(false); setNewRounds([]);
     setRoundTopic(''); setRoundDesc(''); setRoundResult('pending');
     setShowAddRound(false); setIsCreating(false); Keyboard.dismiss();
@@ -401,7 +430,7 @@ export default function PlacementScreen() {
 
   const openEdit = (p: Placement) => {
     setEditing(p); setEditCompany(p.company_name);
-    setEditStatus(p.status); setEditDate(p.date);
+    setEditStatus(p.status); setEditCompanyStatus(p.company_status); setEditDate(p.date);
     setEditStudied(p.studied); setEditRounds([...p.rounds]);
     setShowEditAddRound(false); setERoundTopic(''); setERoundDesc(''); setERoundResult('pending');
     setModalVisible(true);
@@ -438,7 +467,7 @@ export default function PlacementScreen() {
     setIsSavingEdit(true);
     try {
       await updatePlacement(email, editing.id, {
-        company_name: editCompany.trim(), status: editStatus,
+        company_name: editCompany.trim(), status: editStatus, company_status: editCompanyStatus,
         date: editDate.trim(), studied: editStudied, rounds: editRounds,
       });
       setModalVisible(false); loadPlacements();
@@ -489,6 +518,7 @@ export default function PlacementScreen() {
       isCreating={isCreating} setIsCreating={setIsCreating}
       newCompany={newCompany} setNewCompany={setNewCompany}
       newStatus={newStatus} setNewStatus={setNewStatus}
+      newCompanyStatus={newCompanyStatus} setNewCompanyStatus={setNewCompanyStatus}
       newDate={newDate} setNewDate={setNewDate}
       newStudied={newStudied} setNewStudied={setNewStudied}
       newRounds={newRounds} removeRoundFromNew={removeRoundFromNew}
@@ -500,7 +530,7 @@ export default function PlacementScreen() {
       handleSave={handleSave} isSavingNew={isSavingNew} resetCreate={resetCreate}
     />
   ), [
-    isCreating, newCompany, newStatus, newDate, newStudied, newRounds,
+    isCreating, newCompany, newStatus, newCompanyStatus, newDate, newStudied, newRounds,
     showAddRound, roundTopic, roundDesc, roundResult,
     addRoundToNew, removeRoundFromNew, handleSave, isSavingNew, resetCreate,
   ]);
@@ -508,6 +538,7 @@ export default function PlacementScreen() {
   // ── Placement card render ──
   const renderPlacement = useCallback(({ item }: { item: Placement }) => {
     const cfg = STATUS_CONFIG[item.status];
+    const companyCfg = item.company_status ? COMPANY_STATUS_CONFIG[item.company_status] : null;
     const roundsDone = item.rounds.filter(r => r.result === 'success').length;
     return (
       <View style={styles.card}>
@@ -524,6 +555,14 @@ export default function PlacementScreen() {
           </View>
 
           <View style={styles.metaRow}>
+            {companyCfg && (
+              <View style={[styles.metaChip, { backgroundColor: companyCfg.bg }]}>
+                <Ionicons name={companyCfg.icon} size={13} color={companyCfg.color} />
+                <Text style={[styles.metaChipText, { color: companyCfg.color }]}>
+                  {companyCfg.label}
+                </Text>
+              </View>
+            )}
             <View style={[styles.metaChip, { backgroundColor: item.studied ? '#ECFDF5' : '#F1F5F9' }]}>
               <Ionicons name={item.studied ? 'checkmark-circle' : 'close-circle-outline'} size={13} color={item.studied ? '#10B981' : '#94A3B8'} />
               <Text style={[styles.metaChipText, { color: item.studied ? '#10B981' : '#64748B' }]}>
@@ -681,6 +720,19 @@ export default function PlacementScreen() {
                 const cfg = STATUS_CONFIG[s]; const active = editStatus === s;
                 return (
                   <TouchableOpacity key={s} style={[styles.statusChip, active && { backgroundColor: cfg.color, borderColor: cfg.color }]} onPress={() => setEditStatus(s)}>
+                    <Ionicons name={cfg.icon} size={13} color={active ? '#FFF' : cfg.color} style={{ marginRight: 4 }} />
+                    <Text style={[styles.statusChipText, active && { color: '#FFF' }]}>{cfg.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <Text style={styles.selectorLabel}>Company Status:</Text>
+            <View style={styles.statusRow}>
+              {(['present', 'completed', 'upcoming'] as CompanyStatus[]).map(s => {
+                const cfg = COMPANY_STATUS_CONFIG[s]; const active = editCompanyStatus === s;
+                return (
+                  <TouchableOpacity key={s} style={[styles.statusChip, active && { backgroundColor: cfg.color, borderColor: cfg.color }]} onPress={() => setEditCompanyStatus(s)}>
                     <Ionicons name={cfg.icon} size={13} color={active ? '#FFF' : cfg.color} style={{ marginRight: 4 }} />
                     <Text style={[styles.statusChipText, active && { color: '#FFF' }]}>{cfg.label}</Text>
                   </TouchableOpacity>

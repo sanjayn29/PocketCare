@@ -1,7 +1,8 @@
-import { doc, getDoc, setDoc, updateDoc, arrayRemove } from 'firebase/firestore'
+import { arrayRemove, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
 import { db } from '../firebaseConfig'
 
 export type PlacementStatus = 'applied' | 'interview' | 'offer' | 'rejected'
+export type CompanyStatus = 'present' | 'completed' | 'upcoming'
 
 export type PlacementRound = {
   id: string
@@ -16,6 +17,7 @@ export type Placement = {
   status: PlacementStatus
   date: string           // ISO date string YYYY-MM-DD
   studied: boolean       // YES / NO
+  company_status?: CompanyStatus  // present, completed, upcoming
   rounds: PlacementRound[]
   created_at: string
 }
@@ -32,7 +34,8 @@ export async function addPlacement(
   status: PlacementStatus = 'applied',
   date: string = '',
   studied: boolean = false,
-  rounds: PlacementRound[] = []
+  rounds: PlacementRound[] = [],
+  company_status?: CompanyStatus
 ): Promise<Placement | null> {
   try {
     const userDocRef = doc(db, COLLECTION_NAME, email)
@@ -45,6 +48,7 @@ export async function addPlacement(
       status,
       date,
       studied,
+      company_status,
       rounds,
       created_at: now,
     }
