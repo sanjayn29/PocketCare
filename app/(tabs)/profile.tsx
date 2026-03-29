@@ -467,25 +467,24 @@ export default function ProfileScreen() {
   const { user } = useUser();
   const { signOut } = useAuth();
   const email = user?.primaryEmailAddress?.emailAddress || '';
-  const [memoryBestScore, setMemoryBestScore] = useState<{ moves: number; time: number } | null>(null);
-  const [tapBestScore, setTapBestScore] = useState<number | null>(null);
+  const [activeGame, setActiveGame] = useState<'memory' | 'tap' | null>(null);
+  const slideAnim = useRef(new Animated.Value(500)).current;
 
-  // Load best scores on mount
+  // Animate bottom sheet
   useEffect(() => {
-    if (!email) return;
-    loadBestScores();
-  }, [email]);
-
-  const loadBestScores = async () => {
-    try {
-      const memScore = await getMemoryGameScore(email);
-      const tapScore = await getTapGameScore(email);
-      if (memScore) setMemoryBestScore({ moves: memScore.bestMoves, time: memScore.bestTime });
-      if (tapScore) setTapBestScore(tapScore.bestScore);
-    } catch (error) {
-      console.error('Error loading best scores:', error);
+    if (activeGame) {
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: 500,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
     }
-  };
+  }, [activeGame]);
 
   const handleLogout = async () => {
     try {
@@ -535,53 +534,63 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
 
-        {/* Best Scores Display */}
-        <View style={styles.bestScoresSection}>
-          <Text style={styles.bestScoresSectionTitle}>🏆 Your Best Scores</Text>
-          <View style={styles.bestScoresGrid}>
-            {/* Memory Game Score */}
-            <View style={styles.scoreCard}>
-              <Text style={styles.scoreCardIcon}>🧠</Text>
-              <Text style={styles.scoreCardLabel}>Memory Game</Text>
-              {memoryBestScore ? (
-                <>
-                  <Text style={styles.scoreCardValue}>{memoryBestScore.moves}</Text>
-                  <Text style={styles.scoreCardSubtext}>moves</Text>
-                  <Text style={styles.scoreCardTime}>{formatTime(memoryBestScore.time)}</Text>
-                </>
-              ) : (
-                <Text style={styles.scoreCardPlaceholder}>No score yet</Text>
-              )}
-            </View>
+        {/* Games Buttons */}
+        <View style={styles.gameSectionButtons}>
+          <Text style={styles.gameSectionTitle}>🎮 Play Games</Text>
+          <View style={styles.gamesButtonsGrid}>
+            <TouchableOpacity 
+              style={styles.gameButton}
+              onPress={() => setActiveGame('memory')}
+            >
+              <Text style={styles.gameButtonEmoji}>🧠</Text>
+              <Text style={styles.gameButtonTitle}>Memory Card</Text>
+              <Text style={styles.gameButtonSubtitle}>Game</Text>
+            </TouchableOpacity>
 
-            {/* Tap Game Score */}
-            <View style={styles.scoreCard}>
-              <Text style={styles.scoreCardIcon}>⚡</Text>
-              <Text style={styles.scoreCardLabel}>Tap Game</Text>
-              {tapBestScore !== null ? (
-                <>
-                  <Text style={styles.scoreCardValue}>{tapBestScore}</Text>
-                  <Text style={styles.scoreCardSubtext}>taps</Text>
-                </>
-              ) : (
-                <Text style={styles.scoreCardPlaceholder}>No score yet</Text>
-              )}
-            </View>
+            <TouchableOpacity 
+              style={styles.gameButton}
+              onPress={() => setActiveGame('tap')}
+            >
+              <Text style={styles.gameButtonEmoji}>⚡</Text>
+              <Text style={styles.gameButtonTitle}>Tap Reaction</Text>
+              <Text style={styles.gameButtonSubtitle}>Game</Text>
+            </TouchableOpacity>
           </View>
         </View>
-
-        {/* Memory Game */}
-        <View style={styles.gameSection}>
-          <Text style={styles.gameSectionTitle}>Memory Card Game</Text>
-          <MemoryGame email={email} />
-        </View>
-
-        {/* Tap Reaction Game */}
-        <View style={styles.gameSection}>
-          <Text style={styles.gameSectionTitle}>Tap Reaction Game</Text>
-          <TapReactionGame email={email} />
-        </View>
       </View>
+
+      {/* Bottom Sheet Overlay */}
+      {activeGame && (
+        <TouchableOpacity
+          style={styles.bottomSheetOverlay}
+          onPress={() => setActiveGame(null)}
+          activeOpacity={1}
+        >
+          <Animated.View
+            style={[
+              styles.bottomSheet,
+              {
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
+            <TouchableOpacity 
+              style={styles.bottomSheetDragArea}
+              onPress={() => setActiveGame(null)}
+            >
+              <View style={styles.dragHandle} />
+            </TouchableOpacity>
+
+            <ScrollView 
+              style={styles.bottomSheetContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {activeGame === 'memory' && <MemoryGame email={email} />}
+              {activeGame === 'tap' && <TapReactionGame email={email} />}
+            </ScrollView>
+          </Animated.View>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 }
@@ -659,69 +668,86 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Best Scores Display
-  bestScoresSection: {
+  // Game Buttons & Bottom Sheet
+  gameSectionButtons: {
     marginBottom: 40,
   },
-  bestScoresSectionTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#0F172A',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  bestScoresGrid: {
+  gamesButtonsGrid: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 16,
     justifyContent: 'center',
   },
-  scoreCard: {
+  gameButton: {
     flex: 1,
     maxWidth: 160,
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-    borderWidth: 1,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+    borderWidth: 2,
     borderColor: '#E2E8F0',
   },
-  scoreCardIcon: {
-    fontSize: 32,
+  gameButtonEmoji: {
+    fontSize: 48,
     marginBottom: 8,
   },
-  scoreCardLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#64748B',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  scoreCardValue: {
-    fontSize: 28,
+  gameButtonTitle: {
+    fontSize: 16,
     fontWeight: '800',
-    color: '#1D4ED8',
+    color: '#0F172A',
+    textAlign: 'center',
     marginBottom: 2,
   },
-  scoreCardSubtext: {
-    fontSize: 11,
-    color: '#94A3B8',
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  scoreCardTime: {
+  gameButtonSubtitle: {
     fontSize: 12,
-    color: '#1D4ED8',
+    color: '#64748B',
     fontWeight: '600',
+    marginBottom: 8,
   },
-  scoreCardPlaceholder: {
-    fontSize: 13,
-    color: '#94A3B8',
-    fontStyle: 'italic',
+
+  // Bottom Sheet
+  bottomSheetOverlay: {
+    position: 'absolute' as any,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'flex-end',
+    zIndex: 1000,
+  },
+  bottomSheet: {
+    backgroundColor: '#F8FAFC',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    maxHeight: '90%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  bottomSheetDragArea: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  dragHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#CBD5E1',
+  },
+  bottomSheetContent: {
+    padding: 20,
+    maxHeight: '100%',
   },
 
   // Game Styles
