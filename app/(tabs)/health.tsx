@@ -4,15 +4,26 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, FlatList, KeyboardAvoidingView,
+  ActivityIndicator, Alert, FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
   Modal, Platform, ScrollView, StyleSheet, Text,
-  TextInput, TouchableOpacity, View, Keyboard
+  TextInput, TouchableOpacity, View
 } from 'react-native';
 import {
-  MedicalRecord, DietPlan, FitnessPlan, getHealthData,
-  addMedical, updateMedical, deleteMedical,
-  addDiet, updateDiet, deleteDiet, toggleDietDate,
-  addFitness, updateFitness, deleteFitness, toggleFitnessDate
+  addDiet,
+  addFitness,
+  addMedical,
+  deleteDiet,
+  deleteFitness,
+  deleteMedical,
+  DietPlan, FitnessPlan, getHealthData,
+  MedicalRecord,
+  toggleDietDate,
+  toggleFitnessDate,
+  updateDiet,
+  updateFitness,
+  updateMedical
 } from '../../lib/health-service';
 
 // ─── UTILS ──────────────────────────────────────────────────────────────────
@@ -351,20 +362,23 @@ export default function HealthScreen() {
              {datesArray.map(dStr => {
                const dObj = new Date(dStr);
                const dayLabel = dObj.getDate().toString();
-               const isTicked = item.completed_dates.includes(dStr);
+               const isToday = dStr === todayStr;
+               const isTicked = isToday && item.completed_dates.includes(dStr);
+               const canSelect = isToday;
                
                return (
                  <TouchableOpacity 
                    key={dStr} 
-                   style={[styles.gridBox, isTicked && {backgroundColor: colorTheme, borderColor: colorTheme}]}
-                   onPress={() => toggleDayAction(isDiet ? 'diet' : 'fitness', item.id, dStr)}
+                   style={[styles.gridBox, isTicked && {backgroundColor: colorTheme, borderColor: colorTheme}, !canSelect && {opacity: 0.5}]}
+                   onPress={() => canSelect && toggleDayAction(isDiet ? 'diet' : 'fitness', item.id, dStr)}
+                   disabled={!canSelect}
                  >
                    <Text style={[styles.gridText, isTicked && {color: '#FFF'}]}>{dayLabel}</Text>
                  </TouchableOpacity>
                );
              })}
           </View>
-          <Text style={{fontSize:11, color:'#94A3B8', marginTop: 10, textAlign:'center'}}>Tap the date bubbles to track days!</Text>
+          <Text style={{fontSize:11, color:'#94A3B8', marginTop: 10, textAlign:'center'}}>Tap today's date bubble to track!</Text>
        </View>
      );
   }
