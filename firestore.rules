@@ -1,0 +1,61 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Allow access to the UDB collection (your existing users)
+    match /UDB/{document=**} {
+      allow read, write: if true;
+    }
+
+    // Notes
+    match /Notes/{email} {
+      allow read, write: if true;
+    }
+
+    // Tasks
+    match /Tasks/{email} {
+      allow read, write: if true;
+    }
+
+    // Goals
+    match /Goals/{email} {
+      allow read, write: if true;
+    }
+
+    // Calculator history
+    match /calculator/{email} {
+      allow read, write: if true;
+    }
+
+    // Skills
+    match /Skills/{email} {
+      allow read, write: if true;
+    }
+    
+    // Placements
+    match /Placements/{email} {
+      allow read, write: if true;
+    }
+
+    // Finance
+    match /finance/{email} {
+      allow read, write: if true;
+    }
+
+    // Health Tracker
+    match /health/{email} {
+      allow read, write: if true;
+    }
+
+    // Schedules
+    match /schedules/{email} {
+      allow read, write: if true;
+    }
+
+    // Games (NEW - Best scores for both games)
+    match /games/{email} {
+      allow read, write: if true;
+    }
+
+  }
+}

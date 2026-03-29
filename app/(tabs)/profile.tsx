@@ -1,4 +1,10 @@
 import FloatingActionButton from '@/components/FloatingActionButton';
+import {
+  getMemoryGameScore,
+  getTapGameScore,
+  saveMemoryGameScore,
+  saveTapGameScore,
+} from '@/lib/games-service';
 import { useAuth, useUser } from '@clerk/expo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useRef, useState } from 'react';
@@ -24,7 +30,7 @@ interface Card {
   isMatched: boolean;
 }
 
-function MemoryGame() {
+function MemoryGame({ email }: { email: string }) {
   const [cards, setCards] = useState<Card[]>([]);
   const [selectedCards, setSelectedCards] = useState<number[]>([]);
   const [moves, setMoves] = useState(0);
@@ -139,8 +145,14 @@ function MemoryGame() {
 
   const loadBestScore = async () => {
     try {
-      const score = await AsyncStorage.getItem('memoryGameBestScore');
-      if (score) setBestScore(JSON.parse(score));
+      const cloudScore = await getMemoryGameScore(email);
+      if (cloudScore) {
+        setBestScore({ moves: cloudScore.bestMoves, time: cloudScore.bestTime });
+      } else {
+        // Fallback to local storage if no cloud score
+        const localScore = await AsyncStorage.getItem('memoryGameBestScore');
+        if (localScore) setBestScore(JSON.parse(localScore));
+      }
     } catch (error) {
       console.error('Error loading best score:', error);
     }
@@ -150,7 +162,7 @@ function MemoryGame() {
     try {
       const newScore = { moves, time: seconds };
       if (!bestScore || newScore.moves < bestScore.moves) {
-        await AsyncStorage.setItem('memoryGameBestScore', JSON.stringify(newScore));
+        await saveMemoryGameScore(email, newScore.moves, newScore.time);
         setBestScore(newScore);
       }
     } catch (error) {
@@ -266,7 +278,7 @@ function MemoryGame() {
   );
 }
 
-function TapReactionGame() {
+function TapReactionGame({ email }: { email: string }) {
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(5);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -331,8 +343,14 @@ function TapReactionGame() {
 
   const loadHighScore = async () => {
     try {
-      const saved = await AsyncStorage.getItem('tapGameHighScore');
-      if (saved) setHighScore(parseInt(saved, 10));
+      const cloudScore = await getTapGameScore(email);
+      if (cloudScore) {
+        setHighScore(cloudScore.bestScore);
+      } else {
+        // Fallback to local storage
+        const saved = await AsyncStorage.getItem('tapGameHighScore');
+        if (saved) setHighScore(parseInt(saved, 10));
+      }
     } catch (error) {
       console.error('Error loading high score:', error);
     }
@@ -341,7 +359,7 @@ function TapReactionGame() {
   const saveHighScore = async () => {
     try {
       if (score > highScore) {
-        await AsyncStorage.setItem('tapGameHighScore', score.toString());
+        await saveTapGameScore(email, score);
         setHighScore(score);
       }
     } catch (error) {
@@ -448,6 +466,26 @@ function TapReactionGame() {
 export default function ProfileScreen() {
   const { user } = useUser();
   const { signOut } = useAuth();
+  const email = user?.primaryEmailAddress?.emailAddress || '';
+  const [memoryBestScore, setMemoryBestScore] = useState<{ moves: number; time: number } | null>(null);
+  const [tapBestScore, setTapBestScore] = useState<number | null>(null);
+
+  // Load best scores on mount
+  useEffect(() => {
+    if (!email) return;
+    loadBestScores();
+  }, [email]);
+
+  const loadBestScores = async () => {
+    try {
+      const memScore = await getMemoryGameScore(email);
+      const tapScore = await getTapGameScore(email);
+      if (memScore) setMemoryBestScore({ moves: memScore.bestMoves, time: memScore.bestTime });
+      if (tapScore) setTapBestScore(tapScore.bestScore);
+    } catch (error) {
+      console.error('Error loading best scores:', error);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -455,6 +493,12 @@ export default function ProfileScreen() {
     } catch (err) {
       console.error('Error logging out:', err);
     }
+  };
+
+  const formatTime = (secs: number) => {
+    const mins = Math.floor(secs / 60);
+    const secsRem = secs % 60;
+    return `${mins}:${secsRem.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -491,16 +535,51 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
 
+        {/* Best Scores Display */}
+        <View style={styles.bestScoresSection}>
+          <Text style={styles.bestScoresSectionTitle}>🏆 Your Best Scores</Text>
+          <View style={styles.bestScoresGrid}>
+            {/* Memory Game Score */}
+            <View style={styles.scoreCard}>
+              <Text style={styles.scoreCardIcon}>🧠</Text>
+              <Text style={styles.scoreCardLabel}>Memory Game</Text>
+              {memoryBestScore ? (
+                <>
+                  <Text style={styles.scoreCardValue}>{memoryBestScore.moves}</Text>
+                  <Text style={styles.scoreCardSubtext}>moves</Text>
+                  <Text style={styles.scoreCardTime}>{formatTime(memoryBestScore.time)}</Text>
+                </>
+              ) : (
+                <Text style={styles.scoreCardPlaceholder}>No score yet</Text>
+              )}
+            </View>
+
+            {/* Tap Game Score */}
+            <View style={styles.scoreCard}>
+              <Text style={styles.scoreCardIcon}>⚡</Text>
+              <Text style={styles.scoreCardLabel}>Tap Game</Text>
+              {tapBestScore !== null ? (
+                <>
+                  <Text style={styles.scoreCardValue}>{tapBestScore}</Text>
+                  <Text style={styles.scoreCardSubtext}>taps</Text>
+                </>
+              ) : (
+                <Text style={styles.scoreCardPlaceholder}>No score yet</Text>
+              )}
+            </View>
+          </View>
+        </View>
+
         {/* Memory Game */}
         <View style={styles.gameSection}>
           <Text style={styles.gameSectionTitle}>Memory Card Game</Text>
-          <MemoryGame />
+          <MemoryGame email={email} />
         </View>
 
         {/* Tap Reaction Game */}
         <View style={styles.gameSection}>
           <Text style={styles.gameSectionTitle}>Tap Reaction Game</Text>
-          <TapReactionGame />
+          <TapReactionGame email={email} />
         </View>
       </View>
     </ScrollView>
@@ -578,6 +657,71 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+
+  // Best Scores Display
+  bestScoresSection: {
+    marginBottom: 40,
+  },
+  bestScoresSectionTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  bestScoresGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'center',
+  },
+  scoreCard: {
+    flex: 1,
+    maxWidth: 160,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  scoreCardIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  scoreCardLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  scoreCardValue: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#1D4ED8',
+    marginBottom: 2,
+  },
+  scoreCardSubtext: {
+    fontSize: 11,
+    color: '#94A3B8',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  scoreCardTime: {
+    fontSize: 12,
+    color: '#1D4ED8',
+    fontWeight: '600',
+  },
+  scoreCardPlaceholder: {
+    fontSize: 13,
+    color: '#94A3B8',
+    fontStyle: 'italic',
   },
 
   // Game Styles
