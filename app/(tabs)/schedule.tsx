@@ -99,6 +99,9 @@ export default function ScheduleScreen() {
 
   const handleDateSelect = (date: string) => {
     setSelectedDate(date);
+  };
+
+  const handleOpenCreateModal = () => {
     resetCreateForm();
     setShowCreateModal(true);
   };
@@ -446,6 +449,9 @@ export default function ScheduleScreen() {
                 <View style={styles.eventsSection}>
                   <View style={styles.sectionHeader}>
                     <Text style={styles.sectionTitle}>Events for {selectedDate}</Text>
+                    <TouchableOpacity onPress={handleOpenCreateModal} style={styles.addButton}>
+                      <Ionicons name="add" size={24} color="#FFFFFF" />
+                    </TouchableOpacity>
                   </View>
 
                   {getEventsForDate.length > 0 ? (
@@ -827,8 +833,9 @@ const styles = StyleSheet.create({
   eventDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#D97706', marginTop: 4 },
 
   eventsSection: { marginVertical: 16, paddingBottom: 140 },
-  sectionHeader: { marginBottom: 14 },
+  sectionHeader: { marginBottom: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: '#0F172A' },
+  addButton: { backgroundColor: '#1D4ED8', borderRadius: 8, padding: 8, justifyContent: 'center', alignItems: 'center' },
   eventsList: { gap: 10 },
 
   eventCard: {
