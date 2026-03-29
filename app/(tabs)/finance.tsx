@@ -301,6 +301,34 @@ export default function FinanceScreen() {
     };
   }, [totalIncome, totalExpense]);
 
+  // Category breakdown data
+  const categoryData = useMemo(() => {
+    const incomeByCategory: Record<string, number> = {};
+    const expenseByCategory: Record<string, number> = {};
+
+    filteredTxs.forEach(t => {
+      const amount = Number(t.amount);
+      if (t.type === 'income') {
+        incomeByCategory[t.category] = (incomeByCategory[t.category] || 0) + amount;
+      } else {
+        expenseByCategory[t.category] = (expenseByCategory[t.category] || 0) + amount;
+      }
+    });
+
+    // Sort and take top 5
+    const topIncome = Object.entries(incomeByCategory)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([cat, amt]) => ({ name: cat, amount: amt }));
+
+    const topExpense = Object.entries(expenseByCategory)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([cat, amt]) => ({ name: cat, amount: amt }));
+
+    return { topIncome, topExpense };
+  }, [filteredTxs]);
+
   // ── Actions: CREATE
   const handleSaveTx = async () => {
     if(!email) return;
@@ -607,6 +635,75 @@ export default function FinanceScreen() {
               }}
               style={{ borderRadius: 16 }}
             />
+          )}
+        </View>
+      )}
+
+      {/* ── Category Breakdown Charts ── */}
+      {filteredTxs.length > 0 && (
+        <View style={{marginTop: 24}}>
+          <Text style={{fontSize: 16, fontWeight: '600', color: '#0F172A', marginBottom: 16, paddingHorizontal: 16}}>
+            Category Breakdown
+          </Text>
+
+          {/* Income by Category */}
+          {categoryData.topIncome.length > 0 && (
+            <View style={{paddingHorizontal: 16, marginBottom: 20}}>
+              <Text style={{fontSize: 14, fontWeight: '600', color: '#10B981', marginBottom: 12}}>
+                Top Income Categories
+              </Text>
+              {categoryData.topIncome.map((cat, idx) => {
+                const percentage = totalIncome > 0 ? (cat.amount / totalIncome) * 100 : 0;
+                return (
+                  <View key={idx} style={{marginBottom: 12}}>
+                    <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6}}>
+                      <Text style={{fontSize: 13, color: '#334155'}}>{cat.name}</Text>
+                      <Text style={{fontSize: 13, fontWeight: '600', color: '#10B981'}}>${cat.amount.toFixed(2)}</Text>
+                    </View>
+                    <View style={{height: 6, backgroundColor: '#E0E7FF', borderRadius: 3, overflow: 'hidden'}}>
+                      <View
+                        style={{
+                          height: '100%',
+                          width: `${percentage}%`,
+                          backgroundColor: '#10B981',
+                          borderRadius: 3
+                        }}
+                      />
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
+          {/* Expense by Category */}
+          {categoryData.topExpense.length > 0 && (
+            <View style={{paddingHorizontal: 16}}>
+              <Text style={{fontSize: 14, fontWeight: '600', color: '#EF4444', marginBottom: 12}}>
+                Top Expense Categories
+              </Text>
+              {categoryData.topExpense.map((cat, idx) => {
+                const percentage = totalExpense > 0 ? (cat.amount / totalExpense) * 100 : 0;
+                return (
+                  <View key={idx} style={{marginBottom: 12}}>
+                    <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6}}>
+                      <Text style={{fontSize: 13, color: '#334155'}}>{cat.name}</Text>
+                      <Text style={{fontSize: 13, fontWeight: '600', color: '#EF4444'}}>${cat.amount.toFixed(2)}</Text>
+                    </View>
+                    <View style={{height: 6, backgroundColor: '#FEE2E2', borderRadius: 3, overflow: 'hidden'}}>
+                      <View
+                        style={{
+                          height: '100%',
+                          width: `${percentage}%`,
+                          backgroundColor: '#EF4444',
+                          borderRadius: 3
+                        }}
+                      />
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
           )}
         </View>
       )}
