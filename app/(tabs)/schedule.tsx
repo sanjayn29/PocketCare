@@ -1,29 +1,29 @@
 import FloatingActionButton from '@/components/FloatingActionButton';
 import {
-    addScheduleEvent,
-    deleteScheduleEvent,
-    getScheduleEvents,
-    ScheduleEvent,
-    updateScheduleEvent,
+  addScheduleEvent,
+  deleteScheduleEvent,
+  getScheduleEvents,
+  ScheduleEvent,
+  updateScheduleEvent,
 } from '@/lib/schedule-service';
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    Keyboard,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 const PRIORITY_CONFIG: Record<'High' | 'Medium' | 'Low', { emoji: string; bg: string; text: string }> = {
@@ -38,12 +38,17 @@ const STATUS_CONFIG: Record<'Upcoming' | 'Completed' | 'Cancelled', { bg: string
   Cancelled: { bg: '#F5F3FF', text: '#7C3AED' },
 };
 
+type TabType = 'Current' | 'Schedules';
+type StatusFilter = 'All' | 'Upcoming' | 'Completed' | 'Cancelled';
+
 export default function ScheduleScreen() {
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress;
 
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabType>('Current');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
@@ -250,6 +255,18 @@ export default function ScheduleScreen() {
     return events.filter(e => e.date === selectedDate);
   }, [events, selectedDate]);
 
+  const filteredScheduleEvents = useMemo(() => {
+    let filtered = events;
+    if (statusFilter !== 'All') {
+      filtered = filtered.filter(e => e.status === statusFilter);
+    }
+    return filtered.sort((a, b) => {
+      const dateCompare = new Date(a.date).getTime() - new Date(b.date).getTime();
+      if (dateCompare !== 0) return dateCompare;
+      return a.startTime.localeCompare(b.startTime);
+    });
+  }, [events, statusFilter]);
+
   const renderCalendar = () => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
@@ -401,30 +418,91 @@ export default function ScheduleScreen() {
           <ActivityIndicator size="large" color="#1D4ED8" />
         </View>
       ) : (
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {renderCalendar()}
+        <>
+          {/* Tab Navigation */}
+          <View style={styles.tabRow}>
+            <TouchableOpacity
+              style={[styles.tabBtn, activeTab === 'Current' && styles.tabBtnActive]}
+              onPress={() => setActiveTab('Current')}
+            >
+              <Ionicons name="calendar" size={18} color={activeTab === 'Current' ? '#1D4ED8' : '#94A3B8'} />
+              <Text style={[styles.tabText, activeTab === 'Current' && styles.tabTextActive]}>Current</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tabBtn, activeTab === 'Schedules' && styles.tabBtnActive]}
+              onPress={() => setActiveTab('Schedules')}
+            >
+              <Ionicons name="list" size={18} color={activeTab === 'Schedules' ? '#1D4ED8' : '#94A3B8'} />
+              <Text style={[styles.tabText, activeTab === 'Schedules' && styles.tabTextActive]}>Schedules</Text>
+            </TouchableOpacity>
+          </View>
 
-          <View style={styles.eventsSection}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Events for {selectedDate}</Text>
-            </View>
+          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            {/* Current Tab */}
+            {activeTab === 'Current' && (
+              <>
+                {renderCalendar()}
 
-            {getEventsForDate.length > 0 ? (
-              <FlatList
-                data={getEventsForDate}
-                keyExtractor={item => item.id}
-                renderItem={renderEventCard}
-                scrollEnabled={false}
-                style={styles.eventsList}
-              />
-            ) : (
-              <View style={styles.emptyWrap}>
-                <Ionicons name="calendar-outline" size={50} color="#CBD5E1" />
-                <Text style={styles.emptyText}>No events scheduled for this date.</Text>
+                <View style={styles.eventsSection}>
+                  <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Events for {selectedDate}</Text>
+                  </View>
+
+                  {getEventsForDate.length > 0 ? (
+                    <FlatList
+                      data={getEventsForDate}
+                      keyExtractor={item => item.id}
+                      renderItem={renderEventCard}
+                      scrollEnabled={false}
+                      style={styles.eventsList}
+                    />
+                  ) : (
+                    <View style={styles.emptyWrap}>
+                      <Ionicons name="calendar-outline" size={50} color="#CBD5E1" />
+                      <Text style={styles.emptyText}>No events scheduled for this date.</Text>
+                    </View>
+                  )}
+                </View>
+              </>
+            )}
+
+            {/* Schedules Tab */}
+            {activeTab === 'Schedules' && (
+              <View style={styles.schedulesSection}>
+                {/* Status Filters */}
+                <View style={styles.filterRow}>
+                  {(['All', 'Upcoming', 'Completed', 'Cancelled'] as StatusFilter[]).map(status => (
+                    <TouchableOpacity
+                      key={status}
+                      style={[styles.filterChip, statusFilter === status && styles.filterChipActive]}
+                      onPress={() => setStatusFilter(status)}
+                    >
+                      <Text style={[styles.filterText, statusFilter === status && styles.filterTextActive]}>
+                        {status}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* Schedules List */}
+                {filteredScheduleEvents.length > 0 ? (
+                  <FlatList
+                    data={filteredScheduleEvents}
+                    keyExtractor={item => item.id}
+                    renderItem={renderEventCard}
+                    scrollEnabled={false}
+                    style={styles.eventsList}
+                  />
+                ) : (
+                  <View style={styles.emptyWrap}>
+                    <Ionicons name="calendar-outline" size={50} color="#CBD5E1" />
+                    <Text style={styles.emptyText}>No schedules found.</Text>
+                  </View>
+                )}
               </View>
             )}
-          </View>
-        </ScrollView>
+          </ScrollView>
+        </>
       )}
 
       {showStartTimePicker && (
@@ -851,4 +929,68 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   reminderText: { fontSize: 15, fontWeight: '600', color: '#0F172A' },
+
+  tabRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginBottom: 16,
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    paddingBottom: 12,
+  },
+  tabBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#F1F5F9',
+  },
+  tabBtnActive: {
+    backgroundColor: '#EFF6FF',
+    borderBottomWidth: 2,
+    borderBottomColor: '#1D4ED8',
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  tabTextActive: {
+    color: '#1D4ED8',
+  },
+
+  filterRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    gap: 10,
+    flexWrap: 'wrap',
+  },
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  filterChipActive: {
+    backgroundColor: '#1D4ED8',
+    borderColor: '#1D4ED8',
+  },
+  filterText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  filterTextActive: {
+    color: '#FFFFFF',
+  },
+
+  schedulesSection: {
+    paddingVertical: 16,
+  },
 });
