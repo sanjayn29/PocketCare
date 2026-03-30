@@ -363,13 +363,13 @@ export default function HealthScreen() {
                const dObj = new Date(dStr);
                const dayLabel = dObj.getDate().toString();
                const isToday = dStr === todayStr;
-               const isTicked = isToday && item.completed_dates.includes(dStr);
+               const isTicked = item.completed_dates.includes(dStr);
                const canSelect = isToday;
                
                return (
                  <TouchableOpacity 
                    key={dStr} 
-                   style={[styles.gridBox, isTicked && {backgroundColor: colorTheme, borderColor: colorTheme}, !canSelect && {opacity: 0.5}]}
+                   style={[styles.gridBox, isTicked && {backgroundColor: colorTheme, borderColor: colorTheme}]}
                    onPress={() => canSelect && toggleDayAction(isDiet ? 'diet' : 'fitness', item.id, dStr)}
                    disabled={!canSelect}
                  >
@@ -378,7 +378,7 @@ export default function HealthScreen() {
                );
              })}
           </View>
-          <Text style={{fontSize:11, color:'#94A3B8', marginTop: 10, textAlign:'center'}}>Tap today's date bubble to track!</Text>
+          <Text style={{fontSize:11, color:'#94A3B8', marginTop: 10, textAlign:'center'}}>Completed dates are highlighted. Tap today's date to track!</Text>
        </View>
      );
   }
