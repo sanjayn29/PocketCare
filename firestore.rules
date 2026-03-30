@@ -68,8 +68,10 @@ service cloud.firestore {
     }
 
     // User Visit Tracking (Daily streaks)
-    match /users/{email}/visits/{document=**} {
-      allow read, write: if true;
+    match /users/{userId} {
+      match /visits/{visitsDate} {
+        allow read, write: if true;
+      }
     }
 
   }
