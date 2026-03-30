@@ -1,21 +1,23 @@
-import FloatingActionButton from '@/components/FloatingActionButton';
-import Navbar from '@/components/Navbar';
-import { saveUserToFirestore } from '@/lib/save-user';
-import { useUser } from '@clerk/expo';
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { useGreeting } from '@/hooks/use-greeting'
+import { saveUserToFirestore } from '@/lib/save-user'
+import { useUser } from '@clerk/expo'
+import LottieView from 'lottie-react-native'
+import React, { useEffect } from 'react'
+import { StyleSheet, Text, View } from 'react-native'
+
 export default function HomeScreen() {
-  const { user } = useUser();
+  const { user } = useUser()
+  const greeting = useGreeting(user?.firstName || 'User')
 
   // Save user data to Firebase when they're logged in
-  React.useEffect(() => {
+  useEffect(() => {
     if (user) {
-      const email = user.emailAddresses[0]?.emailAddress;
+      const email = user.emailAddresses[0]?.emailAddress
       if (email) {
         const provider =
           user.externalAccounts?.length > 0
             ? user.externalAccounts[0].provider || 'google'
-            : 'email';
+            : 'email'
 
         saveUserToFirestore({
           email,
@@ -24,36 +26,57 @@ export default function HomeScreen() {
           imageUrl: user.imageUrl,
           clerkUserId: user.id,
           provider,
-        });
+        })
       }
     }
-  }, [user]);
+  }, [user])
 
   return (
     <View style={styles.container}>
-      <Navbar />
-      <FloatingActionButton />
-      <View style={styles.content}>
-        <Text style={styles.text}>Home</Text>
-      </View>
+      <Text style={styles.title}>PocketCare</Text>
+      <LottieView
+        source={require('../../assets/animations/Morphing.json')}
+        autoPlay
+        loop
+        style={styles.animation}
+      />
+      <Text style={styles.greetingMessage}>{greeting.message}</Text>
+      <Text style={styles.motivational}>{greeting.motivational}</Text>
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  content: {
-    flex: 1,
-    alignItems: 'center',
+    paddingTop: 60,
+    paddingHorizontal: 20,
     justifyContent: 'center',
-    marginTop: 80, // Space for navbar at top
+    alignItems: 'center',
   },
-  text: {
-    fontSize: 20,
+  title: {
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#CCCCCC',
-  }
-});
+    marginBottom: 20,
+    position: 'absolute',
+    top: 60,
+    left: 20,
+  },
+  animation: {
+    width: 250,
+    height: 250,
+    marginBottom: 20,
+  },
+  greetingMessage: {
+    fontSize: 24,
+    fontWeight: '600',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  motivational: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+})
