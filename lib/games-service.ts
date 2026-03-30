@@ -26,6 +26,11 @@ export const saveMemoryGameScore = async (
   time: number
 ): Promise<void> => {
   try {
+    if (!email) {
+      console.warn('Email is required to save game score');
+      return;
+    }
+    
     const gameDocRef = doc(db, 'games', email);
     const gameDoc = await getDoc(gameDocRef);
 
@@ -33,6 +38,7 @@ export const saveMemoryGameScore = async (
       const data = gameDoc.data() as GameScores;
       // Only update if this is a better score (fewer moves)
       if (!data.memoryGame || moves < data.memoryGame.bestMoves) {
+        console.log(`Updating memory score for ${email}: ${moves} moves`);
         await updateDoc(gameDocRef, {
           memoryGame: {
             bestMoves: moves,
@@ -42,6 +48,7 @@ export const saveMemoryGameScore = async (
         });
       }
     } else {
+      console.log(`Creating new game doc for ${email} with memory score: ${moves} moves`);
       await setDoc(gameDocRef, {
         memoryGame: {
           bestMoves: moves,
@@ -64,6 +71,11 @@ export const saveTapGameScore = async (
   score: number
 ): Promise<void> => {
   try {
+    if (!email) {
+      console.warn('Email is required to save game score');
+      return;
+    }
+    
     const gameDocRef = doc(db, 'games', email);
     const gameDoc = await getDoc(gameDocRef);
 
@@ -71,6 +83,7 @@ export const saveTapGameScore = async (
       const data = gameDoc.data() as GameScores;
       // Only update if this is a better score (more taps)
       if (!data.tapGame || score > data.tapGame.bestScore) {
+        console.log(`Updating tap score for ${email}: ${score} taps`);
         await updateDoc(gameDocRef, {
           tapGame: {
             bestScore: score,
@@ -79,6 +92,7 @@ export const saveTapGameScore = async (
         });
       }
     } else {
+      console.log(`Creating new game doc for ${email} with tap score: ${score} taps`);
       await setDoc(gameDocRef, {
         tapGame: {
           bestScore: score,
@@ -97,12 +111,19 @@ export const saveTapGameScore = async (
  */
 export const getGameScores = async (email: string): Promise<GameScores | null> => {
   try {
+    if (!email) {
+      console.warn('Email is required to get game scores');
+      return null;
+    }
+    
     const gameDocRef = doc(db, 'games', email);
     const gameDoc = await getDoc(gameDocRef);
 
     if (gameDoc.exists()) {
+      console.log(`Retrieved game scores for ${email}`);
       return gameDoc.data() as GameScores;
     }
+    console.log(`No game scores found for ${email}`);
     return null;
   } catch (error) {
     console.error('Error getting game scores:', error);

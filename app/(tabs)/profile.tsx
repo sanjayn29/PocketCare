@@ -3,7 +3,7 @@ import {
   getMemoryGameScore,
   getTapGameScore,
   saveMemoryGameScore,
-  saveTapGameScore,
+  saveTapGameScore
 } from '@/lib/games-service';
 import { useAuth, useUser } from '@clerk/expo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -38,14 +38,12 @@ function MemoryGame({ email }: { email: string }) {
   const [gameWon, setGameWon] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [gameActive, setGameActive] = useState(true);
-  const [bestScore, setBestScore] = useState<{ moves: number; time: number } | null>(null);
   const flipAnimations = useRef<{ [key: number]: Animated.Value }>({});
 
   // Initialize game
   useEffect(() => {
     initializeGame();
-    loadBestScore();
-  }, []);
+  }, [email]);
 
   // Timer
   useEffect(() => {
@@ -62,7 +60,7 @@ function MemoryGame({ email }: { email: string }) {
       Vibration.vibrate([100, 50, 100]);
       saveBestScore();
     }
-  }, [matchedPairs]);
+  }, [matchedPairs, gameActive, moves, seconds, email]);
 
   const initializeGame = () => {
     const shuffled = [...EMOJI_PAIRS, ...EMOJI_PAIRS]
@@ -143,30 +141,16 @@ function MemoryGame({ email }: { email: string }) {
     }
   };
 
-  const loadBestScore = async () => {
-    try {
-      const cloudScore = await getMemoryGameScore(email);
-      if (cloudScore) {
-        setBestScore({ moves: cloudScore.bestMoves, time: cloudScore.bestTime });
-      } else {
-        // Fallback to local storage if no cloud score
-        const localScore = await AsyncStorage.getItem('memoryGameBestScore');
-        if (localScore) setBestScore(JSON.parse(localScore));
-      }
-    } catch (error) {
-      console.error('Error loading best score:', error);
-    }
-  };
-
   const saveBestScore = async () => {
     try {
-      const newScore = { moves, time: seconds };
-      if (!bestScore || newScore.moves < bestScore.moves) {
-        await saveMemoryGameScore(email, newScore.moves, newScore.time);
-        setBestScore(newScore);
+      if (!email) {
+        console.warn('Email is empty, cannot save memory game score');
+        return;
       }
+      console.log(`Saving memory game score: ${moves} moves in ${seconds}s`);
+      await saveMemoryGameScore(email, moves, seconds);
     } catch (error) {
-      console.error('Error saving best score:', error);
+      console.error('Error saving memory game score:', error);
     }
   };
 
@@ -244,16 +228,6 @@ function MemoryGame({ email }: { email: string }) {
         })}
       </View>
 
-      {/* Best Score */}
-      {bestScore && (
-        <View style={styles.bestScoreBox}>
-          <Text style={styles.bestScoreLabel}>🏆 Best Score</Text>
-          <Text style={styles.bestScoreText}>
-            {bestScore.moves} moves • {formatTime(bestScore.time)}
-          </Text>
-        </View>
-      )}
-
       {/* Win Modal */}
       {gameWon && (
         <View style={styles.winModal}>
@@ -288,10 +262,10 @@ function TapReactionGame({ email }: { email: string }) {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const timerId = useRef<number | null>(null);
 
-  // Load high score on mount
+  // Load high score on mount or when email changes
   useEffect(() => {
     loadHighScore();
-  }, []);
+  }, [email]);
 
   // Countdown timer
   useEffect(() => {
@@ -303,7 +277,6 @@ function TapReactionGame({ email }: { email: string }) {
           setIsPlaying(false);
           setGameEnded(true);
           Vibration.vibrate([100, 50, 100]);
-          saveHighScore();
           return 0;
         }
         return prev - 1;
@@ -314,6 +287,13 @@ function TapReactionGame({ email }: { email: string }) {
       if (timerId.current) clearInterval(timerId.current);
     };
   }, [isPlaying]);
+
+  // Save high score when game ends
+  useEffect(() => {
+    if (gameEnded && score >= 0) {
+      saveHighScore(score);
+    }
+  }, [gameEnded]);
 
   // Pulse animation while playing
   useEffect(() => {
@@ -343,6 +323,10 @@ function TapReactionGame({ email }: { email: string }) {
 
   const loadHighScore = async () => {
     try {
+      if (!email) {
+        console.warn('Email is empty, cannot load high score');
+        return;
+      }
       const cloudScore = await getTapGameScore(email);
       if (cloudScore) {
         setHighScore(cloudScore.bestScore);
@@ -356,11 +340,16 @@ function TapReactionGame({ email }: { email: string }) {
     }
   };
 
-  const saveHighScore = async () => {
+  const saveHighScore = async (finalScore: number) => {
     try {
-      if (score > highScore) {
-        await saveTapGameScore(email, score);
-        setHighScore(score);
+      if (!email) {
+        console.warn('Email is empty, cannot save high score');
+        return;
+      }
+      if (finalScore >= highScore) {
+        console.log(`Saving high score: ${finalScore} (previous: ${highScore})`);
+        await saveTapGameScore(email, finalScore);
+        setHighScore(finalScore);
       }
     } catch (error) {
       console.error('Error saving high score:', error);
@@ -469,6 +458,35 @@ export default function ProfileScreen() {
   const email = user?.primaryEmailAddress?.emailAddress || '';
   const [activeGame, setActiveGame] = useState<'memory' | 'tap' | null>(null);
   const slideAnim = useRef(new Animated.Value(500)).current;
+  const [memoryBestScore, setMemoryBestScore] = useState<{ moves: number; time: number } | null>(null);
+  const [tapBestScore, setTapBestScore] = useState<number | null>(null);
+  const [loadingScores, setLoadingScores] = useState(true);
+
+  // Load best scores from database
+  useEffect(() => {
+    if (email) {
+      loadBestScores();
+    }
+  }, [email]);
+
+  const loadBestScores = async () => {
+    try {
+      setLoadingScores(true);
+      const memoryScore = await getMemoryGameScore(email);
+      const tapScore = await getTapGameScore(email);
+      
+      if (memoryScore) {
+        setMemoryBestScore({ moves: memoryScore.bestMoves, time: memoryScore.bestTime });
+      }
+      if (tapScore) {
+        setTapBestScore(tapScore.bestScore);
+      }
+    } catch (error) {
+      console.error('Error loading best scores:', error);
+    } finally {
+      setLoadingScores(false);
+    }
+  };
 
   // Animate bottom sheet
   useEffect(() => {
@@ -483,6 +501,8 @@ export default function ProfileScreen() {
         duration: 300,
         useNativeDriver: true,
       }).start();
+      // Reload scores when closing a game
+      loadBestScores();
     }
   }, [activeGame]);
 
@@ -532,6 +552,34 @@ export default function ProfileScreen() {
           >
             <Text style={styles.logoutButtonText}>Log Out</Text>
           </Pressable>
+        </View>
+
+        {/* Best Scores Section */}
+        <View style={styles.bestScoresSection}>
+          <Text style={styles.bestScoresSectionTitle}>🏆 Your Best Scores</Text>
+          <View style={styles.bestScoresGrid}>
+            {/* Memory Game Best Score */}
+            <View style={styles.bestScoreCard}>
+              <Text style={styles.bestScoreCardEmoji}>🧠</Text>
+              <Text style={styles.bestScoreCardLabel}>Memory Game</Text>
+              <Text style={styles.bestScoreCardValue}>
+                {memoryBestScore ? `${memoryBestScore.moves} moves` : '0 moves'}
+              </Text>
+              <Text style={styles.bestScoreCardTime}>
+                {memoryBestScore ? formatTime(memoryBestScore.time) : '0:00'}
+              </Text>
+            </View>
+
+            {/* Tap Game Best Score */}
+            <View style={styles.bestScoreCard}>
+              <Text style={styles.bestScoreCardEmoji}>⚡</Text>
+              <Text style={styles.bestScoreCardLabel}>Tap Reaction</Text>
+              <Text style={styles.bestScoreCardValue}>
+                {tapBestScore ? `${tapBestScore}` : '0'}
+              </Text>
+              <Text style={styles.bestScoreCardTime}>taps</Text>
+            </View>
+          </View>
         </View>
 
         {/* Games Buttons */}
@@ -602,7 +650,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 56,
+    paddingTop: 100,
     paddingBottom: 100,
   },
   profileCard: {
@@ -665,6 +713,60 @@ const styles = StyleSheet.create({
   logoutButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
+    fontWeight: '600',
+  },
+
+  // Best Scores Section
+  bestScoresSection: {
+    marginBottom: 40,
+  },
+  bestScoresSectionTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  bestScoresGrid: {
+    flexDirection: 'row',
+    gap: 16,
+    justifyContent: 'center',
+  },
+  bestScoreCard: {
+    flex: 1,
+    maxWidth: 160,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  bestScoreCardEmoji: {
+    fontSize: 40,
+    marginBottom: 8,
+  },
+  bestScoreCardLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#64748B',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  bestScoreCardValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 4,
+  },
+  bestScoreCardTime: {
+    fontSize: 12,
+    color: '#94A3B8',
     fontWeight: '600',
   },
 
