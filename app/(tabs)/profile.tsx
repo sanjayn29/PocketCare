@@ -1,6 +1,7 @@
 ﻿import MemoryGameComponent from "@/components/MemoryGameComponent";
 import TapGameComponent from "@/components/TapGameComponent";
 import { getMemoryGameScore, getTapGameScore } from "@/lib/games-service";
+import { getStreakData } from "@/lib/streak-service";
 import { useAuth, useUser } from "@clerk/expo";
 import React, { useEffect, useState } from "react";
 import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -21,6 +22,8 @@ const ProfileScreen: React.FC = () => {
   const [showTapGame, setShowTapGame] = useState(false);
   const [memoryScore, setMemoryScore] = useState<MemoryScore | null>(null);
   const [tapScore, setTapScore] = useState<TapScore | null>(null);
+  const [currentStreak, setCurrentStreak] = useState(0);
+  const [maxStreak, setMaxStreak] = useState(0);
 
   const email = user?.emailAddresses?.[0]?.emailAddress;
   const userId = user?.id;
@@ -34,12 +37,15 @@ const ProfileScreen: React.FC = () => {
   const loadData = async () => {
     if (!email || !userId) return;
     try {
-      const [memoryData, tapData] = await Promise.all([
+      const [memoryData, tapData, streakData] = await Promise.all([
         getMemoryGameScore(email),
         getTapGameScore(email),
+        getStreakData(email),
       ]);
       setMemoryScore(memoryData);
       setTapScore(tapData);
+      setCurrentStreak(streakData.currentStreak);
+      setMaxStreak(streakData.maxStreak);
     } catch (error) {
       console.error("Error loading data:", error);
     }
@@ -73,6 +79,26 @@ const ProfileScreen: React.FC = () => {
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.streakSection}>
+          <Text style={styles.sectionTitle}>🔥 Streaks</Text>
+          <View style={styles.streakContainer}>
+            <View style={styles.streakCard}>
+              <Text style={styles.streakLabel}>Current Streak</Text>
+              <View style={styles.streakValueContainer}>
+                <Text style={styles.streakValue}>{currentStreak}</Text>
+                <Text style={styles.streakUnit}>days</Text>
+              </View>
+            </View>
+            <View style={styles.streakCard}>
+              <Text style={styles.streakLabel}>Best Streak</Text>
+              <View style={styles.streakValueContainer}>
+                <Text style={styles.streakValue}>{maxStreak}</Text>
+                <Text style={styles.streakUnit}>days</Text>
+              </View>
+            </View>
+          </View>
         </View>
 
         <View style={styles.scoresSection}>
@@ -139,6 +165,13 @@ const styles = StyleSheet.create({
   userEmail: { fontSize: 14, color: "#a0a0a0" },
   logoutButton: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: "#ff6b6b", borderRadius: 6 },
   logoutText: { color: "#fff", fontWeight: "600" },
+  streakSection: { marginBottom: 32 },
+  streakContainer: { flexDirection: "row", gap: 12 },
+  streakCard: { flex: 1, backgroundColor: "#161b33", borderRadius: 12, padding: 16, borderWidth: 1, borderColor: "#1a1f3a" },
+  streakLabel: { fontSize: 13, color: "#7a8099", marginBottom: 8 },
+  streakValueContainer: { flexDirection: "row", alignItems: "baseline", gap: 4 },
+  streakValue: { fontSize: 28, fontWeight: "bold", color: "#ff6b6b" },
+  streakUnit: { fontSize: 12, color: "#7a8099" },
   scoresSection: { marginBottom: 32 },
   sectionTitle: { fontSize: 20, fontWeight: "bold", color: "#fff", marginBottom: 16 },
   scoreCard: { backgroundColor: "#161b33", borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: "#1a1f3a" },

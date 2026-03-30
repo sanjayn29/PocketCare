@@ -1,8 +1,9 @@
-import { ClerkProvider } from '@clerk/expo'
+import { recordVisit } from '@/lib/streak-service'
+import { ClerkProvider, useUser } from '@clerk/expo'
 import { tokenCache } from '@clerk/expo/token-cache'
 import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
-import React from 'react'
+import React, { useEffect } from 'react'
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!
 
@@ -10,13 +11,28 @@ if (!publishableKey) {
   throw new Error('Add your Clerk Publishable Key to the .env file')
 }
 
+function RootLayoutContent() {
+  const { user } = useUser()
+  const email = user?.emailAddresses?.[0]?.emailAddress
+
+  useEffect(() => {
+    if (email) {
+      recordVisit(email)
+    }
+  }, [email])
+
+  return (
+    <Stack>
+      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+    </Stack>
+  )
+}
+
 export default function RootLayout() {
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <Stack>
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      </Stack>
+      <RootLayoutContent />
       <StatusBar style="auto" />
     </ClerkProvider>
   )

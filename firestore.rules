@@ -67,5 +67,10 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // User Visit Tracking (Daily streaks)
+    match /users/{email}/visits/{document=**} {
+      allow read, write: if true;
+    }
+
   }
 }
