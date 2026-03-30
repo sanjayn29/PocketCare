@@ -1,7 +1,5 @@
-﻿import ActivityHeatmap from "@/components/ActivityHeatmap";
-import MemoryGameComponent from "@/components/MemoryGameComponent";
+﻿import MemoryGameComponent from "@/components/MemoryGameComponent";
 import TapGameComponent from "@/components/TapGameComponent";
-import { getUserActivityData } from "@/lib/activity-heatmap-service";
 import { getMemoryGameScore, getTapGameScore } from "@/lib/games-service";
 import { useAuth, useUser } from "@clerk/expo";
 import React, { useEffect, useState } from "react";
@@ -23,7 +21,6 @@ const ProfileScreen: React.FC = () => {
   const [showTapGame, setShowTapGame] = useState(false);
   const [memoryScore, setMemoryScore] = useState<MemoryScore | null>(null);
   const [tapScore, setTapScore] = useState<TapScore | null>(null);
-  const [activityDates, setActivityDates] = useState<Set<string>>(new Set());
 
   const email = user?.emailAddresses?.[0]?.emailAddress;
   const userId = user?.id;
@@ -37,14 +34,12 @@ const ProfileScreen: React.FC = () => {
   const loadData = async () => {
     if (!email || !userId) return;
     try {
-      const [memoryData, tapData, activityData] = await Promise.all([
+      const [memoryData, tapData] = await Promise.all([
         getMemoryGameScore(email),
         getTapGameScore(email),
-        getUserActivityData(userId),
       ]);
       setMemoryScore(memoryData);
       setTapScore(tapData);
-      setActivityDates(activityData);
     } catch (error) {
       console.error("Error loading data:", error);
     }
@@ -79,8 +74,6 @@ const ProfileScreen: React.FC = () => {
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         </View>
-
-        <ActivityHeatmap activityDates={activityDates} />
 
         <View style={styles.scoresSection}>
           <Text style={styles.sectionTitle}>🏆 Best Scores</Text>
