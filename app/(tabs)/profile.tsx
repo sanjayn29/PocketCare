@@ -1,5 +1,7 @@
-﻿import MemoryGameComponent from "@/components/MemoryGameComponent";
+﻿import ActivityHeatmap from "@/components/ActivityHeatmap";
+import MemoryGameComponent from "@/components/MemoryGameComponent";
 import TapGameComponent from "@/components/TapGameComponent";
+import { getUserActivityData } from "@/lib/activity-heatmap-service";
 import { getMemoryGameScore, getTapGameScore } from "@/lib/games-service";
 import { useAuth, useUser } from "@clerk/expo";
 import React, { useEffect, useState } from "react";
@@ -21,31 +23,37 @@ const ProfileScreen: React.FC = () => {
   const [showTapGame, setShowTapGame] = useState(false);
   const [memoryScore, setMemoryScore] = useState<MemoryScore | null>(null);
   const [tapScore, setTapScore] = useState<TapScore | null>(null);
+  const [activityDates, setActivityDates] = useState<Set<string>>(new Set());
 
   const email = user?.emailAddresses?.[0]?.emailAddress;
+  const userId = user?.id;
 
   useEffect(() => {
-    loadScores();
-  }, [email]);
+    if (email && userId) {
+      loadData();
+    }
+  }, [email, userId]);
 
-  const loadScores = async () => {
-    if (!email) return;
+  const loadData = async () => {
+    if (!email || !userId) return;
     try {
-      const [memoryData, tapData] = await Promise.all([
+      const [memoryData, tapData, activityData] = await Promise.all([
         getMemoryGameScore(email),
         getTapGameScore(email),
+        getUserActivityData(userId),
       ]);
       setMemoryScore(memoryData);
       setTapScore(tapData);
+      setActivityDates(activityData);
     } catch (error) {
-      console.error("Error loading scores:", error);
+      console.error("Error loading data:", error);
     }
   };
 
   const handleGameClose = () => {
     setShowMemoryGame(false);
     setShowTapGame(false);
-    loadScores();
+    loadData();
   };
 
   const handleLogout = async () => {
@@ -71,6 +79,8 @@ const ProfileScreen: React.FC = () => {
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         </View>
+
+        <ActivityHeatmap activityDates={activityDates} />
 
         <View style={styles.scoresSection}>
           <Text style={styles.sectionTitle}>🏆 Best Scores</Text>
@@ -127,32 +137,32 @@ const ProfileScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f5f5", paddingTop: 16 },
+  container: { flex: 1, backgroundColor: "#0a0e27", paddingTop: 16 },
   scrollContent: { paddingHorizontal: 16, paddingBottom: 40 },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 32, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: "#ddd" },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 32, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: "#1a1f3a" },
   profileSection: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
   avatar: { width: 56, height: 56, borderRadius: 28 },
-  userName: { fontSize: 18, fontWeight: "bold", color: "#333" },
-  userEmail: { fontSize: 14, color: "#666" },
+  userName: { fontSize: 18, fontWeight: "bold", color: "#fff" },
+  userEmail: { fontSize: 14, color: "#a0a0a0" },
   logoutButton: { paddingHorizontal: 16, paddingVertical: 8, backgroundColor: "#ff6b6b", borderRadius: 6 },
   logoutText: { color: "#fff", fontWeight: "600" },
   scoresSection: { marginBottom: 32 },
-  sectionTitle: { fontSize: 20, fontWeight: "bold", color: "#333", marginBottom: 16 },
-  scoreCard: { backgroundColor: "#fff", borderRadius: 12, padding: 16, marginBottom: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
-  gameTitle: { fontSize: 16, fontWeight: "bold", color: "#333", marginBottom: 12 },
+  sectionTitle: { fontSize: 20, fontWeight: "bold", color: "#fff", marginBottom: 16 },
+  scoreCard: { backgroundColor: "#161b33", borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: "#1a1f3a" },
+  gameTitle: { fontSize: 16, fontWeight: "bold", color: "#fff", marginBottom: 12 },
   scoreDetails: { flexDirection: "row", justifyContent: "center", gap: 16 },
   scoreItem: { alignItems: "center", flex: 1 },
-  scoreLabel: { fontSize: 12, color: "#999", marginBottom: 4 },
+  scoreLabel: { fontSize: 12, color: "#7a8099", marginBottom: 4 },
   scoreValue: { fontSize: 20, fontWeight: "bold", color: "#4a9eff" },
-  divider: { width: 1, backgroundColor: "#ddd" },
+  divider: { width: 1, backgroundColor: "#1a1f3a" },
   gamesSection: { marginBottom: 20 },
-  gameButton: { flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 12, padding: 16, marginBottom: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
+  gameButton: { flexDirection: "row", alignItems: "center", backgroundColor: "#161b33", borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: "#1a1f3a" },
   memoryButton: { borderLeftWidth: 4, borderLeftColor: "#4a9eff" },
   tapButton: { borderLeftWidth: 4, borderLeftColor: "#ffa500" },
   gameButtonIcon: { fontSize: 32, marginRight: 16 },
   gameButtonContent: { flex: 1 },
-  gameButtonTitle: { fontSize: 16, fontWeight: "bold", color: "#333", marginBottom: 4 },
-  gameButtonSubtitle: { fontSize: 13, color: "#999" },
+  gameButtonTitle: { fontSize: 16, fontWeight: "bold", color: "#fff", marginBottom: 4 },
+  gameButtonSubtitle: { fontSize: 13, color: "#7a8099" },
 });
 
 export default ProfileScreen;

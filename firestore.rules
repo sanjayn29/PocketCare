@@ -57,5 +57,15 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // User Stats (Streak tracking and daily usage)
+    match /userStats/{email} {
+      allow read, write: if true;
+    }
+
+    // User Activity Heatmap
+    match /users/{userId}/activity/{document=**} {
+      allow read, write: if true;
+    }
+
   }
 }

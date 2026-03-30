@@ -4,30 +4,30 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator, Alert,
-  Dimensions,
-  FlatList,
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal, Platform, ScrollView, StyleSheet, Switch, Text,
-  TextInput, TouchableOpacity, View
+    ActivityIndicator, Alert,
+    Dimensions,
+    FlatList,
+    Keyboard,
+    KeyboardAvoidingView,
+    Modal, Platform, ScrollView, StyleSheet, Switch, Text,
+    TextInput, TouchableOpacity, View
 } from 'react-native';
 import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
 import {
-  addDebt,
-  addFinanceGoal,
-  addTransaction,
-  Debt,
-  DebtInterestType,
-  deleteDebt,
-  deleteFinanceGoal,
-  deleteTransaction,
-  FinanceGoal, getFinanceData,
-  Transaction,
-  TransactionType,
-  updateDebt,
-  updateFinanceGoal,
-  updateTransaction
+    addDebt,
+    addFinanceGoal,
+    addTransaction,
+    Debt,
+    DebtInterestType,
+    deleteDebt,
+    deleteFinanceGoal,
+    deleteTransaction,
+    FinanceGoal, getFinanceData,
+    Transaction,
+    TransactionType,
+    updateDebt,
+    updateFinanceGoal,
+    updateTransaction
 } from '../../lib/finance-service';
 
 const screenWidth = Dimensions.get('window').width;
