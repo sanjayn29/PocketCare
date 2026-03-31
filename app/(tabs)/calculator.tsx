@@ -48,8 +48,14 @@ export default function CalculatorScreen() {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const colors = getColors(isDark)
-  const brightGold = '#FFD700'
-  const softGold = '#E8C96A'
+  
+  // Multi-color palette for premium feel
+  const uiColors = {
+    primary: '#3B82F6',   // Blue for Basic
+    secondary: '#8B5CF6', // Purple for Interest
+    tertiary: '#10B981',  // Green for History
+    accent: '#F59E0B',    // Amber for highlights
+  }
   
   const backButtonScale = useRef(new Animated.Value(1)).current
   const [fontsLoaded] = useFonts({
@@ -455,6 +461,7 @@ export default function CalculatorScreen() {
 
   const clearExpression = () => {
     setBasicExpression('');
+    setBasicTitle('');
     setBasicResult(null);
   };
 
@@ -475,7 +482,7 @@ export default function CalculatorScreen() {
       alignItems: 'center',
       backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
       borderWidth: 1.5,
-      borderColor: '#FFD700',
+      borderColor: '#3B82F6',
     },
     backButtonText: {
       fontSize: 22,
@@ -535,18 +542,50 @@ export default function CalculatorScreen() {
       color: colors.textSecondary,
       marginBottom: 6,
     },
-    tabTextActive: {
-      color: '#FFD700',
+    tabTextActiveBasic: {
+      color: '#3B82F6',
       fontWeight: '900',
     },
-    activeIndicator: {
+    tabTextActiveInterest: {
+      color: '#8B5CF6',
+      fontWeight: '900',
+    },
+    tabTextActiveHistory: {
+      color: '#10B981',
+      fontWeight: '900',
+    },
+    activeIndicatorBasic: {
       position: 'absolute',
       bottom: -8,
       width: '60%',
       height: 3,
-      backgroundColor: '#FFD700',
+      backgroundColor: '#3B82F6',
       borderRadius: 2,
-      shadowColor: '#FFD700',
+      shadowColor: '#3B82F6',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.5,
+      shadowRadius: 4,
+    },
+    activeIndicatorInterest: {
+      position: 'absolute',
+      bottom: -8,
+      width: '60%',
+      height: 3,
+      backgroundColor: '#8B5CF6',
+      borderRadius: 2,
+      shadowColor: '#8B5CF6',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.5,
+      shadowRadius: 4,
+    },
+    activeIndicatorHistory: {
+      position: 'absolute',
+      bottom: -8,
+      width: '60%',
+      height: 3,
+      backgroundColor: '#10B981',
+      borderRadius: 2,
+      shadowColor: '#10B981',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.5,
       shadowRadius: 4,
@@ -608,8 +647,8 @@ export default function CalculatorScreen() {
       justifyContent: 'center',
     },
     segmentBtnActive: {
-      backgroundColor: isDark ? 'rgba(255, 215, 0, 0.15)' : 'rgba(255, 215, 0, 0.1)',
-      borderColor: '#FFD700',
+      backgroundColor: isDark ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.1)',
+      borderColor: '#8B5CF6',
     },
     segmentBtnText: {
       fontSize: 12,
@@ -617,7 +656,7 @@ export default function CalculatorScreen() {
       fontWeight: '600',
     },
     segmentBtnTextActive: {
-      color: isDark ? '#FFD700' : '#B8860B',
+      color: isDark ? '#8B5CF6' : '#6D28D9',
       fontWeight: '700',
     },
     input: {
@@ -633,18 +672,18 @@ export default function CalculatorScreen() {
     },
     calculateBtn: {
       marginTop: 8,
-      backgroundColor: '#FFD700',
+      backgroundColor: '#8B5CF6',
       borderRadius: 18,
       paddingVertical: 14,
       alignItems: 'center',
-      shadowColor: '#FFD700',
+      shadowColor: '#8B5CF6',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.2,
       shadowRadius: 8,
       elevation: 4,
     },
     calculateBtnText: {
-      color: '#000000',
+      color: '#FFFFFF',
       fontWeight: '700',
       fontSize: 16,
     },
@@ -652,9 +691,9 @@ export default function CalculatorScreen() {
       marginTop: 20,
       padding: 16,
       borderRadius: 20,
-      backgroundColor: isDark ? 'rgba(255, 215, 0, 0.05)' : 'rgba(255, 215, 0, 0.03)',
+      backgroundColor: isDark ? 'rgba(139, 92, 246, 0.08)' : 'rgba(139, 92, 246, 0.05)',
       borderWidth: 1,
-      borderColor: 'rgba(255, 215, 0, 0.3)',
+      borderColor: 'rgba(139, 92, 246, 0.3)',
     },
     resultLabel: {
       fontSize: 12,
@@ -688,21 +727,21 @@ export default function CalculatorScreen() {
       color: colors.text,
     },
     equalsBtn: {
-      backgroundColor: '#FFD700',
-      borderColor: '#FFD700',
+      backgroundColor: '#3B82F6',
+      borderColor: '#3B82F6',
     },
     equalsBtnText: {
-      color: '#000000',
+      color: '#FFFFFF',
       fontWeight: '700',
     },
     clearBtn: {
-      backgroundColor: '#EF4444',
-      borderColor: '#EF4444',
+      backgroundColor: '#3B82F6',
+      borderColor: '#3B82F6',
       flexDirection: 'row',
     },
     deleteBtn: {
-      backgroundColor: colors.secondary,
-      borderColor: colors.secondary,
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.2)' : '#000000',
+      borderColor: isDark ? '#3B82F6' : '#000000',
       flexDirection: 'row',
     },
     utilityBtnText: {
@@ -714,27 +753,27 @@ export default function CalculatorScreen() {
       marginTop: 20,
       borderRadius: 20,
       padding: 16,
-      backgroundColor: isDark ? 'rgba(34, 197, 94, 0.1)' : 'rgba(34, 197, 94, 0.05)',
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.05)',
       borderWidth: 1,
-      borderColor: 'rgba(34, 197, 94, 0.3)',
+      borderColor: 'rgba(59, 130, 246, 0.3)',
     },
     basicResultLabel: {
       fontSize: 12,
       fontWeight: '700',
-      color: '#22C55E',
+      color: '#3B82F6',
     },
     basicResultValue: {
       marginTop: 4,
       fontSize: 28,
       fontFamily: 'Roboto Slab',
       fontWeight: '700',
-      color: '#22C55E',
+      color: '#3B82F6',
     },
     historyCard: {
-      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.8)',
+      backgroundColor: isDark ? 'rgba(16, 185, 129, 0.03)' : 'rgba(16, 185, 129, 0.02)',
       borderRadius: 20,
       borderWidth: 1,
-      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+      borderColor: isDark ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.1)',
       marginBottom: 16,
       padding: 16,
     },
@@ -746,7 +785,7 @@ export default function CalculatorScreen() {
     historyTitle: {
       fontSize: 16,
       fontWeight: '800',
-      color: colors.text,
+      color: isDark ? '#10B981' : '#059669',
     },
     historyMeta: {
       marginTop: 2,
@@ -770,7 +809,7 @@ export default function CalculatorScreen() {
     entryType: {
       fontSize: 13,
       fontWeight: '700',
-      color: isDark ? '#FFD700' : '#B8860B',
+      color: isDark ? '#10B981' : '#059669',
     },
     entryText: {
       marginTop: 2,
@@ -831,7 +870,7 @@ export default function CalculatorScreen() {
       fontWeight: '600',
     },
     modalSaveBtn: {
-      backgroundColor: '#FFD700',
+      backgroundColor: '#3B82F6',
       borderRadius: 14,
       paddingHorizontal: 20,
       paddingVertical: 12,
@@ -839,7 +878,7 @@ export default function CalculatorScreen() {
       alignItems: 'center',
     },
     modalSaveText: {
-      color: '#000000',
+      color: '#FFFFFF',
       fontWeight: '700',
     },
     filterContainer: {
@@ -877,8 +916,8 @@ export default function CalculatorScreen() {
       gap: 6,
     },
     filterBtnActive: {
-      backgroundColor: isDark ? 'rgba(255, 215, 0, 0.15)' : 'rgba(255, 215, 0, 0.1)',
-      borderColor: '#FFD700',
+      backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)',
+      borderColor: '#10B981',
     },
     filterBtnText: {
       fontSize: 13,
@@ -886,7 +925,7 @@ export default function CalculatorScreen() {
       fontWeight: '500',
     },
     filterBtnTextActive: {
-      color: isDark ? '#FFD700' : '#B8860B',
+      color: isDark ? '#10B981' : '#059669',
       fontWeight: '700',
     },
     customDateContainer: {
@@ -1075,14 +1114,14 @@ export default function CalculatorScreen() {
               <Ionicons
                 name="calculator-outline"
                 size={18}
-                color={activeTab === 'basic' ? '#FFD700' : '#64748B'}
+                color={activeTab === 'basic' ? '#3B82F6' : '#64748B'}
                 style={{ marginRight: 8 }}
               />
-              <Text style={[dynamicStyles.tabText, activeTab === 'basic' && dynamicStyles.tabTextActive, { marginBottom: 0 }]}>
+              <Text style={[dynamicStyles.tabText, activeTab === 'basic' && dynamicStyles.tabTextActiveBasic, { marginBottom: 0 }]}>
                 Basic
               </Text>
             </View>
-            {activeTab === 'basic' && <View style={dynamicStyles.activeIndicator} />}
+            {activeTab === 'basic' && <View style={dynamicStyles.activeIndicatorBasic} />}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -1093,14 +1132,14 @@ export default function CalculatorScreen() {
               <Ionicons
                 name="trending-up-outline"
                 size={18}
-                color={activeTab === 'interest' ? '#FFD700' : '#64748B'}
+                color={activeTab === 'interest' ? '#8B5CF6' : '#64748B'}
                 style={{ marginRight: 8 }}
               />
-              <Text style={[dynamicStyles.tabText, activeTab === 'interest' && dynamicStyles.tabTextActive, { marginBottom: 0 }]}>
+              <Text style={[dynamicStyles.tabText, activeTab === 'interest' && dynamicStyles.tabTextActiveInterest, { marginBottom: 0 }]}>
                 Interest (SI/CI)
               </Text>
             </View>
-            {activeTab === 'interest' && <View style={dynamicStyles.activeIndicator} />}
+            {activeTab === 'interest' && <View style={dynamicStyles.activeIndicatorInterest} />}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -1111,14 +1150,14 @@ export default function CalculatorScreen() {
               <Ionicons
                 name="list-outline"
                 size={18}
-                color={activeTab === 'history' ? '#FFD700' : '#64748B'}
+                color={activeTab === 'history' ? '#10B981' : '#64748B'}
                 style={{ marginRight: 8 }}
               />
-              <Text style={[dynamicStyles.tabText, activeTab === 'history' && dynamicStyles.tabTextActive, { marginBottom: 0 }]}>
+              <Text style={[dynamicStyles.tabText, activeTab === 'history' && dynamicStyles.tabTextActiveHistory, { marginBottom: 0 }]}>
                 History
               </Text>
             </View>
-            {activeTab === 'history' && <View style={dynamicStyles.activeIndicator} />}
+            {activeTab === 'history' && <View style={dynamicStyles.activeIndicatorHistory} />}
           </TouchableOpacity>
         </View>
 
