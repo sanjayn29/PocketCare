@@ -4,10 +4,11 @@ import { ThemedView } from '@/components/themed-view'
 import { getColors } from '@/constants/styles'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import { Ionicons } from '@expo/vector-icons'
+import { useFonts } from 'expo-font'
 import { useRouter } from 'expo-router'
 import LottieView from 'lottie-react-native'
 import React, { useEffect, useRef, useState } from 'react'
-import { Animated, Pressable, StyleSheet, View } from 'react-native'
+import { Animated, Linking, Pressable, StyleSheet, View } from 'react-native'
 
 type OnboardingPageData =
   | {
@@ -25,7 +26,7 @@ type OnboardingPageData =
 const ONBOARDING_PAGES: readonly OnboardingPageData[] = [
   {
     type: 'intro',
-    title: 'PocketCare',
+    title: 'Pocket\nCare',
     subtitle: '"Care, clarity, and control — all in your pocket."',
   },
   {
@@ -85,7 +86,15 @@ export default function OnboardingPage() {
     ).start()
   }, [floatAnim])
 
+  const [fontsLoaded] = useFonts({
+    'Momo Signature': require('../assets/Font/MomoSignature-Regular.ttf'),
+  })
+
   const page = ONBOARDING_PAGES[pageIndex]
+
+  if (!fontsLoaded) {
+    return null
+  }
 
   const onNext = () => {
     if (pageIndex < ONBOARDING_PAGES.length - 1) {
@@ -100,6 +109,10 @@ export default function OnboardingPage() {
     router.replace('/(tabs)')
   }
 
+  const onDeveloperPress = () => {
+    Linking.openURL('https://www.sanjayn.me')
+  }
+
   return (
     <ThemedView style={[styles.container, { backgroundColor: colors.background }]}> 
       <View style={styles.canvas}>
@@ -107,7 +120,7 @@ export default function OnboardingPage() {
           <View style={[styles.glowCircle, { backgroundColor: `${colors.primary}20` }]} />
           {page.type === 'intro' ? (
             <View style={styles.introContent}>
-              <ThemedText type="title" style={[styles.introTitle, { color: colors.primary }]}>{page.title}</ThemedText>
+              <ThemedText style={[styles.introTitle, { color: colors.primary }]}>{page.title}</ThemedText>
               <ThemedText style={[styles.introQuote, { color: colors.text }]}>{page.subtitle}</ThemedText>
               <LottieView
                 source={require('../assets/animations/Intro.json')}
@@ -115,6 +128,15 @@ export default function OnboardingPage() {
                 loop
                 style={styles.introAnimation}
               />
+              <Pressable onPress={onDeveloperPress} style={({ pressed }) => [styles.devLinkButton, pressed && styles.buttonPressed]}>
+                <View style={styles.devLinkRow}>
+                  
+                  <ThemedText style={[styles.devPrefixText, { color: isDark ? '#FFFFFF' : '#111111' }]}>Developed by</ThemedText>
+                  <View style={styles.devNameWrap}>
+                    <ThemedText style={styles.devNameText}>Sanjay N</ThemedText>
+                  </View>
+                </View>
+              </Pressable>
             </View>
           ) : (
             <View style={styles.diagramRow}>
@@ -137,7 +159,7 @@ export default function OnboardingPage() {
       <View style={styles.body}>
         {page.type !== 'intro' && (
           <>
-            <ThemedText type="title" style={[styles.title, { color: colors.text }]}>{page.title}</ThemedText>
+            <ThemedText style={[styles.title, { color: colors.text }]}>{page.title}</ThemedText>
             <ThemedText style={[styles.subtitle, { color: colors.textSecondary }]}>{page.subtitle}</ThemedText>
           </>
         )}
@@ -209,11 +231,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   introTitle: {
-    fontSize: 42,
-    lineHeight: 48,
-    fontWeight: '900',
+    fontFamily: 'Momo Signature',
+    fontSize: 48,
+    lineHeight: 54,
     textAlign: 'center',
     marginBottom: 18,
+  },
+  title: {
+    fontFamily: 'Momo Signature',
+    fontSize: 30,
+    lineHeight: 36,
+    marginBottom: 16,
   },
   introQuote: {
     fontSize: 18,
@@ -223,9 +251,34 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   introAnimation: {
-    width: 220,
-    height: 220,
-    marginTop: 8,
+    width: 280,
+    height: 280,
+    marginTop: 12,
+  },
+  devLinkButton: {
+    marginTop: 10,
+  },
+  devLinkRow: {
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  devPrefixText: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  devNameText: {
+    fontFamily: 'Momo Signature',
+    fontSize: 22,
+    color: '#D4AF37',
+    textDecorationLine: 'underline',
+    textDecorationColor: '#D4AF37',
+    textAlign: 'center',
+  },
+  devNameWrap: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#D4AF37',
+    paddingBottom: 2,
+    marginTop: 2,
   },
   blockCard: {
     width: 260,
@@ -255,12 +308,6 @@ const styles = StyleSheet.create({
   },
   body: {
     marginTop: 24,
-  },
-  title: {
-    fontSize: 30,
-    lineHeight: 36,
-    fontWeight: '800',
-    marginBottom: 16,
   },
   subtitle: {
     fontSize: 16,
