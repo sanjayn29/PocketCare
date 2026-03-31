@@ -1,4 +1,4 @@
-import FloatingActionButton from '@/components/FloatingActionButton';
+
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useUser } from '@clerk/expo';
@@ -1143,7 +1143,7 @@ export default function TasksScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
-      <FloatingActionButton />
+
     </KeyboardAvoidingView>
   );
 }

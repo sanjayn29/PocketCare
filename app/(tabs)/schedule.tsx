@@ -1,4 +1,4 @@
-import FloatingActionButton from '@/components/FloatingActionButton';
+
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import {
@@ -797,7 +797,7 @@ export default function ScheduleScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
-      <FloatingActionButton />
+
     </KeyboardAvoidingView>
   );
 }

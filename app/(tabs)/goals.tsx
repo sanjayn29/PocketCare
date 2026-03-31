@@ -1,4 +1,4 @@
-import FloatingActionButton from '@/components/FloatingActionButton';
+
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import React, { useEffect, useState } from 'react';
@@ -774,7 +774,7 @@ export default function GoalsScreen() {
           </ScrollView>
         </KeyboardAvoidingView>
       </Modal>
-      <FloatingActionButton />
+
     </KeyboardAvoidingView>
   );
 }

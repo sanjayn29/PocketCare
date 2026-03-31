@@ -1,4 +1,4 @@
-import FloatingActionButton from '@/components/FloatingActionButton';
+
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useUser } from '@clerk/expo';
@@ -494,7 +494,7 @@ export default function HealthScreen() {
       {renderEditModal(editingDiet !== null, () => setEditingDiet(null), handleUpdateDietProps, 'Edit Diet Plan', colors.success)}
       {renderEditModal(editingFitness !== null, () => setEditingFitness(null), handleUpdateFitnessProps, 'Edit Fitness Plan', colors.primary)}
 
-      <FloatingActionButton />
+
     </KeyboardAvoidingView>
   );
 }

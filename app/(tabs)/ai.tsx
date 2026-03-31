@@ -1,5 +1,5 @@
 
-import FloatingActionButton from '@/components/FloatingActionButton'
+
 import { getColors } from '@/constants/styles'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import { getAIResponse, getProductivityInsight } from '@/lib/ai-service'
@@ -304,7 +304,7 @@ export default function AIScreen() {
             <Text style={dynamicStyles.sendButtonText}>Send</Text>
           </TouchableOpacity>
         </View>
-        <FloatingActionButton />
+
       </View>
     </KeyboardAvoidingView>
   )

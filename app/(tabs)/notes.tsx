@@ -1,4 +1,4 @@
-import FloatingActionButton from '@/components/FloatingActionButton';
+
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
@@ -680,7 +680,7 @@ export default function NotesScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
-      <FloatingActionButton />
+
     </KeyboardAvoidingView>
   );
 }
