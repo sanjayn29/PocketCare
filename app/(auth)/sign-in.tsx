@@ -11,12 +11,12 @@ import LottieView from 'lottie-react-native'
 import React, { useEffect, useState } from 'react'
 import { ActivityIndicator, Dimensions, Image, Pressable, StyleSheet, Text, View } from 'react-native'
 import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming
+    Easing,
+    useAnimatedStyle,
+    useSharedValue,
+    withRepeat,
+    withSequence,
+    withTiming
 } from 'react-native-reanimated'
 
 const { width } = Dimensions.get('window');
@@ -141,6 +141,7 @@ export default function AuthPage() {
     logo: {
       width: 200,
       height: 200,
+      borderRadius: 24,
     },
     actionSection: {
       alignItems: 'center',
@@ -150,10 +151,11 @@ export default function AuthPage() {
       backgroundColor: colors.primary,
       borderWidth: 2,
       borderColor: colors.primary,
-      paddingVertical: 16,
-      paddingHorizontal: 24,
-      borderRadius: 100,
-      width: '100%',
+      paddingVertical: 12,
+      paddingHorizontal: 18,
+      borderRadius: 90,
+      width: '90%',
+      maxWidth: 360,
       shadowColor: colors.primary,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.3,
@@ -169,7 +171,7 @@ export default function AuthPage() {
     googleButtonText: {
       color: colors.text,
       fontFamily: 'Momo Signature',
-      fontSize: 22,
+      fontSize: 18,
       fontStyle: 'normal',
     },
     buttonPressed: {
@@ -335,7 +337,7 @@ export default function AuthPage() {
                 source={require('../../assets/animations/Google.json')}
                 autoPlay
                 loop
-                style={{ width: 48, height: 48, marginRight: 16 }}
+                style={{ width: 38, height: 38, marginRight: 12, borderRadius: 12, overflow: 'hidden' }}
               />
               <Text style={dynamicStyles.googleButtonText}>Continue with Google</Text>
             </View>
