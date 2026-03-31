@@ -21,30 +21,31 @@ import {
 
 type TabView = 'placements' | 'companies';
 
-const STATUS_CONFIG: Record<PlacementStatus, { label: string; color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }> = {
-  applied:   { label: 'Applied',   color: '#3B82F6', bg: '#EFF6FF', icon: 'paper-plane' },
-  interview: { label: 'Interview', color: '#F59E0B', bg: '#FFFBEB', icon: 'mic' },
-  offer:     { label: 'Offer',     color: '#10B981', bg: '#ECFDF5', icon: 'trophy' },
-  rejected:  { label: 'Rejected',  color: '#EF4444', bg: '#FEF2F2', icon: 'close-circle' },
-};
+// Dynamic config based on theme
+const getStatusConfig = (colors: any): Record<PlacementStatus, { label: string; color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }> => ({
+  applied:   { label: 'Applied',   color: colors.info, bg: colors.overlay, icon: 'paper-plane' },
+  interview: { label: 'Interview', color: colors.warning, bg: colors.overlay, icon: 'mic' },
+  offer:     { label: 'Offer',     color: colors.success, bg: colors.overlay, icon: 'trophy' },
+  rejected:  { label: 'Rejected',  color: colors.danger, bg: colors.overlay, icon: 'close-circle' },
+});
 
-const COMPANY_STATUS_CONFIG: Record<CompanyStatus, { label: string; color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }> = {
-  present:   { label: 'Present',   color: '#8B5CF6', bg: '#FAF5FF', icon: 'checkmark-circle' },
-  completed: { label: 'Completed', color: '#10B981', bg: '#ECFDF5', icon: 'checkmark-done' },
-  upcoming:  { label: 'Upcoming',  color: '#F59E0B', bg: '#FFFBEB', icon: 'calendar' },
-};
+const getCompanyStatusConfig = (colors: any): Record<CompanyStatus, { label: string; color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }> => ({
+  present:   { label: 'Present',   color: colors.primary, bg: colors.overlay, icon: 'checkmark-circle' },
+  completed: { label: 'Completed', color: colors.success, bg: colors.overlay, icon: 'checkmark-done' },
+  upcoming:  { label: 'Upcoming',  color: colors.warning, bg: colors.overlay, icon: 'calendar' },
+});
 
-const ROUND_RESULT_CONFIG: Record<PlacementRound['result'], { label: string; color: string; bg: string }> = {
-  success:  { label: 'Cleared ✓', color: '#10B981', bg: '#ECFDF5' },
-  rejected: { label: 'Rejected ✗', color: '#EF4444', bg: '#FEF2F2' },
-  pending:  { label: 'Pending…',   color: '#F59E0B', bg: '#FFFBEB' },
-};
+const getRoundResultConfig = (colors: any): Record<PlacementRound['result'], { label: string; color: string; bg: string }> => ({
+  success:  { label: 'Cleared ✓', color: colors.success, bg: colors.overlay },
+  rejected: { label: 'Rejected ✗', color: colors.danger, bg: colors.overlay },
+  pending:  { label: 'Pending…',   color: colors.warning, bg: colors.overlay },
+});
 
 // ─── DatePickerInput ─────────────────────────────────────────────────────────
 
-type DatePickerInputProps = { value: string; onChange: (v: string) => void };
+type DatePickerInputProps = { value: string; onChange: (v: string) => void; colors: any; styles: any };
 
-const DatePickerInput = React.memo(({ value, onChange }: DatePickerInputProps) => {
+const DatePickerInput = React.memo(({ value, onChange, colors, styles }: DatePickerInputProps) => {
   const [show, setShow] = useState(false);
 
   // Parse stored string → Date (fallback to today)
@@ -68,10 +69,10 @@ const DatePickerInput = React.memo(({ value, onChange }: DatePickerInputProps) =
 
   return (
     <View>
-      <TouchableOpacity style={styles.dateBtn} onPress={() => setShow(true)} activeOpacity={0.75}>
-        <Ionicons name="calendar-outline" size={16} color="#3B82F6" style={{ marginRight: 8 }} />
-        <Text style={[styles.dateBtnText, !value && { color: '#94A3B8' }]}>{displayLabel}</Text>
-        <Ionicons name="chevron-down" size={14} color="#94A3B8" style={{ marginLeft: 'auto' }} />
+      <TouchableOpacity style={[{ paddingVertical: 12, paddingHorizontal: 12, borderRadius: 8, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]} onPress={() => setShow(true)} activeOpacity={0.75}>
+        <Ionicons name="calendar-outline" size={16} color={colors.primary} style={{ marginRight: 8 }} />
+        <Text style={[{ fontSize: 14, fontWeight: '500', color: value ? colors.text : colors.textSecondary }]}>{displayLabel}</Text>
+        <Ionicons name="chevron-down" size={14} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
       </TouchableOpacity>
 
       {show && (
@@ -85,8 +86,8 @@ const DatePickerInput = React.memo(({ value, onChange }: DatePickerInputProps) =
         />
       )}
       {show && Platform.OS === 'ios' && (
-        <TouchableOpacity style={styles.dateDoneBtn} onPress={() => setShow(false)}>
-          <Text style={styles.dateDoneBtnText}>Done</Text>
+        <TouchableOpacity style={[{ padding: 12, backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.border, alignItems: 'center' }]} onPress={() => setShow(false)}>
+          <Text style={[{ fontSize: 16, fontWeight: '600', color: colors.primary }]}>Done</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -96,29 +97,32 @@ const DatePickerInput = React.memo(({ value, onChange }: DatePickerInputProps) =
 // ─── Sub-components (defined OUTSIDE main component to prevent remounts) ──────
 
 const RoundResultSelector = React.memo(({
-  value, onChange,
-}: { value: PlacementRound['result']; onChange: (v: PlacementRound['result']) => void }) => (
-  <View style={styles.resultRow}>
-    {(['success', 'pending', 'rejected'] as PlacementRound['result'][]).map(r => {
-      const active = value === r;
-      const cfg = ROUND_RESULT_CONFIG[r];
-      return (
-        <TouchableOpacity
-          key={r}
-          style={[styles.resultChip, active && { backgroundColor: cfg.color, borderColor: cfg.color }]}
-          onPress={() => onChange(r)}
-        >
-          <Text style={[styles.resultChipText, active && { color: '#FFF' }]}>{cfg.label}</Text>
-        </TouchableOpacity>
-      );
-    })}
-  </View>
-));
+  value, onChange, colors, styles
+}: { value: PlacementRound['result']; onChange: (v: PlacementRound['result']) => void; colors: any; styles: any }) => {
+  const ROUND_RESULT_CONFIG = getRoundResultConfig(colors);
+  return (
+    <View style={styles.resultRow}>
+      {(['success', 'pending', 'rejected'] as PlacementRound['result'][]).map(r => {
+        const active = value === r;
+        const cfg = ROUND_RESULT_CONFIG[r];
+        return (
+          <TouchableOpacity
+            key={r}
+            style={[styles.resultChip, active && { backgroundColor: cfg.color, borderColor: cfg.color }]}
+            onPress={() => onChange(r)}
+          >
+            <Text style={[styles.resultChipText, active && { color: '#FFF' }]}>{cfg.label}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+});
 
 const RoundCard = React.memo(({
-  round, onDelete, onResultChange,
-}: { round: PlacementRound; onDelete?: () => void; onResultChange?: (v: PlacementRound['result']) => void }) => {
-  const cfg = ROUND_RESULT_CONFIG[round.result];
+  round, onDelete, onResultChange, colors, styles,
+}: { round: PlacementRound; onDelete?: () => void; onResultChange?: (v: PlacementRound['result']) => void; colors: any; styles: any }) => {
+  const cfg = getRoundResultConfig(colors)[round.result];
   return (
     <View style={styles.roundCard}>
       <View style={styles.roundHeader}>
@@ -129,12 +133,12 @@ const RoundCard = React.memo(({
         </View>
         {onDelete && (
           <TouchableOpacity onPress={onDelete} style={{ marginLeft: 6 }}>
-            <Ionicons name="trash-outline" size={15} color="#EF4444" />
+            <Ionicons name="trash-outline" size={15} color={colors.danger} />
           </TouchableOpacity>
         )}
       </View>
       {round.description ? <Text style={styles.roundDesc}>{round.description}</Text> : null}
-      {onResultChange && <RoundResultSelector value={round.result} onChange={onResultChange} />}
+      {onResultChange && <RoundResultSelector value={round.result} onChange={onResultChange} colors={colors} styles={styles} />}
     </View>
   );
 });
@@ -144,9 +148,9 @@ type AddRoundFormProps = {
   topic: string; setTopic: (v: string) => void;
   desc: string; setDesc: (v: string) => void;
   result: PlacementRound['result']; setResult: (v: PlacementRound['result']) => void;
-  onAdd: () => void; onCancel: () => void;
+  onAdd: () => void; onCancel: () => void; colors: any; styles: any;
 };
-const AddRoundForm = React.memo(({ topic, setTopic, desc, setDesc, result, setResult, onAdd, onCancel }: AddRoundFormProps) => (
+const AddRoundForm = React.memo(({ topic, setTopic, desc, setDesc, result, setResult, onAdd, onCancel, colors, styles }: AddRoundFormProps) => (
   <View style={styles.addRoundForm}>
     <TextInput
       style={styles.input}
@@ -164,7 +168,7 @@ const AddRoundForm = React.memo(({ topic, setTopic, desc, setDesc, result, setRe
       onChangeText={setDesc}
     />
     <Text style={styles.selectorLabel}>Result:</Text>
-    <RoundResultSelector value={result} onChange={setResult} />
+    <RoundResultSelector value={result} onChange={setResult} colors={colors} styles={styles} />
     <View style={styles.rowBtns}>
       <TouchableOpacity style={styles.cancelBtn} onPress={onCancel}>
         <Text style={styles.cancelBtnText}>Cancel</Text>
@@ -194,6 +198,8 @@ type CreateCardProps = {
   handleSave: () => void;
   isSavingNew: boolean;
   resetCreate: () => void;
+  colors: any;
+  styles: any;
 };
 
 const CreateCard = React.memo(({
@@ -210,7 +216,13 @@ const CreateCard = React.memo(({
   roundResult, setRoundResult,
   addRoundToNew,
   handleSave, isSavingNew, resetCreate,
-}: CreateCardProps) => (
+  colors,
+  styles,
+}: CreateCardProps) => {
+  const STATUS_CONFIG = getStatusConfig(colors);
+  const ROUND_RESULT_CONFIG = getRoundResultConfig(colors);
+
+  return (
   <View style={styles.createCard}>
     {isCreating ? (
       <View style={styles.createExpanded}>
@@ -222,12 +234,12 @@ const CreateCard = React.memo(({
           onChangeText={setNewCompany}
           autoFocus
         />
-        <DatePickerInput value={newDate} onChange={setNewDate} />
+        <DatePickerInput value={newDate} onChange={setNewDate} colors={colors} styles={styles} />
 
         <Text style={styles.selectorLabel}>Application Status:</Text>
         <View style={styles.statusRow}>
           {(['interview', 'offer', 'rejected'] as PlacementStatus[]).map(s => {
-            const cfg = STATUS_CONFIG[s];
+            const cfg = getStatusConfig(colors)[s];
             const active = newStatus === s;
             return (
               <TouchableOpacity
@@ -245,7 +257,7 @@ const CreateCard = React.memo(({
         <Text style={styles.selectorLabel}>Company Status:</Text>
         <View style={styles.statusRow}>
           {(['present', 'completed', 'upcoming'] as CompanyStatus[]).map(s => {
-            const cfg = COMPANY_STATUS_CONFIG[s];
+            const cfg = getCompanyStatusConfig(colors)[s];
             const active = newCompanyStatus === s;
             return (
               <TouchableOpacity
@@ -265,14 +277,14 @@ const CreateCard = React.memo(({
           <Switch
             value={newStudied}
             onValueChange={setNewStudied}
-            trackColor={{ false: '#E2E8F0', true: '#3B82F6' }}
-            thumbColor={newStudied ? '#FFF' : '#CBD5E1'}
+            trackColor={{ false: colors.border, true: colors.primary }}
+            thumbColor={'#FFF'}
           />
         </View>
 
         <Text style={styles.selectorLabel}>Interview Rounds:</Text>
         {newRounds.map(r => (
-          <RoundCard key={r.id} round={r} onDelete={() => removeRoundFromNew(r.id)} />
+          <RoundCard key={r.id} round={r} onDelete={() => removeRoundFromNew(r.id)} colors={colors} styles={styles} />
         ))}
 
         {showAddRound ? (
@@ -280,11 +292,11 @@ const CreateCard = React.memo(({
             topic={roundTopic} setTopic={setRoundTopic}
             desc={roundDesc} setDesc={setRoundDesc}
             result={roundResult} setResult={setRoundResult}
-            onAdd={addRoundToNew} onCancel={() => setShowAddRound(false)}
+            onAdd={addRoundToNew} onCancel={() => setShowAddRound(false)} colors={colors} styles={styles}
           />
         ) : (
           <TouchableOpacity style={styles.addRoundBtn} onPress={() => setShowAddRound(true)}>
-            <Ionicons name="add-circle-outline" size={17} color="#3B82F6" />
+            <Ionicons name="add-circle-outline" size={17} color={colors.primary} />
             <Text style={styles.addRoundBtnText}>Add Interview Round</Text>
           </TouchableOpacity>
         )}
@@ -303,14 +315,15 @@ const CreateCard = React.memo(({
     ) : (
       <TouchableOpacity style={styles.createCollapsed} onPress={() => setIsCreating(true)}>
         <View style={styles.createIconWrap}>
-          <Ionicons name="briefcase-outline" size={20} color="#3B82F6" />
+          <Ionicons name="briefcase-outline" size={20} color={colors.info} />
         </View>
         <Text style={styles.createCollapsedText}>Track a new company application…</Text>
-        <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+        <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
       </TouchableOpacity>
     )}
   </View>
-));
+  );
+});
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
@@ -321,6 +334,9 @@ export default function PlacementScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const colors = getColors(isDark);
+
+  // Dynamic styles based on theme
+  const styles = useMemo(() => getStyles(colors), [colors]);
 
   const [placements, setPlacements] = useState<Placement[]>([]);
   const [loading, setLoading]       = useState(true);
@@ -706,18 +722,21 @@ export default function PlacementScreen() {
       roundResult={roundResult} setRoundResult={setRoundResult}
       addRoundToNew={addRoundToNew}
       handleSave={handleSave} isSavingNew={isSavingNew} resetCreate={resetCreate}
+      colors={colors}
+      styles={styles}
     />
   ), [
     isCreating, newCompany, newStatus, newCompanyStatus, newDate, newStudied, newRounds,
     showAddRound, roundTopic, roundDesc, roundResult,
-    addRoundToNew, removeRoundFromNew, handleSave, isSavingNew, resetCreate,
+    addRoundToNew, removeRoundFromNew, handleSave, isSavingNew, resetCreate, colors, styles,
   ]);
 
   // ── Placement card render ──
   const renderPlacement = useCallback(({ item }: { item: Placement }) => {
-    const cfg = STATUS_CONFIG[item.status];
-    const companyCfg = item.company_status ? COMPANY_STATUS_CONFIG[item.company_status] : null;
+    const cfg = getStatusConfig(colors)[item.status];
+    const companyCfg = item.company_status ? getCompanyStatusConfig(colors)[item.company_status] : null;
     const roundsDone = item.rounds.filter(r => r.result === 'success').length;
+    const ROUND_RESULT_CONFIG = getRoundResultConfig(colors);
     return (
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <TouchableOpacity style={styles.cardMain} onPress={() => openEdit(item)} activeOpacity={0.75}>
@@ -741,9 +760,9 @@ export default function PlacementScreen() {
                 </Text>
               </View>
             )}
-            <View style={[styles.metaChip, { backgroundColor: isDark ? '#1e563f' : '#ECFDF5', borderColor: isDark ? colors.border : undefined, borderWidth: isDark ? 1 : 0 }]}>
-              <Ionicons name={item.studied ? 'checkmark-circle' : 'close-circle-outline'} size={13} color={item.studied ? '#10B981' : colors.textSecondary} />
-              <Text style={[styles.metaChipText, { color: item.studied ? '#10B981' : colors.textSecondary }]}>
+            <View style={[styles.metaChip, { backgroundColor: item.studied ? (isDark ? '#1e563f' : '#ECFDF5') : colors.card, borderColor: isDark ? colors.border : undefined, borderWidth: isDark ? 1 : 0 }]}>
+              <Ionicons name={item.studied ? 'checkmark-circle' : 'close-circle-outline'} size={13} color={item.studied ? colors.success : colors.textSecondary} />
+              <Text style={[styles.metaChipText, { color: item.studied ? colors.success : colors.textSecondary }]}>
                 {item.studied ? 'Studied' : 'Not Studied'}
               </Text>
             </View>
@@ -770,7 +789,7 @@ export default function PlacementScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.deleteArea} onPress={() => handleDelete(item.id)} hitSlop={10}>
-          <Ionicons name="trash-outline" size={20} color="#FF5252" />
+          <Ionicons name="trash-outline" size={20} color={colors.danger} />
         </TouchableOpacity>
       </View>
     );
@@ -812,7 +831,7 @@ export default function PlacementScreen() {
           <View style={styles.filterRow}>
             {(['all', 'interview', 'offer', 'rejected'] as const).map(s => {
               const active = filterStatus === s;
-              const label = s === 'all' ? 'All' : STATUS_CONFIG[s].label;
+              const label = s === 'all' ? 'All' : getStatusConfig(colors)[s].label;
               return (
                 <TouchableOpacity
                   key={s}
@@ -828,7 +847,7 @@ export default function PlacementScreen() {
           </View>
 
           {loading ? (
-            <View style={styles.center}><ActivityIndicator size="large" color="#3B82F6" /></View>
+            <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
           ) : (
             <FlatList
               data={filteredPlacements}
@@ -843,7 +862,7 @@ export default function PlacementScreen() {
               keyboardDismissMode="none"
               ListEmptyComponent={
                 <View style={styles.emptyWrap}>
-                  <Ionicons name="briefcase-outline" size={60} color="#CBD5E1" />
+                  <Ionicons name="briefcase-outline" size={60} color={colors.textSecondary} />
                   <Text style={styles.emptyText}>No applications tracked yet.</Text>
                 </View>
               }
@@ -859,8 +878,8 @@ export default function PlacementScreen() {
           <View style={styles.filterRow}>
             {(['all', 'present', 'completed', 'upcoming'] as const).map(s => {
               const active = companyStatusFilter === s;
-              const label = s === 'all' ? 'All' : COMPANY_STATUS_CONFIG[s].label;
-              const cfg = s === 'all' ? null : COMPANY_STATUS_CONFIG[s];
+              const label = s === 'all' ? 'All' : getCompanyStatusConfig(colors)[s].label;
+              const cfg = s === 'all' ? null : getCompanyStatusConfig(colors)[s];
               return (
                 <TouchableOpacity
                   key={s}
@@ -876,7 +895,7 @@ export default function PlacementScreen() {
           </View>
 
           {loading ? (
-            <View style={styles.center}><ActivityIndicator size="large" color="#3B82F6" /></View>
+            <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
           ) : (
             <FlatList
               data={filteredCompanies}
@@ -890,7 +909,7 @@ export default function PlacementScreen() {
               keyboardDismissMode="none"
               ListEmptyComponent={
                 <View style={styles.emptyWrap}>
-                  <Ionicons name="layers-outline" size={60} color="#CBD5E1" />
+                  <Ionicons name="layers-outline" size={60} color={colors.textSecondary} />
                   <Text style={styles.emptyText}>No companies in this category.</Text>
                 </View>
               }
@@ -909,19 +928,19 @@ export default function PlacementScreen() {
             <Text style={styles.modalTitle}>Edit Application</Text>
             <TouchableOpacity onPress={handleSaveEdit} disabled={isSavingEdit}>
               {isSavingEdit
-                ? <ActivityIndicator size="small" color="#3B82F6" />
+                ? <ActivityIndicator size="small" color={colors.primary} />
                 : <Text style={styles.saveHeaderText}>Save</Text>}
             </TouchableOpacity>
           </View>
 
           <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled">
             <TextInput style={styles.titleInput} placeholder="Company Name" value={editCompany} onChangeText={setEditCompany} />
-            <DatePickerInput value={editDate} onChange={setEditDate} />
+            <DatePickerInput value={editDate} onChange={setEditDate} colors={colors} styles={styles} />
 
             <Text style={styles.selectorLabel}>Application Status:</Text>
             <View style={styles.statusRow}>
               {(['interview', 'offer', 'rejected'] as PlacementStatus[]).map(s => {
-                const cfg = STATUS_CONFIG[s]; const active = editStatus === s;
+                const cfg = getStatusConfig(colors)[s]; const active = editStatus === s;
                 return (
                   <TouchableOpacity key={s} style={[styles.statusChip, active && { backgroundColor: cfg.color, borderColor: cfg.color }]} onPress={() => setEditStatus(s)}>
                     <Ionicons name={cfg.icon} size={13} color={active ? '#FFF' : cfg.color} style={{ marginRight: 4 }} />
@@ -934,7 +953,7 @@ export default function PlacementScreen() {
             <Text style={styles.selectorLabel}>Company Status:</Text>
             <View style={styles.statusRow}>
               {(['present', 'completed', 'upcoming'] as CompanyStatus[]).map(s => {
-                const cfg = COMPANY_STATUS_CONFIG[s]; const active = editCompanyStatus === s;
+                const cfg = getCompanyStatusConfig(colors)[s]; const active = editCompanyStatus === s;
                 return (
                   <TouchableOpacity key={s} style={[styles.statusChip, active && { backgroundColor: cfg.color, borderColor: cfg.color }]} onPress={() => setEditCompanyStatus(s)}>
                     <Ionicons name={cfg.icon} size={13} color={active ? '#FFF' : cfg.color} style={{ marginRight: 4 }} />
@@ -946,12 +965,12 @@ export default function PlacementScreen() {
 
             <View style={styles.switchRow}>
               <Text style={styles.switchLabel}>📚 Studied for this?</Text>
-              <Switch value={editStudied} onValueChange={setEditStudied} trackColor={{ false: '#E2E8F0', true: '#3B82F6' }} thumbColor={editStudied ? '#FFF' : '#CBD5E1'} />
+              <Switch value={editStudied} onValueChange={setEditStudied} trackColor={{ false: colors.border, true: colors.primary }} thumbColor={'#FFF'} />
             </View>
 
             <Text style={styles.selectorLabel}>Interview Rounds:</Text>
             {editRounds.map(r => (
-              <RoundCard key={r.id} round={r} onDelete={() => removeEditRound(r.id)} onResultChange={(v) => updateEditRoundResult(r.id, v)} />
+              <RoundCard key={r.id} round={r} onDelete={() => removeEditRound(r.id)} onResultChange={(v) => updateEditRoundResult(r.id, v)} colors={colors} styles={styles} />
             ))}
 
             {showEditAddRound ? (
@@ -959,11 +978,11 @@ export default function PlacementScreen() {
                 topic={eRoundTopic} setTopic={setERoundTopic}
                 desc={eRoundDesc} setDesc={setERoundDesc}
                 result={eRoundResult} setResult={setERoundResult}
-                onAdd={addRoundToEdit} onCancel={() => setShowEditAddRound(false)}
+                onAdd={addRoundToEdit} onCancel={() => setShowEditAddRound(false)} colors={colors} styles={styles}
               />
             ) : (
               <TouchableOpacity style={[styles.addRoundBtn, { marginBottom: 40 }]} onPress={() => setShowEditAddRound(true)}>
-                <Ionicons name="add-circle-outline" size={17} color="#3B82F6" />
+                <Ionicons name="add-circle-outline" size={17} color={colors.primary} />
                 <Text style={styles.addRoundBtnText}>Add Interview Round</Text>
               </TouchableOpacity>
             )}
@@ -976,13 +995,13 @@ export default function PlacementScreen() {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// ─── Styles (Dynamic based on theme) ──────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
+const getStyles = (colors: any) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   headerArea: { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 6 },
-  pageTitle: { fontSize: 28, fontWeight: '800', color: '#0F172A' },
-  pageSubtitle: { fontSize: 13, color: '#64748B', fontWeight: '500', marginTop: 2 },
+  pageTitle: { fontSize: 28, fontWeight: '800', color: colors.text },
+  pageSubtitle: { fontSize: 13, color: colors.textSecondary, fontWeight: '500', marginTop: 2 },
 
   // ── Tab Navigation ─────────────────────────────────────────────────────────
   tabRow: {
@@ -991,7 +1010,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: colors.border,
     paddingBottom: 12,
   },
   tabBtn: {
@@ -1001,20 +1020,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: colors.card,
   },
   tabBtnActive: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: colors.overlay,
     borderBottomWidth: 2,
-    borderBottomColor: '#3B82F6',
+    borderBottomColor: colors.primary,
   },
   tabBtnText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#64748B',
+    color: colors.textSecondary,
   },
   tabBtnTextActive: {
-    color: '#3B82F6',
+    color: colors.primary,
   },
 
   // ── Filter Bar ──────────────────────────────────────────────────────────────
@@ -1029,18 +1048,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
   },
   filterChipActive: {
-    backgroundColor: '#1D4ED8',
-    borderColor: '#1D4ED8',
+    backgroundColor: colors.info,
+    borderColor: colors.info,
   },
   filterChipText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#64748B',
+    color: colors.textSecondary,
   },
   filterChipTextActive: {
     color: '#FFFFFF',
@@ -1049,111 +1068,111 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   listContent: { paddingHorizontal: 16, paddingBottom: 120 },
   emptyWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 60 },
-  emptyText: { color: '#64748B', fontSize: 16, marginTop: 12, fontWeight: '500' },
+  emptyText: { color: colors.textSecondary, fontSize: 16, marginTop: 12, fontWeight: '500' },
 
   // ── Create Card ─────────────────────────────────────────────────────────────
   createCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 16,
-    borderWidth: 1, borderColor: '#E2E8F0',
-    shadowColor: '#3B82F6', shadowOffset: { width: 0, height: 4 },
+    backgroundColor: colors.card, borderRadius: 16, marginBottom: 16,
+    borderWidth: 1, borderColor: colors.border,
+    shadowColor: colors.info, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08, shadowRadius: 10, elevation: 3, overflow: 'hidden',
   },
   createCollapsed: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
-  createIconWrap: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center' },
-  createCollapsedText: { flex: 1, fontSize: 15, color: '#64748B', fontWeight: '500' },
+  createIconWrap: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.overlay, alignItems: 'center', justifyContent: 'center' },
+  createCollapsedText: { flex: 1, fontSize: 15, color: colors.textSecondary, fontWeight: '500' },
   createExpanded: { padding: 16 },
-  createTitleInput: { fontSize: 18, fontWeight: '700', color: '#0F172A', marginBottom: 12, paddingVertical: 4 },
+  createTitleInput: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 12, paddingVertical: 4 },
   input: {
-    backgroundColor: '#F8FAFC', borderRadius: 10,
+    backgroundColor: colors.background, borderRadius: 10,
     paddingHorizontal: 12, paddingVertical: 10,
-    fontSize: 14, color: '#334155',
-    borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 12,
+    fontSize: 14, color: colors.text,
+    borderWidth: 1, borderColor: colors.border, marginBottom: 12,
   },
-  selectorLabel: { fontSize: 13, fontWeight: '600', color: '#64748B', marginBottom: 8 },
+  selectorLabel: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, marginBottom: 8 },
   statusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
   statusChip: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 12, paddingVertical: 7,
-    borderRadius: 20, backgroundColor: '#F8FAFC',
-    borderWidth: 1.5, borderColor: '#E2E8F0',
+    borderRadius: 20, backgroundColor: colors.card,
+    borderWidth: 1.5, borderColor: colors.border,
   },
-  statusChipText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
+  statusChipText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
   switchRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    marginBottom: 16, backgroundColor: '#F8FAFC',
-    padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0',
+    marginBottom: 16, backgroundColor: colors.card,
+    padding: 12, borderRadius: 10, borderWidth: 1, borderColor: colors.border,
   },
-  switchLabel: { fontSize: 14, fontWeight: '600', color: '#334155' },
+  switchLabel: { fontSize: 14, fontWeight: '600', color: colors.text },
   rowBtns: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12 },
   cancelBtn: { paddingVertical: 8, paddingHorizontal: 16, justifyContent: 'center' },
-  cancelBtnText: { color: '#64748B', fontWeight: '600', fontSize: 14 },
-  saveBtn: { backgroundColor: '#3B82F6', paddingVertical: 8, paddingHorizontal: 20, borderRadius: 20, justifyContent: 'center' },
+  cancelBtnText: { color: colors.textSecondary, fontWeight: '600', fontSize: 14 },
+  saveBtn: { backgroundColor: colors.info, paddingVertical: 8, paddingHorizontal: 20, borderRadius: 20, justifyContent: 'center' },
   saveBtnText: { color: '#FFF', fontWeight: '700', fontSize: 14 },
   addRoundBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingVertical: 10, borderWidth: 1.5, borderColor: '#BFDBFE',
+    paddingVertical: 10, borderWidth: 1.5, borderColor: colors.border,
     borderRadius: 10, borderStyle: 'dashed', justifyContent: 'center', marginTop: 4,
   },
-  addRoundBtnText: { fontSize: 14, color: '#3B82F6', fontWeight: '600' },
+  addRoundBtnText: { fontSize: 14, color: colors.info, fontWeight: '600' },
 
   // ── Date Picker ─────────────────────────────────────────────────────────────
   dateBtn: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#F8FAFC', borderRadius: 10,
+    backgroundColor: colors.card, borderRadius: 10,
     paddingHorizontal: 12, paddingVertical: 11,
-    borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 12,
+    borderWidth: 1, borderColor: colors.border, marginBottom: 12,
   },
-  dateBtnText: { fontSize: 14, color: '#334155', fontWeight: '500' },
+  dateBtnText: { fontSize: 14, color: colors.text, fontWeight: '500' },
   dateDoneBtn: {
     alignSelf: 'flex-end', marginBottom: 8,
-    backgroundColor: '#3B82F6', paddingHorizontal: 20, paddingVertical: 7,
+    backgroundColor: colors.info, paddingHorizontal: 20, paddingVertical: 7,
     borderRadius: 20,
   },
   dateDoneBtnText: { color: '#FFF', fontWeight: '700', fontSize: 14 },
 
   // ── Add Round Form ──────────────────────────────────────────────────────────
-  addRoundForm: { backgroundColor: '#F0F9FF', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#BAE6FD' },
+  addRoundForm: { backgroundColor: colors.overlay, borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: colors.border },
   resultRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 12 },
-  resultChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' },
-  resultChipText: { fontSize: 12, fontWeight: '700', color: '#64748B' },
+  resultChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+  resultChipText: { fontSize: 12, fontWeight: '700', color: colors.textSecondary },
 
   // ── Placement Card ──────────────────────────────────────────────────────────
   card: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 14,
-    flexDirection: 'row', borderWidth: 1, borderColor: '#F1F5F9',
+    backgroundColor: colors.card, borderRadius: 16, marginBottom: 14,
+    flexDirection: 'row', borderWidth: 1, borderColor: colors.border,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
   },
   cardMain: { flex: 1, padding: 16 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
-  companyName: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
-  cardDate: { fontSize: 12, color: '#94A3B8', fontWeight: '500', marginTop: 2 },
+  companyName: { fontSize: 18, fontWeight: '800', color: colors.text },
+  cardDate: { fontSize: 12, color: colors.textSecondary, fontWeight: '500', marginTop: 2 },
   statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
   statusBadgeText: { fontSize: 11, fontWeight: '800' },
   metaRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 10 },
-  metaChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1, borderColor: '#E2E8F0' },
-  metaChipText: { fontSize: 12, fontWeight: '600' },
+  metaChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1, borderColor: colors.border },
+  metaChipText: { fontSize: 12, fontWeight: '600', color: colors.text },
   roundPreview: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
   roundPreviewDot: { width: 7, height: 7, borderRadius: 99 },
-  roundPreviewTopic: { flex: 1, fontSize: 13, color: '#475569', fontWeight: '500' },
+  roundPreviewTopic: { flex: 1, fontSize: 13, color: colors.textSecondary, fontWeight: '500' },
   roundPreviewResult: { fontSize: 11, fontWeight: '700' },
   deleteArea: { paddingHorizontal: 14, justifyContent: 'flex-start', alignItems: 'center', paddingTop: 18 },
 
   // ── Round Card ──────────────────────────────────────────────────────────────
-  roundCard: { backgroundColor: '#F8FAFC', borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#E2E8F0' },
+  roundCard: { backgroundColor: colors.card, borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: colors.border },
   roundHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 4, gap: 6 },
   roundDotLarge: { width: 8, height: 8, borderRadius: 99 },
-  roundTopic: { flex: 1, fontSize: 14, fontWeight: '700', color: '#1E293B' },
+  roundTopic: { flex: 1, fontSize: 14, fontWeight: '700', color: colors.text },
   roundResultBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   roundResultText: { fontSize: 11, fontWeight: '800' },
-  roundDesc: { fontSize: 13, color: '#475569', marginBottom: 8, marginLeft: 14 },
+  roundDesc: { fontSize: 13, color: colors.textSecondary, marginBottom: 8, marginLeft: 14 },
 
   // ── Modal ───────────────────────────────────────────────────────────────────
-  modalContainer: { flex: 1, backgroundColor: '#FFF' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderColor: '#F1F5F9' },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: '#0F172A' },
-  cancelText: { fontSize: 16, color: '#64748B' },
-  saveHeaderText: { fontSize: 16, fontWeight: '700', color: '#3B82F6' },
+  modalContainer: { flex: 1, backgroundColor: colors.background },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderColor: colors.border },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
+  cancelText: { fontSize: 16, color: colors.textSecondary },
+  saveHeaderText: { fontSize: 16, fontWeight: '700', color: colors.info },
   modalBody: { padding: 20, flex: 1 },
-  titleInput: { fontSize: 22, fontWeight: '700', color: '#0F172A', marginBottom: 14, borderBottomWidth: 1, borderBottomColor: '#E2E8F0', paddingBottom: 8 },
+  titleInput: { fontSize: 22, fontWeight: '700', color: colors.text, marginBottom: 14, borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 8 },
 });

@@ -5,15 +5,14 @@ import React from 'react';
 import { View } from 'react-native';
 
 import { AnimatedTabButton } from '@/components/AnimatedTabButton';
-
-// Inverted palette
-const WHITE = '#FFFFFF';
-const BLACK = '#000000';
-const GRAY_ACTIVE = '#111111';     // almost black – very crisp
-const GRAY_INACTIVE = '#666666';   // medium gray for inactive
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { getColors } from '@/constants/styles';
 
 export default function TabLayout() {
   const { isSignedIn, isLoaded } = useAuth();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const colors = getColors(isDark);
 
   if (!isLoaded) {
     return null;
@@ -35,24 +34,24 @@ export default function TabLayout() {
             bottom: 0,
             left: 0,
             right: 0,
-            backgroundColor: WHITE,
+            backgroundColor: colors.card,
             borderTopLeftRadius: 25,
             borderTopRightRadius: 25,
             borderBottomLeftRadius: 0,
             borderBottomRightRadius: 0,
             height: 68,
             borderTopWidth: 2.5,
-            borderTopColor: BLACK,
+            borderTopColor: colors.border,
             borderLeftWidth: 1.5,
-            borderLeftColor: BLACK,
+            borderLeftColor: colors.border,
             borderRightWidth: 1.5,
-            borderRightColor: BLACK,
+            borderRightColor: colors.border,
             borderBottomWidth: 0,
             paddingBottom: 10,
             paddingTop: 18,
           },
-          tabBarActiveTintColor: GRAY_ACTIVE,
-          tabBarInactiveTintColor: GRAY_INACTIVE,
+          tabBarActiveTintColor: colors.primary,
+          tabBarInactiveTintColor: colors.textSecondary,
           tabBarLabelStyle: {
             fontSize: 12,
             fontWeight: '600',

@@ -28,17 +28,17 @@ import {
   View,
 } from 'react-native';
 
-const PRIORITY_CONFIG: Record<'High' | 'Medium' | 'Low', { emoji: string; bg: string; text: string }> = {
-  High: { emoji: '🔴', bg: '#FEE2E2', text: '#DC2626' },
-  Medium: { emoji: '🟡', bg: '#FEF3C7', text: '#D97706' },
-  Low: { emoji: '🟢', bg: '#D1FAE5', text: '#065F46' },
-};
+const PRIORITY_CONFIG = (colors: any): Record<'High' | 'Medium' | 'Low', { emoji: string; bg: string; text: string }> => ({
+  High: { emoji: '🔴', bg: colors.danger, text: colors.danger },
+  Medium: { emoji: '🟡', bg: colors.warning, text: colors.warning },
+  Low: { emoji: '🟢', bg: colors.success, text: colors.success },
+});
 
-const STATUS_CONFIG: Record<'Upcoming' | 'Completed' | 'Cancelled', { bg: string; text: string }> = {
-  Upcoming: { bg: '#EFF6FF', text: '#1D4ED8' },
-  Completed: { bg: '#F0FDF4', text: '#16A34A' },
-  Cancelled: { bg: '#F5F3FF', text: '#7C3AED' },
-};
+const STATUS_CONFIG_SCHEDULE = (colors: any): Record<'Upcoming' | 'Completed' | 'Cancelled', { bg: string; text: string }> => ({
+  Upcoming: { bg: colors.info, text: colors.info },
+  Completed: { bg: colors.success, text: colors.success },
+  Cancelled: { bg: colors.warning, text: colors.warning },
+});
 
 type TabType = 'Current' | 'Schedules';
 type StatusFilter = 'All' | 'Upcoming' | 'Completed' | 'Cancelled';
@@ -50,6 +50,9 @@ export default function ScheduleScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const colors = getColors(isDark);
+
+  // Dynamic styles based on theme
+  const styles = useMemo(() => getStyles(colors), [colors]);
 
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -303,13 +306,13 @@ export default function ScheduleScreen() {
       <View style={styles.calendar}>
         <View style={styles.calendarHeader}>
           <TouchableOpacity onPress={goToPreviousMonth}>
-            <Ionicons name="chevron-back" size={24} color="#1D4ED8" />
+            <Ionicons name="chevron-back" size={24} color={colors.primary} />
           </TouchableOpacity>
           <Text style={styles.calendarTitle}>
             {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
           </Text>
           <TouchableOpacity onPress={goToNextMonth}>
-            <Ionicons name="chevron-forward" size={24} color="#1D4ED8" />
+            <Ionicons name="chevron-forward" size={24} color={colors.primary} />
           </TouchableOpacity>
         </View>
 
@@ -354,8 +357,8 @@ export default function ScheduleScreen() {
   };
 
   const renderEventCard = ({ item }: { item: ScheduleEvent }) => {
-    const priorityConfig = PRIORITY_CONFIG[item.priority];
-    const statusConfig = STATUS_CONFIG[item.status];
+    const priorityConfig = PRIORITY_CONFIG(colors)[item.priority];
+    const statusConfig = STATUS_CONFIG_SCHEDULE(colors)[item.status];
 
     return (
       <TouchableOpacity
@@ -370,7 +373,7 @@ export default function ScheduleScreen() {
             </Text>
           </View>
           <TouchableOpacity onPress={() => handleDeleteEvent(item.id)} hitSlop={10}>
-            <Ionicons name="trash-outline" size={18} color="#EF4444" />
+            <Ionicons name="trash-outline" size={18} color={colors.danger} />
           </TouchableOpacity>
         </View>
 
@@ -378,7 +381,7 @@ export default function ScheduleScreen() {
 
         <View style={styles.eventMeta}>
           <View style={styles.metaItem}>
-            <Ionicons name="time-outline" size={13} color="#64748B" />
+            <Ionicons name="time-outline" size={13} color={colors.textSecondary} />
             <Text style={styles.metaText}>
               {item.startTime} - {item.endTime}
             </Text>
@@ -386,7 +389,7 @@ export default function ScheduleScreen() {
 
           {item.location && (
             <View style={styles.metaItem}>
-              <Ionicons name="location-outline" size={13} color="#64748B" />
+              <Ionicons name="location-outline" size={13} color={colors.textSecondary} />
               <Text style={styles.metaText} numberOfLines={1}>
                 {item.location}
               </Text>
@@ -407,7 +410,7 @@ export default function ScheduleScreen() {
 
           {item.reminder && (
             <View style={styles.metaItem}>
-              <Ionicons name="notifications-outline" size={13} color="#D97706" />
+              <Ionicons name="notifications-outline" size={13} color={colors.warning} />
             </View>
           )}
         </View>
@@ -470,7 +473,7 @@ export default function ScheduleScreen() {
                     />
                   ) : (
                     <View style={styles.emptyWrap}>
-                      <Ionicons name="calendar-outline" size={50} color="#CBD5E1" />
+                      <Ionicons name="calendar-outline" size={50} color={colors.border} />
                       <Text style={styles.emptyText}>No events scheduled for this date.</Text>
                     </View>
                   )}
@@ -507,7 +510,7 @@ export default function ScheduleScreen() {
                   />
                 ) : (
                   <View style={styles.emptyWrap}>
-                    <Ionicons name="calendar-outline" size={50} color="#CBD5E1" />
+                    <Ionicons name="calendar-outline" size={50} color={colors.border} />
                     <Text style={styles.emptyText}>No schedules found.</Text>
                   </View>
                 )}
@@ -570,7 +573,7 @@ export default function ScheduleScreen() {
             <Text style={styles.modalTitle}>New Meeting</Text>
             <TouchableOpacity onPress={handleSaveEvent} disabled={isSaving}>
               {isSaving ? (
-                <ActivityIndicator size="small" color="#1D4ED8" />
+                <ActivityIndicator size="small" color={colors.primary} />
               ) : (
                 <Text style={styles.saveText}>Save</Text>
               )}
@@ -597,11 +600,11 @@ export default function ScheduleScreen() {
             />
 
             <TouchableOpacity style={styles.input} onPress={() => setShowStartTimePicker(true)}>
-              <Text style={{ color: '#0F172A' }}>Start Time: {newStartTime}</Text>
+              <Text style={{ color: colors.text }}>Start Time: {newStartTime}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.input} onPress={() => setShowEndTimePicker(true)}>
-              <Text style={{ color: '#0F172A' }}>End Time: {newEndTime}</Text>
+              <Text style={{ color: colors.text }}>End Time: {newEndTime}</Text>
             </TouchableOpacity>
 
             <TextInput
@@ -623,7 +626,7 @@ export default function ScheduleScreen() {
                   ]}
                   onPress={() => setNewPriority(priority)}
                 >
-                  <Text style={styles.priorityBtnEmoji}>{PRIORITY_CONFIG[priority].emoji}</Text>
+                  <Text style={styles.priorityBtnEmoji}>{PRIORITY_CONFIG(colors)[priority].emoji}</Text>
                   <Text
                     style={[
                       styles.priorityBtnText,
@@ -666,7 +669,7 @@ export default function ScheduleScreen() {
               <Ionicons
                 name={newReminder ? 'checkbox' : 'square-outline'}
                 size={24}
-                color="#1D4ED8"
+                color={colors.primary}
               />
               <Text style={styles.reminderText}>Remind me</Text>
             </TouchableOpacity>
@@ -691,7 +694,7 @@ export default function ScheduleScreen() {
             <Text style={styles.modalTitle}>Edit Meeting</Text>
             <TouchableOpacity onPress={handleSaveEdit} disabled={isEditSaving}>
               {isEditSaving ? (
-                <ActivityIndicator size="small" color="#1D4ED8" />
+                <ActivityIndicator size="small" color={colors.primary} />
               ) : (
                 <Text style={styles.saveText}>Save</Text>
               )}
@@ -715,11 +718,11 @@ export default function ScheduleScreen() {
             />
 
             <TouchableOpacity style={styles.input} onPress={() => setShowEditStartTimePicker(true)}>
-              <Text style={{ color: '#0F172A' }}>Start Time: {editStartTime}</Text>
+              <Text style={{ color: colors.text }}>Start Time: {editStartTime}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.input} onPress={() => setShowEditEndTimePicker(true)}>
-              <Text style={{ color: '#0F172A' }}>End Time: {editEndTime}</Text>
+              <Text style={{ color: colors.text }}>End Time: {editEndTime}</Text>
             </TouchableOpacity>
 
             <TextInput
@@ -740,7 +743,7 @@ export default function ScheduleScreen() {
                   ]}
                   onPress={() => setEditPriority(priority)}
                 >
-                  <Text style={styles.priorityBtnEmoji}>{PRIORITY_CONFIG[priority].emoji}</Text>
+                  <Text style={styles.priorityBtnEmoji}>{PRIORITY_CONFIG(colors)[priority].emoji}</Text>
                   <Text
                     style={[
                       styles.priorityBtnText,
@@ -783,7 +786,7 @@ export default function ScheduleScreen() {
               <Ionicons
                 name={editReminder ? 'checkbox' : 'square-outline'}
                 size={24}
-                color="#1D4ED8"
+                color={colors.primary}
               />
               <Text style={styles.reminderText}>Remind me</Text>
             </TouchableOpacity>
@@ -796,21 +799,21 @@ export default function ScheduleScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
+const getStyles = (colors: any) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   headerArea: { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 12 },
-  pageTitle: { fontSize: 28, fontWeight: '800', color: '#0F172A' },
-  pageSubtitle: { fontSize: 13, color: '#64748B', fontWeight: '500', marginTop: 2 },
+  pageTitle: { fontSize: 28, fontWeight: '800', color: colors.text },
+  pageSubtitle: { fontSize: 13, color: colors.textSecondary, fontWeight: '500', marginTop: 2 },
   content: { flex: 1, paddingHorizontal: 16 },
   centerWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   calendar: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 14,
     marginVertical: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
   },
   calendarHeader: {
     flexDirection: 'row',
@@ -818,9 +821,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  calendarTitle: { fontSize: 16, fontWeight: '700', color: '#0F172A', textAlign: 'center', flex: 1 },
+  calendarTitle: { fontSize: 16, fontWeight: '700', color: colors.text, textAlign: 'center', flex: 1 },
   weekDays: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 12 },
-  weekDay: { fontSize: 12, fontWeight: '600', color: '#64748B', width: '14.28%', textAlign: 'center' },
+  weekDay: { fontSize: 12, fontWeight: '600', color: colors.textSecondary, width: '14.28%', textAlign: 'center' },
   daysGrid: { flexDirection: 'row', flexWrap: 'wrap' },
   dayCell: {
     width: '14.28%',
@@ -830,26 +833,26 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
   },
-  dayCellSelected: { backgroundColor: '#1D4ED8', borderColor: '#1D4ED8' },
-  dayCellHasEvents: { borderWidth: 2, borderColor: '#D97706' },
-  dayNumber: { fontSize: 14, fontWeight: '600', color: '#0F172A' },
+  dayCellSelected: { backgroundColor: colors.info, borderColor: colors.info },
+  dayCellHasEvents: { borderWidth: 2, borderColor: colors.warning },
+  dayNumber: { fontSize: 14, fontWeight: '600', color: colors.text },
   dayNumberSelected: { color: '#FFFFFF', fontWeight: '700' },
-  eventDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#D97706', marginTop: 4 },
+  eventDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.warning, marginTop: 4 },
 
   eventsSection: { marginVertical: 16, paddingBottom: 140 },
   sectionHeader: { marginBottom: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#0F172A' },
-  addButton: { backgroundColor: '#1D4ED8', borderRadius: 8, padding: 8, justifyContent: 'center', alignItems: 'center' },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+  addButton: { backgroundColor: colors.info, borderRadius: 8, padding: 8, justifyContent: 'center', alignItems: 'center' },
   eventsList: { gap: 10 },
 
   eventCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
     marginBottom: 10,
   },
   eventCardHeader: {
@@ -860,17 +863,17 @@ const styles = StyleSheet.create({
   },
   eventTitleRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
   priorityEmoji: { fontSize: 18 },
-  eventTitle: { fontSize: 15, fontWeight: '700', color: '#0F172A', flex: 1 },
-  eventPurpose: { fontSize: 13, color: '#64748B', marginBottom: 10, lineHeight: 18 },
+  eventTitle: { fontSize: 15, fontWeight: '700', color: colors.text, flex: 1 },
+  eventPurpose: { fontSize: 13, color: colors.textSecondary, marginBottom: 10, lineHeight: 18 },
   eventMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  metaText: { fontSize: 12, color: '#64748B' },
+  metaText: { fontSize: 12, color: colors.textSecondary },
   priorityBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   priorityText: { fontSize: 12, fontWeight: '600' },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   statusText: { fontSize: 12, fontWeight: '600' },
   emptyWrap: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
-  emptyText: { fontSize: 14, color: '#94A3B8', marginTop: 12, textAlign: 'center' },
+  emptyText: { fontSize: 14, color: colors.textSecondary, marginTop: 12, textAlign: 'center' },
 
   modalHeader: {
     flexDirection: 'row',
@@ -880,56 +883,56 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: colors.border,
   },
-  cancelText: { fontSize: 16, color: '#64748B', fontWeight: '600' },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: '#0F172A' },
-  saveText: { fontSize: 16, color: '#1D4ED8', fontWeight: '700' },
+  cancelText: { fontSize: 16, color: colors.textSecondary, fontWeight: '600' },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
+  saveText: { fontSize: 16, color: colors.info, fontWeight: '700' },
   modalBody: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
 
   input: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginBottom: 14,
     fontSize: 15,
-    color: '#0F172A',
+    color: colors.text,
   },
-  label: { fontSize: 14, fontWeight: '700', color: '#0F172A', marginBottom: 10, marginTop: 6 },
+  label: { fontSize: 14, fontWeight: '700', color: colors.text, marginBottom: 10, marginTop: 6 },
 
   priorityGrid: { flexDirection: 'row', gap: 10, marginBottom: 16 },
   priorityBtn: {
     flex: 1,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: 'center',
     gap: 4,
   },
-  priorityBtnActive: { backgroundColor: '#FEE2E2', borderColor: '#DC2626' },
+  priorityBtnActive: { backgroundColor: colors.overlay, borderColor: colors.danger },
   priorityBtnEmoji: { fontSize: 20 },
-  priorityBtnText: { fontSize: 12, color: '#64748B', fontWeight: '600' },
-  priorityBtnTextActive: { color: '#DC2626', fontWeight: '700' },
+  priorityBtnText: { fontSize: 12, color: colors.textSecondary, fontWeight: '600' },
+  priorityBtnTextActive: { color: colors.danger, fontWeight: '700' },
 
   statusGrid: { flexDirection: 'row', gap: 10, marginBottom: 16 },
   statusBtn: {
     flex: 1,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  statusBtnActive: { backgroundColor: '#EFF6FF', borderColor: '#1D4ED8' },
-  statusBtnText: { fontSize: 12, color: '#64748B', fontWeight: '600' },
-  statusBtnTextActive: { color: '#1D4ED8', fontWeight: '700' },
+  statusBtnActive: { backgroundColor: colors.overlay, borderColor: colors.info },
+  statusBtnText: { fontSize: 12, color: colors.textSecondary, fontWeight: '600' },
+  statusBtnTextActive: { color: colors.info, fontWeight: '700' },
 
   reminderToggle: {
     flexDirection: 'row',
@@ -937,11 +940,11 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 14,
     paddingHorizontal: 14,
-    backgroundColor: '#F0F9FF',
+    backgroundColor: colors.overlay,
     borderRadius: 10,
     marginBottom: 20,
   },
-  reminderText: { fontSize: 15, fontWeight: '600', color: '#0F172A' },
+  reminderText: { fontSize: 15, fontWeight: '600', color: colors.text },
 
   tabRow: {
     flexDirection: 'row',
@@ -949,7 +952,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     gap: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: colors.border,
     paddingBottom: 12,
   },
   tabBtn: {
@@ -959,20 +962,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: colors.card,
   },
   tabBtnActive: {
-    backgroundColor: '#EFF6FF',
+    backgroundColor: colors.overlay,
     borderBottomWidth: 2,
-    borderBottomColor: '#1D4ED8',
+    borderBottomColor: colors.info,
   },
   tabText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#64748B',
+    color: colors.textSecondary,
   },
   tabTextActive: {
-    color: '#1D4ED8',
+    color: colors.info,
   },
 
   filterRow: {
@@ -986,18 +989,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: colors.border,
   },
   filterChipActive: {
-    backgroundColor: '#1D4ED8',
-    borderColor: '#1D4ED8',
+    backgroundColor: colors.info,
+    borderColor: colors.info,
   },
   filterText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#64748B',
+    color: colors.textSecondary,
   },
   filterTextActive: {
     color: '#FFFFFF',
