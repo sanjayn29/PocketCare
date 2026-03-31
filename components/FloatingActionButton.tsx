@@ -28,6 +28,7 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
     { id: 'skills', label: 'Skills', icon: 'school', tint: colors.secondary + '1A' },
     { id: 'schedule', label: 'Schedule', icon: 'calendar', tint: colors.info + '1A' },
     { id: 'profile', label: 'Profile', icon: 'person', tint: colors.textSecondary + '1A' },
+    { id: 'placement', label: 'Placements', icon: 'briefcase', tint: colors.primary + '20' },
   ];
 
   const pulseAnim = useRef(new Animated.Value(0)).current;
@@ -123,6 +124,7 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
       skills: '/skills',
       schedule: '/schedule',
       profile: '/profile',
+      placement: '/placement',
     };
 
     const route = optionRoutes[optionId];

@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
+import LottieView from 'lottie-react-native';
 
 import { AnimatedTabButton } from '@/components/AnimatedTabButton';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -51,7 +52,7 @@ export default function TabLayout() {
           tabBarInactiveTintColor: colors.textSecondary,
           tabBarLabelStyle: {
             fontSize: 12,
-            fontWeight: '600',
+            fontWeight: 'bold',
             marginBottom: 4,
             marginTop: 4,
             letterSpacing: 0.2,
@@ -93,11 +94,26 @@ export default function TabLayout() {
           options={{
             title: 'Pocket AI',
             tabBarIcon: ({ color, focused }) => (
-              <Ionicons
-                name={focused ? 'flash' : 'flash-outline'}
-                size={focused ? 28 : 26}
-                color={color}
-              />
+              <View style={{ 
+                width: 40, 
+                height: 40, 
+                justifyContent: 'center', 
+                alignItems: 'center',
+                backgroundColor: '#FFFFFF',
+                borderRadius: 20,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                elevation: 2
+              }}>
+                <LottieView
+                  source={require('../../assets/animations/AI.json')}
+                  autoPlay
+                  loop
+                  style={{ width: 44, height: 44 }}
+                />
+              </View>
             ),
           }}
         />
