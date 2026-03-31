@@ -1,14 +1,14 @@
 import { useAuth } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
+import LottieView from 'lottie-react-native';
 import React from 'react';
 import { View } from 'react-native';
-import LottieView from 'lottie-react-native';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { getColors } from '@/constants/styles';
 import { AnimatedTabButton } from '@/components/AnimatedTabButton';
 import FloatingActionButton from '@/components/FloatingActionButton';
+import { getColors } from '@/constants/styles';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -94,6 +94,7 @@ export default function TabLayout() {
           name="ai"
           options={{
             title: 'Pocket AI',
+            tabBarStyle: { display: 'none' },
             tabBarIcon: ({ color, focused }) => (
               <View style={{ 
                 width: 40, 

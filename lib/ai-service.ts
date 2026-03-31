@@ -13,211 +13,63 @@ const getUserContext = async (email: string): Promise<string> => {
     const contextParts: string[] = []
     console.log(`📋 Fetching comprehensive data for user: ${email}`)
 
-    // Fetch streak data - visits subcollection
-    try {
-      const visitsSnapshot = await getDocs(
-        collection(db, 'users', email, 'visits')
-      )
-      const visitCount = visitsSnapshot.docs.length
-      const visitDates = visitsSnapshot.docs.map(d => d.id).sort().join(', ')
-      contextParts.push(`📅 APP VISITS (${visitCount} days):\nVisit dates: ${visitDates || 'No visits yet'}\n`)
-      console.log(`✓ Visits found: ${visitCount}`)
-    } catch (e) {
-      console.error('Error fetching visits:', e)
-      contextParts.push(`📅 APP VISITS: No data available\n`)
-    }
-
-    // Fetch tasks - full document content
+    // Fetch tasks - concise summary
     try {
       const tasksSnapshot = await getDocs(collection(db, 'Tasks'))
       const userTasksDoc = tasksSnapshot.docs.find(d => d.id === email)
       
       if (userTasksDoc && userTasksDoc.exists()) {
         const tasksData = userTasksDoc.data()
-        const tasksContent = JSON.stringify(tasksData, null, 2)
-        contextParts.push(`📋 TASKS:\n${tasksContent}\n`)
-        console.log(`✓ Tasks document found with ${Object.keys(tasksData).length} items`)
-      } else {
-        contextParts.push(`📋 TASKS: No tasks\n`)
+        // Extract only pending tasks to save tokens
+        const pendingTasks = Object.values(tasksData)
+          .filter((t: any) => t.status !== 'completed')
+          .slice(0, 5)
+          .map((t: any) => `${t.title} (${t.priority})`)
+        contextParts.push(`📋 TOP TASKS: ${pendingTasks.join(', ') || 'No pending tasks'}\n`)
       }
     } catch (e) {
       console.error('Error fetching tasks:', e)
-      contextParts.push(`📋 TASKS: Error fetching\n`)
     }
 
-    // Fetch notes - full document content
-    try {
-      const notesSnapshot = await getDocs(collection(db, 'Notes'))
-      const userNotesDoc = notesSnapshot.docs.find(d => d.id === email)
-      
-      if (userNotesDoc && userNotesDoc.exists()) {
-        const notesData = userNotesDoc.data()
-        const notesContent = JSON.stringify(notesData, null, 2)
-        contextParts.push(`📝 NOTES:\n${notesContent}\n`)
-        console.log(`✓ Notes found`)
-      } else {
-        contextParts.push(`📝 NOTES: No notes\n`)
-      }
-    } catch (e) {
-      console.error('Error fetching notes:', e)
-      contextParts.push(`📝 NOTES: Error fetching\n`)
-    }
-
-    // Fetch goals - full document content
+    // Fetch goals - titles only
     try {
       const goalsSnapshot = await getDocs(collection(db, 'Goals'))
       const userGoalsDoc = goalsSnapshot.docs.find(d => d.id === email)
       
       if (userGoalsDoc && userGoalsDoc.exists()) {
         const goalsData = userGoalsDoc.data()
-        const goalsContent = JSON.stringify(goalsData, null, 2)
-        contextParts.push(`🎯 GOALS:\n${goalsContent}\n`)
-        console.log(`✓ Goals found`)
-      } else {
-        contextParts.push(`🎯 GOALS: No goals\n`)
+        const activeGoals = Object.values(goalsData)
+          .slice(0, 3)
+          .map((g: any) => g.title)
+        contextParts.push(`🎯 GOALS: ${activeGoals.join(', ') || 'No active goals'}\n`)
       }
     } catch (e) {
       console.error('Error fetching goals:', e)
-      contextParts.push(`🎯 GOALS: Error fetching\n`)
     }
 
-    // Fetch health data - full document content
+    // Fetch health - basic stats
     try {
       const healthSnapshot = await getDocs(collection(db, 'health'))
       const userHealthDoc = healthSnapshot.docs.find(d => d.id === email)
       
       if (userHealthDoc && userHealthDoc.exists()) {
         const healthData = userHealthDoc.data()
-        const healthContent = JSON.stringify(healthData, null, 2)
-        contextParts.push(`❤️ HEALTH:\n${healthContent}\n`)
-        console.log(`✓ Health found`)
-      } else {
-        contextParts.push(`❤️ HEALTH: No health data\n`)
+        contextParts.push(`❤️ HEALTH: Water: ${healthData.waterIntake || 0}ml, Sleep: ${healthData.sleepHours || 0}h\n`)
       }
     } catch (e) {
       console.error('Error fetching health:', e)
-      contextParts.push(`❤️ HEALTH: Error fetching\n`)
-    }
-
-    // Fetch schedule data - full document content
-    try {
-      const scheduleSnapshot = await getDocs(collection(db, 'schedules'))
-      const userScheduleDoc = scheduleSnapshot.docs.find(d => d.id === email)
-      
-      if (userScheduleDoc && userScheduleDoc.exists()) {
-        const scheduleData = userScheduleDoc.data()
-        const scheduleContent = JSON.stringify(scheduleData, null, 2)
-        contextParts.push(`📅 SCHEDULE:\n${scheduleContent}\n`)
-        console.log(`✓ Schedule found`)
-      } else {
-        contextParts.push(`📅 SCHEDULE: No scheduled events\n`)
-      }
-    } catch (e) {
-      console.error('Error fetching schedule:', e)
-      contextParts.push(`📅 SCHEDULE: Error fetching\n`)
-    }
-
-    // Fetch finance data - full document content
-    try {
-      const financeSnapshot = await getDocs(collection(db, 'finance'))
-      const userFinanceDoc = financeSnapshot.docs.find(d => d.id === email)
-      
-      if (userFinanceDoc && userFinanceDoc.exists()) {
-        const financeData = userFinanceDoc.data()
-        const financeContent = JSON.stringify(financeData, null, 2)
-        contextParts.push(`💰 FINANCE:\n${financeContent}\n`)
-        console.log(`✓ Finance found`)
-      } else {
-        contextParts.push(`💰 FINANCE: No finance data\n`)
-      }
-    } catch (e) {
-      console.error('Error fetching finance:', e)
-      contextParts.push(`💰 FINANCE: Error fetching\n`)
-    }
-
-    // Fetch skills data - full document content
-    try {
-      const skillsSnapshot = await getDocs(collection(db, 'Skills'))
-      const userSkillsDoc = skillsSnapshot.docs.find(d => d.id === email)
-      
-      if (userSkillsDoc && userSkillsDoc.exists()) {
-        const skillsData = userSkillsDoc.data()
-        const skillsContent = JSON.stringify(skillsData, null, 2)
-        contextParts.push(`🎓 SKILLS:\n${skillsContent}\n`)
-        console.log(`✓ Skills found`)
-      } else {
-        contextParts.push(`🎓 SKILLS: No skills\n`)
-      }
-    } catch (e) {
-      console.error('Error fetching skills:', e)
-      contextParts.push(`🎓 SKILLS: Error fetching\n`)
-    }
-
-    // Fetch placements data - full document content
-    try {
-      const placementsSnapshot = await getDocs(collection(db, 'Placements'))
-      const userPlacementsDoc = placementsSnapshot.docs.find(d => d.id === email)
-      
-      if (userPlacementsDoc && userPlacementsDoc.exists()) {
-        const placementsData = userPlacementsDoc.data()
-        const placementsContent = JSON.stringify(placementsData, null, 2)
-        contextParts.push(`💼 PLACEMENTS:\n${placementsContent}\n`)
-        console.log(`✓ Placements found`)
-      } else {
-        contextParts.push(`💼 PLACEMENTS: No placements\n`)
-      }
-    } catch (e) {
-      console.error('Error fetching placements:', e)
-      contextParts.push(`💼 PLACEMENTS: Error fetching\n`)
-    }
-
-    // Fetch games data - full document content
-    try {
-      const gamesSnapshot = await getDocs(collection(db, 'games'))
-      const userGamesDoc = gamesSnapshot.docs.find(d => d.id === email)
-      
-      if (userGamesDoc && userGamesDoc.exists()) {
-        const gamesData = userGamesDoc.data()
-        const gamesContent = JSON.stringify(gamesData, null, 2)
-        contextParts.push(`🎮 GAMES:\n${gamesContent}\n`)
-        console.log(`✓ Games found`)
-      } else {
-        contextParts.push(`🎮 GAMES: No game data\n`)
-      }
-    } catch (e) {
-      console.error('Error fetching games:', e)
-      contextParts.push(`🎮 GAMES: Error fetching\n`)
-    }
-
-    // Fetch calculator history - full document content
-    try {
-      const calcSnapshot = await getDocs(collection(db, 'calculator'))
-      const userCalcDoc = calcSnapshot.docs.find(d => d.id === email)
-      
-      if (userCalcDoc && userCalcDoc.exists()) {
-        const calcData = userCalcDoc.data()
-        const calcContent = JSON.stringify(calcData, null, 2)
-        contextParts.push(`🧮 CALCULATOR:\n${calcContent}\n`)
-        console.log(`✓ Calculator found`)
-      } else {
-        contextParts.push(`🧮 CALCULATOR: No calculation history\n`)
-      }
-    } catch (e) {
-      console.error('Error fetching calculator:', e)
-      contextParts.push(`🧮 CALCULATOR: Error fetching\n`)
     }
 
     const finalContext = contextParts.join('')
-    console.log('📊 Final comprehensive context ready for AI')
     return finalContext
   } catch (error) {
     console.error('Error fetching user context:', error)
-    return 'Unable to fetch user data - please try again'
+    return 'User profile info not available.'
   }
 }
 
 /**
- * Gets AI response from Groq using llama-3.3-70b-versatile model
+ * Gets AI response from Groq using llama-3.1-8b-instant model
  */
 export const getAIResponse = async (
   userMessage: string,
@@ -236,27 +88,7 @@ export const getAIResponse = async (
     const messages: Array<{ role: string; content: string }> = [
       {
         role: 'system',
-        content: `You are an advanced personal productivity AI assistant for the PocketCare app for user: ${email}
-        
-USER'S COMPLETE PROFILE:
-${userContext}
-
-Your responsibilities:
-1. Analyze ALL available user data to provide intelligent, personalized advice
-2. Help prioritize tasks, goals, and health objectives
-3. Identify patterns in user's activities and suggest improvements
-4. Connect different areas (tasks, goals, health, schedule, finance, skills)
-5. Provide motivation and track progress across all domains
-6. Answer questions about productivity using their complete profile
-
-APPROACH:
-- Always reference their specific data
-- Give concrete, actionable steps
-- Consider their entire workload when making suggestions
-- Be encouraging, supportive, and practical
-- Use emojis for better readability
-- Provide insights no other AI can by using their complete PocketCare profile
-- Be detailed and thorough - give comprehensive advice`,
+        content: `You are a helpful personal assistant for user: ${email}. Profile summary: ${userContext}. Be concise and friendly.`
       },
       ...conversationHistory,
       {
@@ -274,7 +106,7 @@ APPROACH:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'llama-3.1-8b-instant',
         messages,
         temperature: 0.7,
         max_tokens: 2048,
@@ -315,7 +147,7 @@ export const getProductivityInsight = async (
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'llama-3.1-8b-instant',
         messages: [
           {
             role: 'system',

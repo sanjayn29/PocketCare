@@ -4,18 +4,27 @@ import { getColors } from '@/constants/styles'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import { getAIResponse, getProductivityInsight } from '@/lib/ai-service'
 import { useUser } from '@clerk/expo'
+import { Ionicons } from '@expo/vector-icons'
+import { BlurView } from 'expo-blur'
+import { useFonts } from 'expo-font'
+import { useRouter } from 'expo-router'
+import LottieView from 'lottie-react-native'
 import React, { useEffect, useRef, useState } from 'react'
 import {
-    ActivityIndicator,
-    FlatList,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Animated,
+  Dimensions,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+
+const { width } = Dimensions.get('window')
 
 interface Message {
   id: string
@@ -26,9 +35,18 @@ interface Message {
 
 export default function AIScreen() {
   const { user } = useUser()
+  const router = useRouter()
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const colors = getColors(isDark)
+  const brightGold = '#FFD700'
+  const softGold = '#E8C96A'
+  const backButtonScale = useRef(new Animated.Value(1)).current
+  const fadeAnim = useRef(new Animated.Value(0)).current
+  const [fontsLoaded] = useFonts({
+    'Roboto Slab': require('../../assets/Font/RobotoSlab-VariableFont_wght.ttf'),
+    'Momo Signature': require('../../assets/Font/MomoSignature-Regular.ttf'),
+  })
   
   const email = user?.emailAddresses?.[0]?.emailAddress
   const [messages, setMessages] = useState<Message[]>([])
@@ -37,6 +55,29 @@ export default function AIScreen() {
   const [showInsight, setShowInsight] = useState(true)
   const [insight, setInsight] = useState('')
   const flatListRef = useRef<FlatList>(null)
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start()
+
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(backButtonScale, {
+          toValue: 1.06,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(backButtonScale, {
+          toValue: 1,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start()
+  }, [backButtonScale])
 
   useEffect(() => {
     if (email) {
@@ -78,47 +119,76 @@ export default function AIScreen() {
       content: msg.text,
     }))
 
-    const aiResponse = await getAIResponse(inputText, email, conversationHistory)
+    try {
+      const aiResponse = await getAIResponse(inputText, email, conversationHistory)
 
-    const aiMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      text: aiResponse,
-      isUser: false,
-      timestamp: new Date(),
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: aiResponse,
+        isUser: false,
+        timestamp: new Date(),
+      }
+
+      setMessages((prev) => [...prev, aiMessage])
+    } catch (error: any) {
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: error.message?.includes('rate_limit') 
+          ? "I'm a bit overwhelmed with requests right now! 😅 Please try again in a few minutes."
+          : "Sorry, I encountered an error. Please try again.",
+        isUser: false,
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, errorMessage])
+    } finally {
+      setLoading(false)
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true })
+      }, 100)
     }
-
-    setMessages((prev) => [...prev, aiMessage])
-    setLoading(false)
-
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true })
-    }, 100)
   }
 
-  const renderMessage = (item: Message) => (
-    <View
-      style={[
-        dynamicStyles.messageContainer,
-        item.isUser ? dynamicStyles.userMessageContainer : dynamicStyles.aiMessageContainer,
-      ]}
-    >
+  const MessageItem = React.memo(({ item }: { item: Message }) => {
+    return (
       <View
         style={[
-          dynamicStyles.messageBubble,
-          item.isUser ? dynamicStyles.userBubble : dynamicStyles.aiBubble,
+          dynamicStyles.messageContainer,
+          item.isUser ? dynamicStyles.userMessageContainer : dynamicStyles.aiMessageContainer,
         ]}
       >
-        <Text
+        <View
           style={[
-            dynamicStyles.messageText,
-            item.isUser ? dynamicStyles.userText : dynamicStyles.aiText,
+            dynamicStyles.messageBubble,
+            item.isUser ? dynamicStyles.userBubble : dynamicStyles.aiBubble,
           ]}
         >
-          {item.text}
-        </Text>
+          {!item.isUser && (
+            <View style={dynamicStyles.aiIconBadge}>
+              <LottieView
+                source={require('../../assets/animations/AI.json')}
+                autoPlay
+                loop
+                style={{ width: 22, height: 22 }}
+              />
+            </View>
+          )}
+          <Text
+            style={[
+              dynamicStyles.messageText,
+              item.isUser ? { color: isDark ? '#FFFFFF' : '#000000' } : dynamicStyles.aiText,
+            ]}
+          >
+            {item.text}
+          </Text>
+          <Text style={[dynamicStyles.timestamp, item.isUser ? { textAlign: 'right', color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' } : { color: colors.textSecondary }]}>
+            {item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </Text>
+        </View>
       </View>
-    </View>
-  )
+    )
+  })
+
+  const renderMessage = (item: Message) => <MessageItem item={item} />
 
   const dynamicStyles = StyleSheet.create({
     container: {
@@ -126,186 +196,351 @@ export default function AIScreen() {
       backgroundColor: colors.background,
     },
     header: {
-      paddingHorizontal: 16,
-      paddingTop: 12,
-      paddingBottom: 12,
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 16,
+      overflow: 'hidden',
       borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+      borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 16,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+      borderWidth: 1.5,
+      borderColor: brightGold,
+    },
+    backButtonText: {
+      fontSize: 22,
+      color: isDark ? '#FFFFFF' : '#000000',
+      marginTop: -2,
     },
     headerTitle: {
-      fontSize: 22,
-      fontWeight: 'bold',
-      color: colors.text,
-      marginBottom: 4,
+      fontSize: 24, // Main Heading (H1)
+      fontFamily: 'Roboto Slab',
+      color: isDark ? '#FFFFFF' : '#000000',
+      letterSpacing: -0.5,
+      textShadowColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 3,
     },
-    headerSubtitle: {
-      fontSize: 12,
-      color: colors.textSecondary,
+    statusBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(16, 185, 129, 0.1)',
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 10,
+      marginTop: 2,
+      alignSelf: 'flex-start',
+      borderWidth: 0.5,
+      borderColor: 'rgba(16, 185, 129, 0.3)',
+    },
+    statusDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: '#10B981',
+      marginRight: 5,
+    },
+    statusText: {
+      fontSize: 10,
+      color: '#10B981',
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    headerDivider: {
+      height: 0.5,
+      backgroundColor: softGold,
+      marginHorizontal: 16,
+      marginBottom: 12,
+      opacity: 0.6,
+    },
+    aiHeaderIconContainer: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.95)' : '#FFFFFF',
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 1.5,
+      borderColor: brightGold,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 6,
+      elevation: 4,
     },
     messagesContent: {
-      paddingHorizontal: 12,
-      paddingVertical: 12,
+      paddingHorizontal: 16,
+      paddingTop: 16,
+      paddingBottom: 16,
       flexGrow: 1,
     },
     messageContainer: {
       marginVertical: 6,
       flexDirection: 'row',
+      alignItems: 'flex-end',
     },
     userMessageContainer: {
       justifyContent: 'flex-end',
+      paddingLeft: 40,
     },
     aiMessageContainer: {
       justifyContent: 'flex-start',
+      paddingRight: 40,
     },
     messageBubble: {
-      maxWidth: '85%',
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      borderRadius: 12,
-    },
-    userBubble: {
-      backgroundColor: colors.primary,
+      maxWidth: '100%',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 20,
     },
     aiBubble: {
-      backgroundColor: colors.card,
+      backgroundColor: isDark ? 'rgba(40, 40, 40, 0.8)' : '#F0F0F0',
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+      borderBottomLeftRadius: 4,
+    },
+    userBubble: {
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)',
+      borderBottomRightRadius: 4,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0,0,0,0.1)',
+    },
+    aiIconBadge: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: '#FFFFFF',
+      position: 'absolute',
+      top: -14,
+      left: -4,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderWidth: 2,
+      borderColor: brightGold,
+      zIndex: 10,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 3,
     },
     messageText: {
-      fontSize: 14,
-      lineHeight: 18,
+      fontSize: 16, // Body Text
+      lineHeight: 24,
+      fontWeight: '500',
+      letterSpacing: 0.1,
     },
     userText: {
-      color: colors.text,
+      color: '#000000',
     },
     aiText: {
       color: colors.text,
     },
+    timestamp: {
+      fontSize: 12, // Small Text
+      marginTop: 4,
+      opacity: 0.6,
+    },
     loadingContainer: {
       alignItems: 'center',
-      paddingVertical: 16,
+      paddingVertical: 20,
     },
     insightCard: {
-      marginHorizontal: 12,
-      marginVertical: 12,
-      paddingHorizontal: 14,
-      paddingVertical: 12,
-      backgroundColor: colors.card,
-      borderRadius: 10,
-      borderLeftWidth: 4,
-      borderLeftColor: colors.primary,
+      marginHorizontal: 16,
+      marginVertical: 20,
+      padding: 16,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+    },
+    insightHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 8,
+      gap: 8,
     },
     insightTitle: {
-      fontSize: 12,
-      fontWeight: '600',
-      color: colors.primary,
-      marginBottom: 6,
+      fontSize: 18, // Sub Heading (H3)
+      fontWeight: '700',
+      color: isDark ? '#FFFFFF' : '#000000',
+      letterSpacing: 0.5,
+      textTransform: 'uppercase',
     },
     insightText: {
-      fontSize: 13,
+      fontSize: 14, // Secondary Text
       color: colors.text,
-      lineHeight: 18,
+      lineHeight: 22,
     },
     inputWrapper: {
-      paddingBottom: 80,
+      paddingBottom: Platform.OS === 'ios' ? 10 : 0,
+      borderTopWidth: 1,
+      borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+      backgroundColor: 'transparent',
     },
     inputContainer: {
       flexDirection: 'row',
-      paddingHorizontal: 12,
+      paddingHorizontal: 16,
       paddingVertical: 12,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-      backgroundColor: colors.background,
-      gap: 8,
+      alignItems: 'center',
+    },
+    inputInnerContainer: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+      borderRadius: 24,
+      paddingLeft: 16,
+      paddingRight: 6,
+      paddingVertical: 4,
+      borderWidth: 1.5,
+      borderColor: brightGold,
     },
     input: {
       flex: 1,
-      backgroundColor: colors.card,
-      borderRadius: 10,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
       color: colors.text,
-      fontSize: 14,
-      maxHeight: 100,
-      borderWidth: 1,
-      borderColor: colors.border,
+      fontSize: 16,
+      maxHeight: 120,
+      paddingTop: 8,
+      paddingBottom: 8,
+      paddingRight: 12,
+      fontWeight: 'normal',
+      fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
     },
     sendButton: {
-      backgroundColor: colors.primary,
-      borderRadius: 10,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
+      width: 44,
+      height: 44,
+      backgroundColor: brightGold,
+      borderRadius: 22,
       justifyContent: 'center',
       alignItems: 'center',
     },
     sendButtonDisabled: {
-      backgroundColor: colors.border,
-    },
-    sendButtonText: {
-      color: colors.text,
-      fontWeight: '600',
-      fontSize: 14,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+      borderWidth: 0,
+      shadowOpacity: 0,
+      elevation: 0,
     },
   })
 
+  if (!fontsLoaded) {
+    return null
+  }
+
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={dynamicStyles.container}
-    >
-      <View style={dynamicStyles.header}>
-        <Text style={dynamicStyles.headerTitle}>🤖 Pocket AI</Text>
-        <Text style={dynamicStyles.headerSubtitle}>Your Personal Assistant</Text>
-      </View>
-
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        renderItem={({ item }) => renderMessage(item)}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={dynamicStyles.messagesContent}
-        scrollEnabled={true}
-        ListFooterComponent={
-          <>
-            {loading && (
-              <View style={dynamicStyles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary} />
+    <SafeAreaView style={dynamicStyles.container} edges={['top', 'bottom', 'left', 'right']}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={dynamicStyles.container}
+      >
+        <View style={dynamicStyles.header}>
+          <BlurView intensity={isDark ? 40 : 60} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+          <View style={dynamicStyles.headerRow}>
+            <Animated.View style={{ transform: [{ scale: backButtonScale }] }}>
+              <TouchableOpacity style={dynamicStyles.backButton} onPress={() => router.replace('/(tabs)')}>
+                <Text style={dynamicStyles.backButtonText}>←</Text>
+              </TouchableOpacity>
+            </Animated.View>
+            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View>
+                <Text style={dynamicStyles.headerTitle}>Pocket AI</Text>
               </View>
-            )}
-            {showInsight && insight && (
-              <View style={dynamicStyles.insightCard}>
-                <Text style={dynamicStyles.insightTitle}>💡 Productivity Tip</Text>
-                <Text style={dynamicStyles.insightText}>{insight}</Text>
+              <View style={dynamicStyles.aiHeaderIconContainer}>
+                <LottieView
+                  source={require('../../assets/animations/AI.json')}
+                  autoPlay
+                  loop
+                  style={{ width: 45, height: 45 }}
+                />
               </View>
-            )}
-          </>
-        }
-        onContentSizeChange={() => {
-          flatListRef.current?.scrollToEnd({ animated: true })
-        }}
-      />
-
-      <View style={dynamicStyles.inputWrapper}>
-        <View style={dynamicStyles.inputContainer}>
-          <TextInput
-            style={dynamicStyles.input}
-            placeholder="Ask me anything..."
-            placeholderTextColor={colors.textSecondary}
-            value={inputText}
-            onChangeText={setInputText}
-            multiline
-            editable={!loading}
-          />
-          <TouchableOpacity
-            style={[dynamicStyles.sendButton, loading && dynamicStyles.sendButtonDisabled]}
-            onPress={handleSendMessage}
-            disabled={loading || !inputText.trim()}
-          >
-            <Text style={dynamicStyles.sendButtonText}>Send</Text>
-          </TouchableOpacity>
+            </View>
+          </View>
         </View>
 
-      </View>
-    </KeyboardAvoidingView>
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          renderItem={({ item }) => renderMessage(item)}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={dynamicStyles.messagesContent}
+          scrollEnabled={true}
+          initialNumToRender={15}
+          maxToRenderPerBatch={10}
+          windowSize={10}
+          ListFooterComponent={
+            <>
+              {loading && (
+                <View style={dynamicStyles.loadingContainer}>
+                   <LottieView
+                    source={require('../../assets/animations/Loader.json')}
+                    autoPlay
+                    loop
+                    style={{ width: 120, height: 120 }}
+                  />
+                </View>
+              )}
+              {showInsight && insight && (
+                <View style={dynamicStyles.insightCard}>
+                  <View style={dynamicStyles.insightHeader}>
+                     <LottieView
+                      source={require('../../assets/animations/AI.json')}
+                      autoPlay
+                      loop
+                      style={{ width: 24, height: 24 }}
+                    />
+                    <Text style={dynamicStyles.insightTitle}>Pro Insight</Text>
+                  </View>
+                  <Text style={dynamicStyles.insightText}>{insight}</Text>
+                </View>
+              )}
+            </>
+          }
+        />
+
+        <View style={dynamicStyles.inputWrapper}>
+          <BlurView intensity={isDark ? 30 : 50} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+          <View style={dynamicStyles.inputContainer}>
+            <View style={dynamicStyles.inputInnerContainer}>
+              <TextInput
+                style={dynamicStyles.input}
+                placeholder="Type your message..."
+                placeholderTextColor={isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)'}
+                value={inputText}
+                onChangeText={setInputText}
+                multiline
+                editable={!loading}
+                blurOnSubmit={false}
+              />
+              <TouchableOpacity
+                style={[
+                  dynamicStyles.sendButton,
+                  (loading || !inputText.trim()) && dynamicStyles.sendButtonDisabled
+                ]}
+                onPress={handleSendMessage}
+                disabled={loading || !inputText.trim()}
+              >
+                <Ionicons 
+                  name={loading ? "hourglass-outline" : "send"} 
+                  size={22} 
+                  color={loading || !inputText.trim() ? colors.textSecondary : "#000000"} 
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   )
 }
