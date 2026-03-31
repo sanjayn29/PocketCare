@@ -482,7 +482,8 @@ export default function CalculatorScreen() {
       alignItems: 'center',
       backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
       borderWidth: 1.5,
-      borderColor: '#3B82F6',
+      borderColor: activeTab === 'basic' ? uiColors.primary :
+                   activeTab === 'interest' ? uiColors.secondary : uiColors.tertiary,
     },
     backButtonText: {
       fontSize: 22,
