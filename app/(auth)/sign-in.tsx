@@ -4,11 +4,12 @@ import { getColors } from '@/constants/styles'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import { useOAuth } from '@clerk/expo'
 import { Ionicons } from '@expo/vector-icons'
+import { useFonts } from 'expo-font'
 import * as Linking from 'expo-linking'
 import { useRouter } from 'expo-router'
 import LottieView from 'lottie-react-native'
 import React, { useEffect, useState } from 'react'
-import { ActivityIndicator, Dimensions, Image, Pressable, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, Dimensions, Image, Pressable, StyleSheet, Text, View } from 'react-native'
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -38,6 +39,9 @@ export default function AuthPage() {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const colors = getColors(isDark)
+  const [fontsLoaded] = useFonts({
+    'Momo Signature': require('../../assets/Font/MomoSignature-Regular.ttf')
+  })
   
   const [errorMessage, setErrorMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -108,6 +112,10 @@ export default function AuthPage() {
     }
   }
 
+  if (!fontsLoaded) {
+    return null
+  }
+
   const dynamicStyles = StyleSheet.create({
     container: {
       flex: 1,
@@ -160,8 +168,9 @@ export default function AuthPage() {
     },
     googleButtonText: {
       color: colors.text,
-      fontWeight: '700',
-      fontSize: 16,
+      fontFamily: 'Momo Signature',
+      fontSize: 22,
+      fontStyle: 'normal',
     },
     buttonPressed: {
       opacity: 0.85,
@@ -328,7 +337,7 @@ export default function AuthPage() {
                 loop
                 style={{ width: 48, height: 48, marginRight: 16 }}
               />
-              <ThemedText style={dynamicStyles.googleButtonText}>Continue with Google</ThemedText>
+              <Text style={dynamicStyles.googleButtonText}>Continue with Google</Text>
             </View>
           )}
         </Pressable>
