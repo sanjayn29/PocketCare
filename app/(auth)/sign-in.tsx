@@ -6,6 +6,7 @@ import { useOAuth } from '@clerk/expo'
 import { Ionicons } from '@expo/vector-icons'
 import * as Linking from 'expo-linking'
 import { useRouter } from 'expo-router'
+import LottieView from 'lottie-react-native'
 import React, { useEffect, useState } from 'react'
 import { ActivityIndicator, Dimensions, Image, Pressable, StyleSheet, View } from 'react-native'
 import Animated, {
@@ -16,17 +17,19 @@ import Animated, {
   withSequence,
   withTiming
 } from 'react-native-reanimated'
-import LottieView from 'lottie-react-native'
 
 const { width } = Dimensions.get('window');
 
 const APP_FEATURES = [
-  { icon: 'heart-outline', title: 'Health', sub: 'AI guidance' },
-  { icon: 'wallet-outline', title: 'Finance', sub: 'Smart tracking' },
-  { icon: 'briefcase-outline', title: 'Placement', sub: 'Career growth' },
-  { icon: 'school-outline', title: 'Goals', sub: 'Mastery paths' },
-  { icon: 'sparkles-outline', title: 'Personal AI', sub: 'Tailored advice' },
-  { icon: 'checkmark-circle-outline', title: 'TODO', sub: 'Task management' },
+  { icon: 'chatbubble-ellipses-outline', title: 'Pocket AI', sub: 'Ask smart questions' },
+  { icon: 'heart-outline', title: 'Health', sub: 'Track diet, fitness & meds' },
+  { icon: 'wallet-outline', title: 'Finance', sub: 'Budget, calculators & history' },
+  { icon: 'briefcase-outline', title: 'Placement', sub: 'Application progress' },
+  { icon: 'school-outline', title: 'Goals', sub: 'Set milestones & deadlines' },
+  { icon: 'document-text-outline', title: 'Notes', sub: 'Save ideas & journals' },
+  { icon: 'checkmark-circle-outline', title: 'Tasks', sub: 'Prioritize work & habits' },
+  { icon: 'calendar-outline', title: 'Schedule', sub: 'Events, reminders & status' },
+  { icon: 'trophy-outline', title: 'Skills', sub: 'Build growth plans' },
 ] as const
 
 export default function AuthPage() {
