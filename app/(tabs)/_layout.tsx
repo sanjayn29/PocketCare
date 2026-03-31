@@ -5,9 +5,10 @@ import React from 'react';
 import { View } from 'react-native';
 import LottieView from 'lottie-react-native';
 
-import { AnimatedTabButton } from '@/components/AnimatedTabButton';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { getColors } from '@/constants/styles';
+import { AnimatedTabButton } from '@/components/AnimatedTabButton';
+import FloatingActionButton from '@/components/FloatingActionButton';
 
 export default function TabLayout() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -133,16 +134,18 @@ export default function TabLayout() {
         />
 
         <Tabs.Screen
-          name="placement"
+          name="placement" // Keeping string name the same to not break routing
           options={{
-            title: 'Placement',
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons
-                name={focused ? 'briefcase' : 'briefcase-outline'}
-                size={focused ? 28 : 26}
-                color={color}
+            title: '+Options',
+            tabBarIcon: () => (
+              <LottieView
+                source={require('../../assets/animations/More.json')}
+                autoPlay
+                loop
+                style={{ width: 44, height: 44 }}
               />
             ),
+            tabBarButton: (props) => <FloatingActionButton asTabBarItem {...props} />,
           }}
         />
 

@@ -5,14 +5,17 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Animated, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { AnimatedTabButton } from './AnimatedTabButton';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface FloatingActionButtonProps {
   onMenuPress?: (optionId: string) => void;
+  asTabBarItem?: boolean;
+  [key: string]: any;
 }
 
-export default function FloatingActionButton({ onMenuPress }: FloatingActionButtonProps) {
+export default function FloatingActionButton({ onMenuPress, asTabBarItem, ...props }: FloatingActionButtonProps) {
   const router = useRouter();
   const [showMenu, setShowMenu] = useState(false);
   const colorScheme = useColorScheme();
@@ -141,48 +144,57 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
 
   return (
     <>
-      <Pressable
-        style={({ pressed }) => [
-          styles.fab,
-          pressed && styles.fabPressed,
-        ]}
-        onPress={openMenu}
-        {...swipeUpResponder.panHandlers}
-      >
-        <LinearGradient
-          colors={isDark ? ['#B8860B', '#D4AF37'] : ['#D4AF37', '#F4D03F']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.fabGradient}
+      {asTabBarItem ? (
+        <AnimatedTabButton
+          {...(props as any)}
+          onPress={(e: any) => {
+            openMenu();
+          }}
+        />
+      ) : (
+        <Pressable
+          style={({ pressed }) => [
+            styles.fab,
+            pressed && styles.fabPressed,
+          ]}
+          onPress={openMenu}
+          {...swipeUpResponder.panHandlers}
         >
-          <Animated.View
-            style={{
-              transform: [
+          <LinearGradient
+            colors={isDark ? ['#B8860B', '#D4AF37'] : ['#D4AF37', '#F4D03F']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.fabGradient}
+          >
+            <Animated.View
+              style={{
+                transform: [
+                  {
+                    rotate: iconRotate.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['0deg', '45deg'],
+                    }),
+                  },
+                ],
+              }}
+            >
+              <Ionicons name="add" size={22} color="#FFFFFF" />
+            </Animated.View>
+            <Text style={styles.fabLabel}>Options</Text>
+            <Animated.View
+              style={[
+                styles.fabShine,
                 {
-                  rotate: iconRotate.interpolate({
+                  opacity: pulseAnim.interpolate({
                     inputRange: [0, 1],
-                    outputRange: ['0deg', '45deg'],
+                    outputRange: [0.16, 0.34],
                   }),
                 },
-              ],
-            }}
-          >
-            <Ionicons name="add" size={22} color="#FFFFFF" />
-          </Animated.View>
-          <Text style={styles.fabLabel}>Options</Text>
-          <Animated.View
-            style={[
-              styles.fabShine,
-              {
-                opacity: pulseAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.16, 0.34],
-                }),
-              },
-            ]}
-          />
+              ]}
+            />
         </LinearGradient>
       </Pressable>
+      )}
 
       <Modal
         visible={showMenu}
