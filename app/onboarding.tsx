@@ -1,16 +1,35 @@
 
-import { Ionicons } from '@expo/vector-icons'
-import { useRouter } from 'expo-router'
-import React, { useEffect, useRef, useState } from 'react'
-import { Animated, Pressable, StyleSheet, View } from 'react-native'
-
 import { ThemedText } from '@/components/themed-text'
 import { ThemedView } from '@/components/themed-view'
 import { getColors } from '@/constants/styles'
 import { useColorScheme } from '@/hooks/use-color-scheme'
+import { Ionicons } from '@expo/vector-icons'
+import { useRouter } from 'expo-router'
+import LottieView from 'lottie-react-native'
+import React, { useEffect, useRef, useState } from 'react'
+import { Animated, Pressable, StyleSheet, View } from 'react-native'
 
-const ONBOARDING_PAGES = [
+type OnboardingPageData =
+  | {
+      type: 'intro'
+      title: string
+      subtitle: string
+    }
+  | {
+      type: 'feature'
+      title: string
+      subtitle: string
+      blocks: readonly { label: string; detail: string }[]
+    }
+
+const ONBOARDING_PAGES: readonly OnboardingPageData[] = [
   {
+    type: 'intro',
+    title: 'PocketCare',
+    subtitle: '"Care, clarity, and control — all in your pocket."',
+  },
+  {
+    type: 'feature',
     title: 'Smart assistant in your pocket',
     subtitle: 'Pocket AI helps you ask questions, get instant insights, and complete tasks faster.',
     blocks: [
@@ -20,6 +39,7 @@ const ONBOARDING_PAGES = [
     ],
   },
   {
+    type: 'feature',
     title: 'Stay healthy and organized',
     subtitle: 'Track your wellness, save notes, and turn goals into habits.',
     blocks: [
@@ -29,6 +49,7 @@ const ONBOARDING_PAGES = [
     ],
   },
   {
+    type: 'feature',
     title: 'Manage growth the smart way',
     subtitle: 'From finances to schedules, keep everything moving forward.',
     blocks: [
@@ -84,25 +105,42 @@ export default function OnboardingPage() {
       <View style={styles.canvas}>
         <Animated.View style={[styles.diagramContainer, { transform: [{ translateY: floatAnim }] }]}> 
           <View style={[styles.glowCircle, { backgroundColor: `${colors.primary}20` }]} />
-          <View style={styles.diagramRow}>
-            {page.blocks.map((block, index) => (
-              <React.Fragment key={block.label}>
-                <View style={[styles.blockCard, { backgroundColor: colors.card }]}> 
-                  <ThemedText style={[styles.blockTitle, { color: colors.text }]}>{block.label}</ThemedText>
-                  <ThemedText style={[styles.blockSubtitle, { color: colors.textSecondary }]}>{block.detail}</ThemedText>
-                </View>
-                {index < page.blocks.length - 1 ? (
-                  <Ionicons name="arrow-down" size={24} color={colors.primary} style={styles.arrowIcon} />
-                ) : null}
-              </React.Fragment>
-            ))}
-          </View>
+          {page.type === 'intro' ? (
+            <View style={styles.introContent}>
+              <ThemedText type="title" style={[styles.introTitle, { color: colors.primary }]}>{page.title}</ThemedText>
+              <ThemedText style={[styles.introQuote, { color: colors.text }]}>{page.subtitle}</ThemedText>
+              <LottieView
+                source={require('../assets/animations/Intro.json')}
+                autoPlay
+                loop
+                style={styles.introAnimation}
+              />
+            </View>
+          ) : (
+            <View style={styles.diagramRow}>
+              {page.blocks.map((block, index) => (
+                <React.Fragment key={block.label}>
+                  <View style={[styles.blockCard, { backgroundColor: colors.card }]}> 
+                    <ThemedText style={[styles.blockTitle, { color: colors.text }]}>{block.label}</ThemedText>
+                    <ThemedText style={[styles.blockSubtitle, { color: colors.textSecondary }]}>{block.detail}</ThemedText>
+                  </View>
+                  {index < page.blocks.length - 1 ? (
+                    <Ionicons name="arrow-down" size={24} color={colors.primary} style={styles.arrowIcon} />
+                  ) : null}
+                </React.Fragment>
+              ))}
+            </View>
+          )}
         </Animated.View>
       </View>
 
       <View style={styles.body}>
-        <ThemedText type="title" style={[styles.title, { color: colors.text }]}>{page.title}</ThemedText>
-        <ThemedText style={[styles.subtitle, { color: colors.textSecondary }]}>{page.subtitle}</ThemedText>
+        {page.type !== 'intro' && (
+          <>
+            <ThemedText type="title" style={[styles.title, { color: colors.text }]}>{page.title}</ThemedText>
+            <ThemedText style={[styles.subtitle, { color: colors.textSecondary }]}>{page.subtitle}</ThemedText>
+          </>
+        )}
       </View>
 
       <View style={styles.footer}>
@@ -163,6 +201,31 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  introContent: {
+    width: 280,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  introTitle: {
+    fontSize: 42,
+    lineHeight: 48,
+    fontWeight: '900',
+    textAlign: 'center',
+    marginBottom: 18,
+  },
+  introQuote: {
+    fontSize: 18,
+    lineHeight: 26,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginBottom: 18,
+  },
+  introAnimation: {
+    width: 220,
+    height: 220,
+    marginTop: 8,
   },
   blockCard: {
     width: 260,

@@ -35,28 +35,60 @@ export default function HomeScreen() {
     }
   }, [user])
 
+  const animationItems = [
+    { source: require('../../assets/animations/Morphing.json'), label: 'Morphing' },
+    { source: require('../../assets/animations/Rocketship.json'), label: 'Rocketship' },
+    { source: require('../../assets/animations/Loader.json'), label: 'Loader' },
+    { source: require('../../assets/animations/Intro.json'), label: 'Intro' },
+  ]
+
   const dynamicStyles = StyleSheet.create({
     container: {
       flex: 1,
       paddingTop: 60,
       paddingHorizontal: 20,
-      justifyContent: 'center',
+      justifyContent: 'flex-start',
       alignItems: 'center',
       backgroundColor: colors.background,
     },
     title: {
       fontSize: 32,
       fontWeight: 'bold',
-      marginBottom: 20,
-      position: 'absolute',
-      top: 60,
-      left: 20,
+      marginBottom: 16,
+      alignSelf: 'flex-start',
       color: colors.primary,
     },
+    animationGrid: {
+      width: '100%',
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      marginBottom: 24,
+    },
+    animationCard: {
+      width: '48%',
+      borderRadius: 24,
+      overflow: 'hidden',
+      backgroundColor: colors.card,
+      marginBottom: 16,
+      alignItems: 'center',
+      padding: 12,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: 5,
+    },
     animation: {
-      width: 250,
-      height: 250,
-      marginBottom: 20,
+      width: 140,
+      height: 140,
+      marginBottom: 8,
+    },
+    animationLabel: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.text,
+      textAlign: 'center',
     },
     greetingMessage: {
       fontSize: 24,
@@ -77,12 +109,19 @@ export default function HomeScreen() {
   return (
     <View style={dynamicStyles.container}>
       <Text style={dynamicStyles.title}>PocketCare ✨</Text>
-      <LottieView
-        source={require('../../assets/animations/Morphing.json')}
-        autoPlay
-        loop
-        style={dynamicStyles.animation}
-      />
+      <View style={dynamicStyles.animationGrid}>
+        {animationItems.map((item) => (
+          <View key={item.label} style={dynamicStyles.animationCard}>
+            <LottieView
+              source={item.source}
+              autoPlay
+              loop
+              style={dynamicStyles.animation}
+            />
+            <Text style={dynamicStyles.animationLabel}>{item.label}</Text>
+          </View>
+        ))}
+      </View>
       <Text style={dynamicStyles.greetingMessage}>{greeting.message}</Text>
       <Text style={dynamicStyles.motivational}>{greeting.motivational}</Text>
     </View>

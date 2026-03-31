@@ -11,12 +11,12 @@ import LottieView from 'lottie-react-native'
 import React, { useEffect, useState } from 'react'
 import { ActivityIndicator, Dimensions, Image, Pressable, StyleSheet, Text, View } from 'react-native'
 import Animated, {
-    Easing,
-    useAnimatedStyle,
-    useSharedValue,
-    withRepeat,
-    withSequence,
-    withTiming
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming
 } from 'react-native-reanimated'
 
 const { width } = Dimensions.get('window');
