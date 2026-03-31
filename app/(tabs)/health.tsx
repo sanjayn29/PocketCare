@@ -246,7 +246,7 @@ export default function HealthScreen() {
     if (!isCreating) {
       return (
         <TouchableOpacity style={dynamicStyles.createCollapsed} onPress={()=>{ resetForm(); setCreating(true); }}>
-          <View style={[dynamicStyles.createIconWrap, {backgroundColor: type==='Medical'?'#FEE2E2':type==='Diet'?'#DCFCE7':'#E0E7FF'}]}>
+          <View style={[dynamicStyles.createIconWrap, {backgroundColor: type==='Medical' ? colors.danger + '1A' : type==='Diet' ? colors.success + '1A' : colors.primary + '1A'}]}>
              <Ionicons name={type==='Medical'?"medkit-outline":type==='Diet'?"restaurant-outline":"barbell-outline"} size={20} color={type==='Medical'?colors.danger:type==='Diet'?colors.success:colors.primary} />
           </View>
           <Text style={dynamicStyles.createCollapsedText}>Create new {type} record...</Text>
@@ -329,7 +329,7 @@ export default function HealthScreen() {
      const completedCount = item.completed_dates.length;
      const pct = totalDays > 0 ? Math.min(Math.round((completedCount / totalDays) * 100), 100) : 0;
      const datesArray = generateDateList(item.start_date, item.end_date);
-     const colorTheme = isDiet ? '#10B981' : '#4F46E5';
+     const colorTheme = isDiet ? colors.success : colors.primary;
 
      return (
        <View style={dynamicStyles.card}>
@@ -490,9 +490,9 @@ export default function HealthScreen() {
         <DateTimePicker value={new Date()} mode="date" display="default" onChange={onDateChange}/>
       )}
 
-      {renderEditModal(editingMedical !== null, () => setEditingMedical(null), handleUpdateMedicalProps, 'Edit Medical Record', '#EF4444')}
-      {renderEditModal(editingDiet !== null, () => setEditingDiet(null), handleUpdateDietProps, 'Edit Diet Plan', '#10B981')}
-      {renderEditModal(editingFitness !== null, () => setEditingFitness(null), handleUpdateFitnessProps, 'Edit Fitness Plan', '#4F46E5')}
+      {renderEditModal(editingMedical !== null, () => setEditingMedical(null), handleUpdateMedicalProps, 'Edit Medical Record', colors.danger)}
+      {renderEditModal(editingDiet !== null, () => setEditingDiet(null), handleUpdateDietProps, 'Edit Diet Plan', colors.success)}
+      {renderEditModal(editingFitness !== null, () => setEditingFitness(null), handleUpdateFitnessProps, 'Edit Fitness Plan', colors.primary)}
 
       <FloatingActionButton />
     </KeyboardAvoidingView>

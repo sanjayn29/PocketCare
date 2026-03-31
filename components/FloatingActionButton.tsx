@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Animated, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { getColors } from '@/constants/styles';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -13,15 +15,19 @@ interface FloatingActionButtonProps {
 export default function FloatingActionButton({ onMenuPress }: FloatingActionButtonProps) {
   const router = useRouter();
   const [showMenu, setShowMenu] = useState(false);
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const colors = getColors(isDark);
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   const menuOptions = [
-    { id: 'goals', label: 'Goals', icon: 'flag', tint: '#E8F4FF' },
-    { id: 'notes', label: 'Notes', icon: 'document-text', tint: '#EEFCEB' },
-    { id: 'calculator', label: 'Calculator', icon: 'calculator', tint: '#FFF4E8' },
-    { id: 'tasks', label: 'Tasks', icon: 'checkbox', tint: '#F5EDFF' },
-    { id: 'skills', label: 'Skills', icon: 'school', tint: '#FFEFF4' },
-    { id: 'schedule', label: 'Schedule', icon: 'calendar', tint: '#E0F2FE' },
-    { id: 'profile', label: 'Profile', icon: 'person', tint: '#EAF2FF' },
+    { id: 'goals', label: 'Goals', icon: 'flag', tint: colors.danger + '1A' },
+    { id: 'notes', label: 'Notes', icon: 'document-text', tint: colors.success + '1A' },
+    { id: 'calculator', label: 'Calculator', icon: 'calculator', tint: colors.warning + '1A' },
+    { id: 'tasks', label: 'Tasks', icon: 'checkbox', tint: colors.primary + '1A' },
+    { id: 'skills', label: 'Skills', icon: 'school', tint: colors.secondary + '1A' },
+    { id: 'schedule', label: 'Schedule', icon: 'calendar', tint: colors.info + '1A' },
+    { id: 'profile', label: 'Profile', icon: 'person', tint: colors.textSecondary + '1A' },
   ];
 
   const pulseAnim = useRef(new Animated.Value(0)).current;
@@ -87,7 +93,6 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
         }),
       ]).start();
 
-      // Ensure every open starts from hidden state, then reveal options one by one.
       menuItemAnims.forEach((anim) => anim.setValue(0));
 
       Animated.stagger(
@@ -126,7 +131,6 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
     }
 
     if (route) {
-      // Defers navigation so the same tap both closes sheet and navigates reliably.
       setTimeout(() => {
         router.push(route as any);
       }, 60);
@@ -144,7 +148,7 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
         {...swipeUpResponder.panHandlers}
       >
         <LinearGradient
-          colors={['#0F172A', '#1D4ED8']}
+          colors={isDark ? ['#B8860B', '#D4AF37'] : ['#D4AF37', '#F4D03F']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.fabGradient}
@@ -202,7 +206,7 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
             <View style={styles.menuHeader}>
               <Text style={styles.menuTitle}>Choose an Option</Text>
               <Pressable onPress={() => setShowMenu(false)} style={styles.closeButton}>
-                <Ionicons name="close" size={18} color="#111111" />
+                <Ionicons name="close" size={18} color={colors.text} />
               </Pressable>
             </View>
 
@@ -243,7 +247,7 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
                       onPress={() => handleMenuPress(option.id)}
                     >
                       <View style={styles.menuItemIconWrap}>
-                        <Ionicons name={option.icon as any} size={20} color="#111111" />
+                        <Ionicons name={option.icon as any} size={20} color={colors.text} />
                       </View>
                       <Text style={styles.menuItemLabel}>{option.label}</Text>
                     </TouchableOpacity>
@@ -258,7 +262,7 @@ export default function FloatingActionButton({ onMenuPress }: FloatingActionButt
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   fab: {
     position: 'absolute',
     bottom: 86,
@@ -281,7 +285,7 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#DBEAFE',
+    borderColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -305,7 +309,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     top: -28,
     right: -14,
-    backgroundColor: '#93C5FD',
+    backgroundColor: '#FFFFFF',
   },
   modalOverlay: {
     flex: 1,
@@ -313,18 +317,18 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    backgroundColor: 'rgba(15, 23, 42, 0.45)', // Works for both themes
   },
   bottomSheet: {
     zIndex: 2,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 18,
     paddingTop: 10,
     paddingBottom: 18,
     borderTopWidth: 2,
-    borderTopColor: '#D8E7FA',
+    borderTopColor: colors.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.2,
@@ -336,7 +340,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 5,
     borderRadius: 999,
-    backgroundColor: '#CBD5E1',
+    backgroundColor: colors.border,
     marginBottom: 12,
   },
   menuHeader: {
@@ -351,12 +355,12 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: colors.border,
   },
   menuTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#0F172A',
+    color: colors.text,
     letterSpacing: 0.1,
   },
   menuItems: {
@@ -375,22 +379,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#E7ECF3',
+    borderColor: colors.border,
   },
   menuItemIconWrap: {
     width: 34,
     height: 34,
     borderRadius: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.overlay,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E6EBF2',
+    borderColor: colors.border,
   },
   menuItemLabel: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#0F172A',
+    color: colors.text,
     marginTop: 8,
     textAlign: 'center',
   },

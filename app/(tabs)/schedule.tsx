@@ -584,7 +584,7 @@ export default function ScheduleScreen() {
             <TextInput
               style={styles.input}
               placeholder="Meeting Title"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={colors.textSecondary}
               value={newTitle}
               onChangeText={setNewTitle}
               autoFocus
@@ -593,7 +593,7 @@ export default function ScheduleScreen() {
             <TextInput
               style={styles.input}
               placeholder="Purpose"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={colors.textSecondary}
               value={newPurpose}
               onChangeText={setNewPurpose}
               multiline
@@ -610,7 +610,7 @@ export default function ScheduleScreen() {
             <TextInput
               style={styles.input}
               placeholder="Location (optional)"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={colors.textSecondary}
               value={newLocation}
               onChangeText={setNewLocation}
             />
@@ -705,6 +705,7 @@ export default function ScheduleScreen() {
             <TextInput
               style={styles.input}
               placeholder="Meeting Title"
+              placeholderTextColor={colors.textSecondary}
               value={editTitle}
               onChangeText={setEditTitle}
             />
@@ -712,6 +713,7 @@ export default function ScheduleScreen() {
             <TextInput
               style={styles.input}
               placeholder="Purpose"
+              placeholderTextColor={colors.textSecondary}
               value={editPurpose}
               onChangeText={setEditPurpose}
               multiline
@@ -728,6 +730,7 @@ export default function ScheduleScreen() {
             <TextInput
               style={styles.input}
               placeholder="Location (optional)"
+              placeholderTextColor={colors.textSecondary}
               value={editLocation}
               onChangeText={setEditLocation}
             />

@@ -1,10 +1,17 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Vibration } from "react-native";
 import { useUser } from "@clerk/expo";
 import { saveTapGameScore } from "@/lib/games-service";
+import { getColors } from '@/constants/styles';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 const TapGameComponent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { user } = useUser();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const colors = getColors(isDark);
+  const styles = React.useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(5);
   const [gameActive, setGameActive] = useState(true);
@@ -97,28 +104,28 @@ const TapGameComponent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#1e1e2e", paddingHorizontal: 16, paddingTop: 60, paddingBottom: 20 },
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background, paddingHorizontal: 16, paddingTop: 60, paddingBottom: 20 },
   closeButton: { position: "absolute", top: 50, right: 16, zIndex: 10, padding: 8 },
-  closeButtonText: { fontSize: 24, color: "#fff" },
-  title: { fontSize: 28, fontWeight: "bold", color: "#fff", marginBottom: 40, textAlign: "center" },
+  closeButtonText: { fontSize: 24, color: colors.textSecondary },
+  title: { fontSize: 28, fontWeight: "bold", color: colors.text, marginBottom: 40, textAlign: "center" },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  introText: { fontSize: 18, color: "#a0a0a0", textAlign: "center", marginBottom: 40 },
+  introText: { fontSize: 18, color: colors.textSecondary, textAlign: "center", marginBottom: 40 },
   gameContainer: { flex: 1, justifyContent: "space-around", alignItems: "center" },
   statsRow: { flexDirection: "row", justifyContent: "center", gap: 40, marginBottom: 40 },
   statBox: { alignItems: "center" },
-  statLabel: { fontSize: 14, color: "#a0a0a0", marginBottom: 8 },
-  statValue: { fontSize: 32, fontWeight: "bold", color: "#4a9eff" },
-  timeWarning: { color: "#ff6b6b" },
-  tapButton: { width: 160, height: 160, borderRadius: 80, backgroundColor: "#4a9eff", justifyContent: "center", alignItems: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 },
-  tapButtonText: { fontSize: 48, fontWeight: "bold", color: "#fff" },
-  hintText: { fontSize: 16, color: "#a0a0a0", textAlign: "center" },
-  startButton: { backgroundColor: "#4a9eff", paddingVertical: 14, paddingHorizontal: 32, borderRadius: 8, marginBottom: 12, width: "80%", alignItems: "center" },
-  startButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  secondaryButton: { backgroundColor: "#e0e0e0" },
-  secondaryButtonText: { color: "#333", fontSize: 16, fontWeight: "600" },
-  resultTitle: { fontSize: 32, fontWeight: "bold", color: "#fff", marginBottom: 16 },
-  resultScore: { fontSize: 48, fontWeight: "bold", color: "#4a9eff", marginBottom: 40 },
+  statLabel: { fontSize: 14, color: colors.textSecondary, marginBottom: 8 },
+  statValue: { fontSize: 32, fontWeight: "bold", color: colors.primary },
+  timeWarning: { color: colors.danger },
+  tapButton: { width: 160, height: 160, borderRadius: 80, backgroundColor: colors.primary, justifyContent: "center", alignItems: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 },
+  tapButtonText: { fontSize: 48, fontWeight: "bold", color: "#FFFFFF" },
+  hintText: { fontSize: 16, color: colors.textSecondary, textAlign: "center" },
+  startButton: { backgroundColor: colors.primary, paddingVertical: 14, paddingHorizontal: 32, borderRadius: 8, marginBottom: 12, width: "80%", alignItems: "center" },
+  startButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
+  secondaryButton: { backgroundColor: colors.border },
+  secondaryButtonText: { color: colors.text, fontSize: 16, fontWeight: "600" },
+  resultTitle: { fontSize: 32, fontWeight: "bold", color: colors.text, marginBottom: 16 },
+  resultScore: { fontSize: 48, fontWeight: "bold", color: colors.primary, marginBottom: 40 },
 });
 
 export default TapGameComponent;

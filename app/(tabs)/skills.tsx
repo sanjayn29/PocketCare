@@ -30,9 +30,9 @@ export default function SkillsScreen() {
 
   // Move LEVEL_CONFIG inside component to use dynamic colors
   const LEVEL_CONFIG: Record<SkillLevel, { label: string; color: string; bg: string }> = {
-    beginner:     { label: 'Beginner',     color: colors.success, bg: '#DCFCE7' },
-    intermediate: { label: 'Intermediate', color: colors.secondary, bg: '#FEF9C3' },
-    advanced:     { label: 'Advanced',     color: colors.primary, bg: '#F3E8FF' },
+    beginner:     { label: 'Beginner',     color: colors.success,   bg: colors.success + '20' },
+    intermediate: { label: 'Intermediate', color: colors.warning,   bg: colors.warning + '20' },
+    advanced:     { label: 'Advanced',     color: colors.primary,   bg: colors.primary + '20' },
   };
 
   const [skills, setSkills] = useState<Skill[]>([]);

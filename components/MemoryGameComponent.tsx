@@ -1,7 +1,9 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Vibration } from "react-native";
 import { useUser } from "@clerk/expo";
 import { saveMemoryGameScore } from "@/lib/games-service";
+import { getColors } from '@/constants/styles';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 interface Card {
   id: number;
@@ -14,6 +16,11 @@ const EMOJIS = ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼"];
 
 const MemoryGameComponent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { user } = useUser();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const colors = getColors(isDark);
+  const styles = React.useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+
   const [cards, setCards] = useState<Card[]>([]);
   const [flippedCards, setFlippedCards] = useState<number[]>([]);
   const [matchedPairs, setMatchedPairs] = useState(0);
@@ -92,7 +99,9 @@ const MemoryGameComponent: React.FC<{ onClose: () => void }> = ({ onClose }) => 
         <View style={styles.grid}>
           {cards.map((card, index) => (
             <TouchableOpacity key={index} style={[styles.card, card.flipped || card.matched ? styles.cardFlipped : styles.cardUnflipped]} onPress={() => handleCardPress(index)}>
-              <Text style={styles.cardText}>{card.flipped || card.matched ? card.value : "?"}</Text>
+              <Text style={[styles.cardText, card.flipped || card.matched ? styles.cardTextFlipped : styles.cardTextUnflipped]}>
+                {card.flipped || card.matched ? card.value : "?"}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -116,26 +125,28 @@ const MemoryGameComponent: React.FC<{ onClose: () => void }> = ({ onClose }) => 
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#1e1e2e", paddingHorizontal: 16, paddingTop: 60 },
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background, paddingHorizontal: 16, paddingTop: 60 },
   closeButton: { position: "absolute", top: 50, right: 16, zIndex: 10, padding: 8 },
-  closeButtonText: { fontSize: 24, color: "#fff" },
-  title: { fontSize: 28, fontWeight: "bold", color: "#fff", marginBottom: 18 },
+  closeButtonText: { fontSize: 24, color: colors.textSecondary },
+  title: { fontSize: 28, fontWeight: "bold", color: colors.text, marginBottom: 18 },
   stats: { flexDirection: "row", justifyContent: "space-between", marginBottom: 20 },
-  statText: { fontSize: 16, color: "#a0a0a0" },
+  statText: { fontSize: 16, color: colors.textSecondary },
   grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 12, marginBottom: 20 },
   card: { width: "22%", aspectRatio: 1, borderRadius: 12, justifyContent: "center", alignItems: "center", borderWidth: 2 },
-  cardUnflipped: { backgroundColor: "#4a9eff", borderColor: "#2d6fd3" },
-  cardFlipped: { backgroundColor: "#e0e0e0", borderColor: "#b0b0b0" },
+  cardUnflipped: { backgroundColor: colors.primary, borderColor: colors.primary },
+  cardFlipped: { backgroundColor: colors.card, borderColor: colors.border },
   cardText: { fontSize: 32 },
+  cardTextFlipped: { color: colors.text },
+  cardTextUnflipped: { color: '#FFFFFF' },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.7)", justifyContent: "center", alignItems: "center" },
-  winModal: { backgroundColor: "#fff", borderRadius: 20, padding: 24, alignItems: "center", width: "80%" },
-  winText: { fontSize: 36, fontWeight: "bold", marginBottom: 12 },
-  resultText: { fontSize: 18, color: "#666", marginBottom: 24 },
-  button: { backgroundColor: "#4a9eff", paddingVertical: 12, paddingHorizontal: 24, borderRadius: 8, marginBottom: 12, width: "100%", alignItems: "center" },
-  buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  secondaryButton: { backgroundColor: "#e0e0e0" },
-  secondaryButtonText: { color: "#333", fontSize: 16, fontWeight: "600" },
+  winModal: { backgroundColor: colors.card, borderRadius: 20, padding: 24, alignItems: "center", width: "80%", borderWidth: 1, borderColor: colors.border },
+  winText: { fontSize: 36, fontWeight: "bold", marginBottom: 12, color: colors.text },
+  resultText: { fontSize: 18, color: colors.textSecondary, marginBottom: 24 },
+  button: { backgroundColor: colors.primary, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 8, marginBottom: 12, width: "100%", alignItems: "center" },
+  buttonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
+  secondaryButton: { backgroundColor: colors.border },
+  secondaryButtonText: { color: colors.text, fontSize: 16, fontWeight: "600" },
 });
 
 export default MemoryGameComponent;

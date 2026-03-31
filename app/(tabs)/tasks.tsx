@@ -756,15 +756,15 @@ export default function TasksScreen() {
 
              {item.isGoalTask && (
                 <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>
-                   <Ionicons name="flag" size={12} color={isCompleted ? "#94A3B8" : "#3B82F6"} />
-                   <Text style={{fontSize: 10, fontWeight: '700', color: isCompleted ? "#94A3B8" : "#3B82F6"}}>GOAL TASK</Text>
+                   <Ionicons name="flag" size={12} color={isCompleted ? colors.textSecondary : colors.primary} />
+                   <Text style={{fontSize: 10, fontWeight: '700', color: isCompleted ? colors.textSecondary : colors.primary}}>GOAL TASK</Text>
                 </View>
              )}
           </View>
         </TouchableOpacity>
 
         <TouchableOpacity style={[dynamicStyles.deleteArea]} onPress={() => handleDelete(item.id)} hitSlop={10}>
-          <Ionicons name="trash-outline" size={20} color={item.isGoalTask ? "#CBD5E1" : colors.danger} />
+          <Ionicons name="trash-outline" size={20} color={item.isGoalTask ? colors.border : colors.danger} />
         </TouchableOpacity>
       </View>
     );
@@ -840,7 +840,7 @@ export default function TasksScreen() {
           <TextInput
             style={[dynamicStyles.createTitleInput]}
             placeholder="Task Title"
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={colors.textSecondary}
             value={newTitle}
             onChangeText={setNewTitle}
             autoFocus
@@ -848,7 +848,7 @@ export default function TasksScreen() {
           <TextInput
             style={[dynamicStyles.createContentInput]}
             placeholder="Description (Optional)"
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={colors.textSecondary}
             multiline
             value={newDesc}
             onChangeText={setNewDesc}
@@ -860,7 +860,7 @@ export default function TasksScreen() {
             style={[dynamicStyles.dateInputWrapper]}
             onPress={() => setShowDatePicker(true)}
           >
-            <Ionicons name="calendar-outline" size={18} color="#64748B" style={{ marginRight: 8 }} />
+            <Ionicons name="calendar-outline" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
             <Text style={[dynamicStyles.dateInputText, !newDueDate && { color: colors.textSecondary }]}>
               {newDueDate ? `Due: ${newDueDate}` : 'Select Due Date (Optional)'}
             </Text>
@@ -908,7 +908,7 @@ export default function TasksScreen() {
           activeOpacity={0.8}
           onPress={() => setIsCreating(true)}
         >
-          <Ionicons name="add-circle-outline" size={22} color="#1D4ED8" />
+          <Ionicons name="add-circle-outline" size={22} color={colors.primary} />
           <Text style={[dynamicStyles.createCollapsedText]}>Add a new task...</Text>
         </TouchableOpacity>
       )}
@@ -1053,7 +1053,7 @@ export default function TasksScreen() {
 
       {loading ? (
         <View style={[dynamicStyles.center]}>
-          <ActivityIndicator size="large" color="#1D4ED8" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
         <FlatList
@@ -1068,7 +1068,7 @@ export default function TasksScreen() {
           keyboardShouldPersistTaps="handled"
           ListEmptyComponent={
              <View style={[dynamicStyles.emptyWrap]}>
-               <Ionicons name="checkbox-outline" size={60} color="#CBD5E1" />
+               <Ionicons name="checkbox-outline" size={60} color={colors.border} />
                <Text style={[dynamicStyles.emptyText]}>No tasks pending. You're all caught up!</Text>
              </View>
           }
@@ -1093,7 +1093,7 @@ export default function TasksScreen() {
             <Text style={[dynamicStyles.modalTitle]}>Edit Task</Text>
             <TouchableOpacity onPress={handleSaveEdit} disabled={isSavingEdit}>
               {isSavingEdit ? (
-                <ActivityIndicator size="small" color="#1D4ED8" />
+                <ActivityIndicator size="small" color={colors.primary} />
               ) : (
                 <Text style={[dynamicStyles.saveHeaderBtnText]}>Save</Text>
               )}
@@ -1104,7 +1104,7 @@ export default function TasksScreen() {
             <TextInput
               style={[dynamicStyles.titleInput]}
               placeholder="Task Title"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={colors.textSecondary}
               value={editTitle}
               onChangeText={setEditTitle}
             />
@@ -1115,7 +1115,7 @@ export default function TasksScreen() {
               style={[dynamicStyles.dateInputWrapper, { marginBottom: 20 }]}
               onPress={() => setShowEditDatePicker(true)}
             >
-              <Ionicons name="calendar-outline" size={18} color="#64748B" style={{ marginRight: 8 }} />
+              <Ionicons name="calendar-outline" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
               <Text style={[dynamicStyles.dateInputText, !editDueDate && { color: colors.textSecondary }]}>
                 {editDueDate ? `Due: ${editDueDate}` : 'Select Due Date'}
               </Text>
@@ -1133,7 +1133,7 @@ export default function TasksScreen() {
             <TextInput
               style={[dynamicStyles.contentInput]}
               placeholder="Description"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={colors.textSecondary}
               multiline
               textAlignVertical="top"
               value={editDesc}

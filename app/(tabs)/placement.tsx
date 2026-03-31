@@ -155,14 +155,14 @@ const AddRoundForm = React.memo(({ topic, setTopic, desc, setDesc, result, setRe
     <TextInput
       style={styles.input}
       placeholder="Round Topic (e.g. Technical Round 1)"
-      placeholderTextColor="#94A3B8"
+      placeholderTextColor={colors.textSecondary}
       value={topic}
       onChangeText={setTopic}
     />
     <TextInput
       style={[styles.input, { minHeight: 60, textAlignVertical: 'top' }]}
       placeholder="Notes / What was asked…"
-      placeholderTextColor="#94A3B8"
+      placeholderTextColor={colors.textSecondary}
       multiline
       value={desc}
       onChangeText={setDesc}
@@ -229,7 +229,7 @@ const CreateCard = React.memo(({
         <TextInput
           style={styles.createTitleInput}
           placeholder="Company Name"
-          placeholderTextColor="#94A3B8"
+          placeholderTextColor={colors.textSecondary}
           value={newCompany}
           onChangeText={setNewCompany}
           autoFocus
@@ -301,7 +301,7 @@ const CreateCard = React.memo(({
           </TouchableOpacity>
         )}
 
-        <View style={[styles.rowBtns, { marginTop: 12, borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 12 }]}>
+        <View style={[styles.rowBtns, { marginTop: 12, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12 }]}>
           <TouchableOpacity style={styles.cancelBtn} onPress={resetCreate}>
             <Text style={styles.cancelBtnText}>Cancel</Text>
           </TouchableOpacity>
@@ -728,7 +728,7 @@ export default function PlacementScreen() {
   ), [
     isCreating, newCompany, newStatus, newCompanyStatus, newDate, newStudied, newRounds,
     showAddRound, roundTopic, roundDesc, roundResult,
-    addRoundToNew, removeRoundFromNew, handleSave, isSavingNew, resetCreate, colors, styles,
+    addRoundToNew, removeRoundFromNew, handleSave, isSavingNew, resetCreate, colors, styles, isDark
   ]);
 
   // ── Placement card render ──
@@ -793,7 +793,7 @@ export default function PlacementScreen() {
         </TouchableOpacity>
       </View>
     );
-  }, [placements]);
+  }, [placements, colors, styles, isDark]);
 
   // ─────────────────────────────────────────────────────────────────────────────
 
@@ -860,6 +860,7 @@ export default function PlacementScreen() {
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="none"
+              extraData={isDark}
               ListEmptyComponent={
                 <View style={styles.emptyWrap}>
                   <Ionicons name="briefcase-outline" size={60} color={colors.textSecondary} />
@@ -907,6 +908,7 @@ export default function PlacementScreen() {
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="none"
+              extraData={isDark}
               ListEmptyComponent={
                 <View style={styles.emptyWrap}>
                   <Ionicons name="layers-outline" size={60} color={colors.textSecondary} />
