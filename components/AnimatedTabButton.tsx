@@ -1,15 +1,20 @@
 import { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import * as Haptics from 'expo-haptics';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { Animated, Pressable, StyleSheet, View } from 'react-native';
+import { getColors } from '@/constants/styles';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export function AnimatedTabButton(props: BottomTabBarButtonProps) {
   const { children, accessibilityState, onPress, onPressIn } = props;
   const focused = accessibilityState?.selected ?? false;
+  
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const colors = getColors(isDark);
+  const styles = useMemo(() => getStyles(colors), [colors]);
 
-  // Drives the active-state visuals and lift effect.
   const focusAnim = useRef(new Animated.Value(focused ? 1 : 0)).current;
-  // Press interaction scale.
   const scale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -49,7 +54,7 @@ export function AnimatedTabButton(props: BottomTabBarButtonProps) {
 
   const animatedBg = focusAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['transparent', '#EAF3FF'],
+    outputRange: ['transparent', colors.primary + '1A'],
   });
 
   const animatedDotScale = focusAnim.interpolate({
@@ -92,7 +97,7 @@ export function AnimatedTabButton(props: BottomTabBarButtonProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   button: {
     flex: 1,
     alignItems: 'center',
@@ -116,8 +121,8 @@ const styles = StyleSheet.create({
   },
   line: {
     height: 5,
-    width: 5,
-    backgroundColor: '#0F172A',
+    width: 20, // Slightly wider pill instead of a tiny dot for a more modern look
+    backgroundColor: colors.primary,
     borderRadius: 999,
   },
 });

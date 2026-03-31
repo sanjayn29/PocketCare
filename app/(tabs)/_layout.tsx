@@ -31,24 +31,21 @@ export default function TabLayout() {
           sceneStyle: { backgroundColor: 'transparent' },
           tabBarStyle: {
             position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
+            bottom: 24,
+            left: 16,
+            right: 16,
             backgroundColor: colors.card,
-            borderTopLeftRadius: 25,
-            borderTopRightRadius: 25,
-            borderBottomLeftRadius: 0,
-            borderBottomRightRadius: 0,
-            height: 68,
-            borderTopWidth: 2.5,
-            borderTopColor: colors.border,
-            borderLeftWidth: 1.5,
-            borderLeftColor: colors.border,
-            borderRightWidth: 1.5,
-            borderRightColor: colors.border,
-            borderBottomWidth: 0,
-            paddingBottom: 10,
-            paddingTop: 18,
+            borderRadius: 36, // Perfect circular edges for 72 height
+            height: 72,
+            borderWidth: 1, // Softer border
+            borderColor: colors.border,
+            paddingBottom: 8,
+            paddingTop: 8,
+            shadowColor: colors.primary, // Premium glow effect matching the theme
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.12,
+            shadowRadius: 16,
+            elevation: 12,
           },
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textSecondary,
@@ -60,7 +57,7 @@ export default function TabLayout() {
             letterSpacing: 0.2,
           },
           tabBarShowLabel: true,
-          tabBarButton: AnimatedTabButton,
+          tabBarButton: (props) => <AnimatedTabButton {...props} />,
         }}
       >
         <Tabs.Screen
