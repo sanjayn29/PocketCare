@@ -76,7 +76,7 @@ export default function AuthPage() {
       )
 
       thunderOpacity.value = withTiming(0, { duration: 1800, easing: Easing.in(Easing.quad) }, () => {
-        router.replace('/(tabs)')
+        router.replace('/onboarding')
       })
     }
   }, [showThunderpower])
@@ -98,7 +98,7 @@ export default function AuthPage() {
       setErrorMessage('')
       setIsLoading(true)
       const { createdSessionId, setActive } = await startOAuthFlow({
-        redirectUrl: Linking.createURL('/(tabs)', { scheme: 'myapp' })
+        redirectUrl: Linking.createURL('/onboarding', { scheme: 'myapp' })
       })
 
       if (createdSessionId && setActive) {
