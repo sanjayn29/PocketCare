@@ -4,29 +4,34 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import React, { useEffect, useMemo, useState } from 'react';
+import { BlurView } from 'expo-blur';
+import { useFonts } from 'expo-font';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Animated,
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-    CalculationEntry,
-    CalculationHistoryGroup,
-    CalculationType,
-    createOrAppendCalculation,
-    deleteCalculationEntry,
-    deleteCalculationHistory,
-    getCalculationHistory,
-    updateCalculationHistoryTitle,
+  CalculationEntry,
+  CalculationHistoryGroup,
+  CalculationType,
+  createOrAppendCalculation,
+  deleteCalculationEntry,
+  deleteCalculationHistory,
+  getCalculationHistory,
+  updateCalculationHistoryTitle,
 } from '../../lib/calculator-service';
 
 
@@ -37,14 +42,39 @@ type Result = {
 
 export default function CalculatorScreen() {
   const { user } = useUser();
+  const router = useRouter();
   const email = user?.primaryEmailAddress?.emailAddress;
 
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const colors = getColors(isDark)
+  const brightGold = '#FFD700'
+  const softGold = '#E8C96A'
+  
+  const backButtonScale = useRef(new Animated.Value(1)).current
+  const [fontsLoaded] = useFonts({
+    'Roboto Slab': require('../../assets/Font/RobotoSlab-VariableFont_wght.ttf'),
+  })
 
   // Tab state
   const [activeTab, setActiveTab] = useState<'basic' | 'interest' | 'history'>('basic');
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(backButtonScale, {
+          toValue: 1.06,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(backButtonScale, {
+          toValue: 1,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start()
+  }, [backButtonScale])
 
   // Interest Calculator States
   const [calcType, setCalcType] = useState<CalculationType>('simple_interest');
@@ -392,35 +422,24 @@ export default function CalculatorScreen() {
       const result = Number(output.toFixed(4));
       setBasicResult(result);
 
-      // Save to history
+      // SAVE TO FIREBASE
       if (email) {
-        const title = basicTitle.trim();
-        if (!title) {
-          Alert.alert('Title Required', 'Please enter a topic/title for this calculation.');
-          return;
-        }
-
         setBasicSaving(true);
         try {
-          const ok = await createOrAppendCalculation(email, title, {
+          const trimmedTitle = basicTitle.trim() || 'General Calculation';
+          await createOrAppendCalculation(email, trimmedTitle, {
             type: 'basic_calculation' as any,
+            expression: expression,
+            total_amount: result,
             principal: 0,
             rate: 0,
             time: 0,
             interest: 0,
-            total_amount: result,
-            expression: expression,
-          } as any);
-
-          if (ok) {
-            await loadBasicHistory();
-            setBasicTitle('');
-            setBasicExpression('');
-            setBasicResult(null);
-            Alert.alert('Success', 'Calculation saved!');
-          }
+          });
+          await loadHistory();
+          await loadBasicHistory();
         } catch (error) {
-          console.error(error);
+          console.error('Failed to save basic calculation:', error);
         } finally {
           setBasicSaving(false);
         }
@@ -448,77 +467,109 @@ export default function CalculatorScreen() {
       flex: 1,
       backgroundColor: colors.background,
     },
+    backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+      borderWidth: 1.5,
+      borderColor: '#FFD700',
+    },
+    backButtonText: {
+      fontSize: 22,
+      color: isDark ? '#FFFFFF' : '#000000',
+      marginTop: -2,
+    },
     headerArea: {
       paddingHorizontal: 20,
-      marginTop: 16,
-      marginBottom: 12,
+      paddingTop: Platform.OS === 'ios' ? 12 : 20,
+      paddingBottom: 20,
+      overflow: 'hidden',
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+      marginBottom: 0,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 16,
     },
     pageTitle: {
-      fontSize: 28,
-      fontWeight: '800',
-      color: colors.text,
+      fontSize: 24, // Main Heading (H1)
+      fontFamily: 'Roboto Slab',
+      color: isDark ? '#FFFFFF' : '#000000',
+      letterSpacing: -0.5,
     },
     pageSubTitle: {
-      marginTop: 4,
-      fontSize: 13,
+      marginTop: 2,
+      fontSize: 12, // Small Text
       color: colors.textSecondary,
       fontWeight: '500',
     },
     
-    // Tab Navigation Styles
     tabContainer: {
       flexDirection: 'row',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      backgroundColor: colors.card,
+      paddingHorizontal: 8,
+      paddingVertical: 8,
+      backgroundColor: colors.background,
       borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-      gap: 10,
+      borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
     },
     tab: {
       flex: 1,
-      flexDirection: 'row',
-      paddingVertical: 12,
-      paddingHorizontal: 12,
-      borderRadius: 12,
-      backgroundColor: colors.background,
-      borderWidth: 1,
-      borderColor: colors.border,
+      flexDirection: 'column',
+      paddingVertical: 10,
+      paddingHorizontal: 4,
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 8,
+      position: 'relative',
     },
     tabActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
+      // Background removed for a cleaner look with the underline
     },
     tabText: {
-      fontSize: 13,
+      fontSize: 11,
       fontWeight: '700',
       color: colors.textSecondary,
+      marginBottom: 6,
     },
     tabTextActive: {
-      color: colors.card,
+      color: '#FFD700',
+      fontWeight: '900',
+    },
+    activeIndicator: {
+      position: 'absolute',
+      bottom: -8,
+      width: '60%',
+      height: 3,
+      backgroundColor: '#FFD700',
+      borderRadius: 2,
+      shadowColor: '#FFD700',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.5,
+      shadowRadius: 4,
     },
 
     // Section Titles
     sectionTitle: {
-      fontSize: 18,
-      fontWeight: '800',
-      color: colors.text,
+      fontSize: 20, // H2
+      fontFamily: 'Roboto Slab',
+      color: isDark ? '#FFFFFF' : '#000000',
       marginBottom: 4,
     },
     sectionSubtitle: {
-      fontSize: 13,
+      fontSize: 14, // Secondary Text
       color: colors.textSecondary,
-      fontWeight: '500',
-      marginBottom: 12,
+      fontWeight: '400',
+      marginBottom: 20,
     },
     interestFormTitle: {
-      fontSize: 14,
-      fontWeight: '800',
-      color: colors.text,
-      marginBottom: 12,
+      fontSize: 18, // H3
+      fontFamily: 'Roboto Slab',
+      color: isDark ? '#FFFFFF' : '#000000',
+      marginBottom: 16,
     },
 
     // Basic Calculator Wrapper
@@ -532,81 +583,78 @@ export default function CalculatorScreen() {
       paddingBottom: 120,
     },
     formCard: {
-      backgroundColor: colors.card,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: colors.border,
-      padding: 16,
-      marginBottom: 16,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 3,
-      elevation: 2,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.8)',
+      borderRadius: 24,
+      borderWidth: 1.5,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+      padding: 20,
+      marginBottom: 20,
+      overflow: 'hidden',
     },
     segmentRow: {
       flexDirection: 'row',
-      gap: 10,
-      marginBottom: 14,
+      gap: 12,
+      marginBottom: 20,
       alignItems: 'center',
     },
     segmentBtn: {
       flex: 1,
-      paddingVertical: 12,
-      borderRadius: 10,
-      backgroundColor: colors.background,
+      paddingVertical: 10,
+      borderRadius: 16,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
       alignItems: 'center',
       justifyContent: 'center',
     },
     segmentBtnActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
+      backgroundColor: isDark ? 'rgba(255, 215, 0, 0.15)' : 'rgba(255, 215, 0, 0.1)',
+      borderColor: '#FFD700',
     },
     segmentBtnText: {
       fontSize: 12,
       color: colors.textSecondary,
-      fontWeight: '700',
+      fontWeight: '600',
     },
     segmentBtnTextActive: {
-      color: colors.card,
+      color: isDark ? '#FFD700' : '#B8860B',
+      fontWeight: '700',
     },
     input: {
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 10,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      fontSize: 15,
+      borderWidth: 1.5,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+      borderRadius: 16,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      fontSize: 16,
       color: colors.text,
-      marginBottom: 10,
-      backgroundColor: colors.card,
+      marginBottom: 12,
+      backgroundColor: isDark ? 'rgba(0, 0, 0, 0.2)' : '#FFFFFF',
     },
     calculateBtn: {
-      marginTop: 4,
-      backgroundColor: colors.primary,
-      borderRadius: 10,
-      paddingVertical: 12,
+      marginTop: 8,
+      backgroundColor: '#FFD700',
+      borderRadius: 18,
+      paddingVertical: 14,
       alignItems: 'center',
-      shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.15,
-      shadowRadius: 4,
-      elevation: 3,
+      shadowColor: '#FFD700',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 4,
     },
     calculateBtnText: {
-      color: colors.card,
-      fontWeight: '800',
-      fontSize: 15,
+      color: '#000000',
+      fontWeight: '700',
+      fontSize: 16,
     },
     resultCard: {
-      marginTop: 12,
-      padding: 12,
-      borderRadius: 12,
-      backgroundColor: colors.background,
+      marginTop: 20,
+      padding: 16,
+      borderRadius: 20,
+      backgroundColor: isDark ? 'rgba(255, 215, 0, 0.05)' : 'rgba(255, 215, 0, 0.03)',
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: 'rgba(255, 215, 0, 0.3)',
     },
     resultLabel: {
       fontSize: 12,
@@ -627,28 +675,29 @@ export default function CalculatorScreen() {
     operatorBtn: {
       flex: 1,
       borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.card,
-      borderRadius: 10,
-      paddingVertical: 12,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+      borderRadius: 14,
+      paddingVertical: 14,
       alignItems: 'center',
       justifyContent: 'center',
     },
     operatorBtnText: {
-      fontSize: 16,
-      fontWeight: '800',
+      fontSize: 18,
+      fontWeight: '600',
       color: colors.text,
     },
     equalsBtn: {
-      backgroundColor: colors.success,
-      borderColor: colors.success,
+      backgroundColor: '#FFD700',
+      borderColor: '#FFD700',
     },
     equalsBtnText: {
-      color: colors.card,
+      color: '#000000',
+      fontWeight: '700',
     },
     clearBtn: {
-      backgroundColor: colors.danger,
-      borderColor: colors.danger,
+      backgroundColor: '#EF4444',
+      borderColor: '#EF4444',
       flexDirection: 'row',
     },
     deleteBtn: {
@@ -657,41 +706,37 @@ export default function CalculatorScreen() {
       flexDirection: 'row',
     },
     utilityBtnText: {
-      color: colors.text,
-      fontWeight: '800',
+      color: '#FFFFFF',
+      fontWeight: '700',
       fontSize: 13,
     },
     basicResultWrap: {
-      marginTop: 12,
-      borderRadius: 12,
-      padding: 12,
-      backgroundColor: colors.background,
+      marginTop: 20,
+      borderRadius: 20,
+      padding: 16,
+      backgroundColor: isDark ? 'rgba(34, 197, 94, 0.1)' : 'rgba(34, 197, 94, 0.05)',
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: 'rgba(34, 197, 94, 0.3)',
     },
     basicResultLabel: {
       fontSize: 12,
       fontWeight: '700',
-      color: colors.success,
+      color: '#22C55E',
     },
     basicResultValue: {
       marginTop: 4,
-      fontSize: 24,
-      fontWeight: '800',
-      color: colors.success,
+      fontSize: 28,
+      fontFamily: 'Roboto Slab',
+      fontWeight: '700',
+      color: '#22C55E',
     },
     historyCard: {
-      backgroundColor: colors.card,
-      borderRadius: 14,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.8)',
+      borderRadius: 20,
       borderWidth: 1,
-      borderColor: colors.border,
-      marginBottom: 12,
-      padding: 12,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 2,
-      elevation: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+      marginBottom: 16,
+      padding: 16,
     },
     historyHeader: {
       flexDirection: 'row',
@@ -715,27 +760,27 @@ export default function CalculatorScreen() {
     },
     entryRow: {
       borderTopWidth: 1,
-      borderTopColor: colors.background,
-      paddingTop: 10,
-      marginTop: 10,
+      borderTopColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+      paddingTop: 12,
+      marginTop: 12,
       flexDirection: 'row',
       alignItems: 'flex-start',
-      gap: 8,
+      gap: 12,
     },
     entryType: {
       fontSize: 13,
       fontWeight: '700',
-      color: colors.primary,
+      color: isDark ? '#FFD700' : '#B8860B',
     },
     entryText: {
       marginTop: 2,
       fontSize: 12,
       color: colors.textSecondary,
-      fontWeight: '500',
+      fontWeight: '400',
     },
     entryResult: {
-      marginTop: 2,
-      fontSize: 12,
+      marginTop: 4,
+      fontSize: 14,
       color: colors.text,
       fontWeight: '700',
     },
@@ -752,90 +797,97 @@ export default function CalculatorScreen() {
     },
     modalOverlay: {
       flex: 1,
-      backgroundColor: 'rgba(2, 6, 23, 0.35)',
+      backgroundColor: isDark ? 'rgba(0, 0, 0, 0.6)' : 'rgba(0, 0, 0, 0.4)',
       justifyContent: 'center',
-      padding: 20,
+      padding: 24,
     },
     modalCard: {
-      backgroundColor: colors.card,
-      borderRadius: 14,
-      padding: 14,
+      backgroundColor: isDark ? '#1A1A1A' : '#FFFFFF',
+      borderRadius: 24,
+      padding: 20,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
     },
     modalTitle: {
-      fontSize: 16,
-      fontWeight: '800',
-      color: colors.text,
-      marginBottom: 10,
+      fontSize: 18,
+      fontFamily: 'Roboto Slab',
+      color: isDark ? '#FFFFFF' : '#000000',
+      marginBottom: 16,
     },
     modalActions: {
       flexDirection: 'row',
       justifyContent: 'flex-end',
-      gap: 10,
+      gap: 12,
+      marginTop: 8,
     },
     modalCancelBtn: {
-      paddingHorizontal: 14,
-      paddingVertical: 10,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 14,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
     },
     modalCancelText: {
       color: colors.textSecondary,
-      fontWeight: '700',
+      fontWeight: '600',
     },
     modalSaveBtn: {
-      backgroundColor: colors.primary,
-      borderRadius: 10,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-      minWidth: 84,
+      backgroundColor: '#FFD700',
+      borderRadius: 14,
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      minWidth: 90,
       alignItems: 'center',
     },
     modalSaveText: {
-      color: colors.card,
+      color: '#000000',
       fontWeight: '700',
     },
     filterContainer: {
       paddingHorizontal: 16,
       paddingVertical: 12,
-      backgroundColor: colors.background,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-      marginBottom: 4,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)',
+      borderRadius: 16,
+      marginBottom: 12,
     },
     filterLabel: {
       fontSize: 12,
       fontWeight: '700',
-      color: colors.text,
-      marginBottom: 8,
+      color: colors.textSecondary,
+      marginBottom: 10,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
     },
     filterRow: {
       flexDirection: 'row',
-      gap: 10,
-      marginBottom: 10,
+      gap: 8,
+      marginBottom: 8,
       flexWrap: 'wrap',
       alignItems: 'center',
     },
     filterBtn: {
       paddingHorizontal: 12,
       paddingVertical: 8,
-      borderRadius: 8,
-      backgroundColor: colors.card,
+      borderRadius: 12,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : '#FFFFFF',
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       gap: 6,
     },
     filterBtnActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
+      backgroundColor: isDark ? 'rgba(255, 215, 0, 0.15)' : 'rgba(255, 215, 0, 0.1)',
+      borderColor: '#FFD700',
     },
     filterBtnText: {
       fontSize: 13,
       color: colors.textSecondary,
-      fontWeight: '600',
+      fontWeight: '500',
     },
     filterBtnTextActive: {
-      color: colors.card,
+      color: isDark ? '#FFD700' : '#B8860B',
+      fontWeight: '700',
     },
     customDateContainer: {
       marginTop: 12,
@@ -992,63 +1044,89 @@ export default function CalculatorScreen() {
     );
   };
 
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
-    <KeyboardAvoidingView
-      style={dynamicStyles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <View style={dynamicStyles.headerArea}>
-        <Text style={dynamicStyles.pageTitle}>Calculator</Text>
-        <Text style={dynamicStyles.pageSubTitle}>Simple & Compound Interest or Basic Calculations</Text>
-      </View>
+    <SafeAreaView style={dynamicStyles.container} edges={['top', 'left', 'right']}>
+      <View style={{ flex: 1 }}>
+        <View style={dynamicStyles.headerArea}>
+          <BlurView intensity={isDark ? 40 : 60} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+          <View style={dynamicStyles.headerRow}>
+            <Animated.View style={{ transform: [{ scale: backButtonScale }] }}>
+              <TouchableOpacity style={dynamicStyles.backButton} onPress={() => router.replace('/(tabs)')}>
+                <Text style={dynamicStyles.backButtonText}>←</Text>
+              </TouchableOpacity>
+            </Animated.View>
+            <View>
+              <Text style={dynamicStyles.pageTitle}>Calculator</Text>
+            </View>
+          </View>
+        </View>
 
-      {/* Tab Navigation */}
-      <View style={dynamicStyles.tabContainer}>
-        <TouchableOpacity
-          style={[dynamicStyles.tab, activeTab === 'basic' && dynamicStyles.tabActive]}
-          onPress={() => setActiveTab('basic')}
-        >
-          <Ionicons
-            name="calculator-outline"
-            size={18}
-            color={activeTab === 'basic' ? '#FFFFFF' : '#64748B'}
-            style={{ marginRight: 8 }}
-          />
-          <Text style={[dynamicStyles.tabText, activeTab === 'basic' && dynamicStyles.tabTextActive]}>
-            Basic
-          </Text>
-        </TouchableOpacity>
+        {/* Tab Navigation */}
+        <View style={dynamicStyles.tabContainer}>
+          <TouchableOpacity
+            style={[dynamicStyles.tab, activeTab === 'basic' && dynamicStyles.tabActive]}
+            onPress={() => setActiveTab('basic')}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons
+                name="calculator-outline"
+                size={18}
+                color={activeTab === 'basic' ? '#FFD700' : '#64748B'}
+                style={{ marginRight: 8 }}
+              />
+              <Text style={[dynamicStyles.tabText, activeTab === 'basic' && dynamicStyles.tabTextActive, { marginBottom: 0 }]}>
+                Basic
+              </Text>
+            </View>
+            {activeTab === 'basic' && <View style={dynamicStyles.activeIndicator} />}
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[dynamicStyles.tab, activeTab === 'interest' && dynamicStyles.tabActive]}
-          onPress={() => setActiveTab('interest')}
-        >
-          <Ionicons
-            name="trending-up-outline"
-            size={18}
-            color={activeTab === 'interest' ? '#FFFFFF' : '#64748B'}
-            style={{ marginRight: 8 }}
-          />
-          <Text style={[dynamicStyles.tabText, activeTab === 'interest' && dynamicStyles.tabTextActive]}>
-            Interest (SI/CI)
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[dynamicStyles.tab, activeTab === 'interest' && dynamicStyles.tabActive]}
+            onPress={() => setActiveTab('interest')}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons
+                name="trending-up-outline"
+                size={18}
+                color={activeTab === 'interest' ? '#FFD700' : '#64748B'}
+                style={{ marginRight: 8 }}
+              />
+              <Text style={[dynamicStyles.tabText, activeTab === 'interest' && dynamicStyles.tabTextActive, { marginBottom: 0 }]}>
+                Interest (SI/CI)
+              </Text>
+            </View>
+            {activeTab === 'interest' && <View style={dynamicStyles.activeIndicator} />}
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[dynamicStyles.tab, activeTab === 'history' && dynamicStyles.tabActive]}
-          onPress={() => setActiveTab('history')}
+          <TouchableOpacity
+            style={[dynamicStyles.tab, activeTab === 'history' && dynamicStyles.tabActive]}
+            onPress={() => setActiveTab('history')}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons
+                name="list-outline"
+                size={18}
+                color={activeTab === 'history' ? '#FFD700' : '#64748B'}
+                style={{ marginRight: 8 }}
+              />
+              <Text style={[dynamicStyles.tabText, activeTab === 'history' && dynamicStyles.tabTextActive, { marginBottom: 0 }]}>
+                History
+              </Text>
+            </View>
+            {activeTab === 'history' && <View style={dynamicStyles.activeIndicator} />}
+          </TouchableOpacity>
+        </View>
+
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
-          <Ionicons
-            name="list-outline"
-            size={18}
-            color={activeTab === 'history' ? '#FFFFFF' : '#64748B'}
-            style={{ marginRight: 8 }}
-          />
-          <Text style={[dynamicStyles.tabText, activeTab === 'history' && dynamicStyles.tabTextActive]}>
-            History
-          </Text>
-        </TouchableOpacity>
-      </View>
 
       {/* Basic Calculator Tab */}
       {activeTab === 'basic' && (
@@ -1067,7 +1145,7 @@ export default function CalculatorScreen() {
                   style={dynamicStyles.input}
                   value={basicTitle}
                   onChangeText={setBasicTitle}
-                  placeholder="Topic/Title (Example: Monthly Expenses)"
+                  placeholder="Topic (e.g., Grocery)"
                   placeholderTextColor="#94A3B8"
                 />
 
@@ -1075,7 +1153,7 @@ export default function CalculatorScreen() {
                   style={dynamicStyles.input}
                   value={basicExpression}
                   onChangeText={setBasicExpression}
-                  placeholder="Enter expression (Example: 25+5*2-10/2)"
+                  placeholder="Enter calculation (e.g., 500+200)"
                   placeholderTextColor="#94A3B8"
                 />
 
@@ -1169,30 +1247,6 @@ export default function CalculatorScreen() {
                           appendToExpression('^');
                         } else if (token === '%') {
                           appendToExpression('%');
-                        }
-                      }}
-                    >
-                      <Text style={dynamicStyles.operatorBtnText}>{token}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-
-                <View style={dynamicStyles.operatorRow}>
-                  {['log', 'sin', 'cos', 'tan', '1/x'].map((token) => (
-                    <TouchableOpacity
-                      key={token}
-                      style={dynamicStyles.operatorBtn}
-                      onPress={() => {
-                        if (token === 'log') {
-                          appendToExpression('Math.log10(');
-                        } else if (token === 'sin') {
-                          appendToExpression('Math.sin(');
-                        } else if (token === 'cos') {
-                          appendToExpression('Math.cos(');
-                        } else if (token === 'tan') {
-                          appendToExpression('Math.tan(');
-                        } else if (token === '1/x') {
-                          appendToExpression('1/');
                         }
                       }}
                     >
@@ -1405,11 +1459,9 @@ export default function CalculatorScreen() {
                     </Text>
                   </TouchableOpacity>
                 </View>
-              </View>
 
-              {/* Filter by Date */}
-              <View style={dynamicStyles.filterContainer}>
-                <Text style={dynamicStyles.filterLabel}>Filter by Date</Text>
+                {/* Filter by Date */}
+                <Text style={[dynamicStyles.filterLabel, { marginTop: 12 }]}>Filter by Date</Text>
                 <View style={dynamicStyles.filterRow}>
                   <TouchableOpacity
                     style={[
@@ -1481,7 +1533,7 @@ export default function CalculatorScreen() {
                     <Ionicons
                       name="calendar-outline"
                       size={16}
-                      color={historyFilterDate === 'custom' ? '#FFFFFF' : '#64748B'}
+                      color={historyFilterDate === 'custom' ? (isDark ? '#FFD700' : '#B8860B') : '#64748B'}
                       style={{ marginRight: 4 }}
                     />
                     <Text
@@ -1538,7 +1590,7 @@ export default function CalculatorScreen() {
               </TouchableOpacity>
               <TouchableOpacity style={dynamicStyles.modalSaveBtn} onPress={handleSaveRename} disabled={renaming}>
                 {renaming ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color="#000000" />
                 ) : (
                   <Text style={dynamicStyles.modalSaveText}>Save</Text>
                 )}
@@ -1581,7 +1633,9 @@ export default function CalculatorScreen() {
       )}
 
 
-    </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </View>
+    </SafeAreaView>
   );
 }
 

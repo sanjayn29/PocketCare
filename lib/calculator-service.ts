@@ -1,11 +1,12 @@
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
 import { db } from '../firebaseConfig'
 
-export type CalculationType = 'simple_interest' | 'compound_interest'
+export type CalculationType = 'simple_interest' | 'compound_interest' | 'basic_calculation'
 
 export type CalculationEntry = {
   id: string
   type: CalculationType
+  expression?: string
   principal: number
   rate: number
   time: number
