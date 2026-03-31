@@ -1,4 +1,6 @@
 import FloatingActionButton from '@/components/FloatingActionButton';
+import { getColors } from '@/constants/styles';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -54,6 +56,10 @@ const generateDateList = (start: string, end: string) => {
 export default function HealthScreen() {
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress;
+
+  const colorScheme = useColorScheme()
+  const isDark = colorScheme === 'dark'
+  const colors = getColors(isDark)
 
   const [loading, setLoading] = useState(true);
   
@@ -211,10 +217,10 @@ export default function HealthScreen() {
   // ── UI Snippets
 
   const renderTimeFilterBlock = () => (
-    <View style={styles.segmentBlock}>
+    <View style={dynamicStyles.segmentBlock}>
       {(['Week','Month','Year','All','Custom'] as TimeFilter[]).map(t => (
-        <TouchableOpacity key={t} style={[styles.segmentBtn, timeFilter===t && styles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
-          <Text style={[styles.segmentText, timeFilter===t && styles.segmentTextActive]}>{t}</Text>
+        <TouchableOpacity key={t} style={[dynamicStyles.segmentBtn, timeFilter===t && dynamicStyles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
+          <Text style={[dynamicStyles.segmentText, timeFilter===t && dynamicStyles.segmentTextActive]}>{t}</Text>
         </TouchableOpacity>
       ))}
     </View>
@@ -224,13 +230,13 @@ export default function HealthScreen() {
     if (timeFilter !== 'Custom') return null;
     return (
       <View style={{flexDirection: 'row', gap: 10, marginBottom: 16, marginTop: -6}}>
-        <TouchableOpacity style={{flex: 1, backgroundColor: '#FFF', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center'}} onPress={() => setShowDatePicker('customStart')}>
-          <Text style={{fontSize: 12, color: '#64748B', fontWeight: '700'}}>Start Date</Text>
-          <Text style={{fontSize: 14, color: '#0F172A', fontWeight: '700', marginTop: 4}}>{customStart}</Text>
+        <TouchableOpacity style={{flex: 1, backgroundColor: colors.card, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center'}} onPress={() => setShowDatePicker('customStart')}>
+          <Text style={{fontSize: 12, color: colors.textSecondary, fontWeight: '700'}}>Start Date</Text>
+          <Text style={{fontSize: 14, color: colors.text, fontWeight: '700', marginTop: 4}}>{customStart}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={{flex: 1, backgroundColor: '#FFF', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center'}} onPress={() => setShowDatePicker('customEnd')}>
-          <Text style={{fontSize: 12, color: '#64748B', fontWeight: '700'}}>End Date</Text>
-          <Text style={{fontSize: 14, color: '#0F172A', fontWeight: '700', marginTop: 4}}>{customEnd}</Text>
+        <TouchableOpacity style={{flex: 1, backgroundColor: colors.card, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center'}} onPress={() => setShowDatePicker('customEnd')}>
+          <Text style={{fontSize: 12, color: colors.textSecondary, fontWeight: '700'}}>End Date</Text>
+          <Text style={{fontSize: 14, color: colors.text, fontWeight: '700', marginTop: 4}}>{customEnd}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -239,38 +245,38 @@ export default function HealthScreen() {
   const renderCreationCard = (type: TabType, saveHandler: () => void, isCreating: boolean, setCreating: (b:boolean)=>void) => {
     if (!isCreating) {
       return (
-        <TouchableOpacity style={styles.createCollapsed} onPress={()=>{ resetForm(); setCreating(true); }}>
-          <View style={[styles.createIconWrap, {backgroundColor: type==='Medical'?'#FEE2E2':type==='Diet'?'#DCFCE7':'#E0E7FF'}]}>
-             <Ionicons name={type==='Medical'?"medkit-outline":type==='Diet'?"restaurant-outline":"barbell-outline"} size={20} color={type==='Medical'?'#EF4444':type==='Diet'?'#10B981':'#4F46E5'} />
+        <TouchableOpacity style={dynamicStyles.createCollapsed} onPress={()=>{ resetForm(); setCreating(true); }}>
+          <View style={[dynamicStyles.createIconWrap, {backgroundColor: type==='Medical'?'#FEE2E2':type==='Diet'?'#DCFCE7':'#E0E7FF'}]}>
+             <Ionicons name={type==='Medical'?"medkit-outline":type==='Diet'?"restaurant-outline":"barbell-outline"} size={20} color={type==='Medical'?colors.danger:type==='Diet'?colors.success:colors.primary} />
           </View>
-          <Text style={styles.createCollapsedText}>Create new {type} record...</Text>
+          <Text style={dynamicStyles.createCollapsedText}>Create new {type} record...</Text>
         </TouchableOpacity>
       );
     }
 
     return (
-      <View style={styles.createExpanded}>
-        <TextInput style={styles.titleInput} placeholder={`${type} Topic / Name`} value={formTopic} onChangeText={setFormTopic} autoFocus />
-        <TextInput style={styles.input} placeholder="Description (Optional)" value={formDesc} onChangeText={setFormDesc} />
+      <View style={dynamicStyles.createExpanded}>
+        <TextInput style={dynamicStyles.titleInput} placeholder={`${type} Topic / Name`} value={formTopic} onChangeText={setFormTopic} autoFocus />
+        <TextInput style={dynamicStyles.input} placeholder="Description (Optional)" value={formDesc} onChangeText={setFormDesc} />
         
         <View style={{flexDirection:'row', gap:10, marginBottom: 16}}>
            <View style={{flex:1}}>
-              <Text style={styles.selectorLabel}>Start Date</Text>
-              <TouchableOpacity style={styles.input} onPress={()=>setShowDatePicker('start')}>
-                <Text style={{color: '#334155'}}>{formStart}</Text>
+              <Text style={dynamicStyles.selectorLabel}>Start Date</Text>
+              <TouchableOpacity style={dynamicStyles.input} onPress={()=>setShowDatePicker('start')}>
+                <Text style={{color: colors.text}}>{formStart}</Text>
               </TouchableOpacity>
            </View>
            <View style={{flex:1}}>
-              <Text style={styles.selectorLabel}>End Date</Text>
-              <TouchableOpacity style={styles.input} onPress={()=>setShowDatePicker('end')}>
-                <Text style={{color: '#334155'}}>{formEnd}</Text>
+              <Text style={dynamicStyles.selectorLabel}>End Date</Text>
+              <TouchableOpacity style={dynamicStyles.input} onPress={()=>setShowDatePicker('end')}>
+                <Text style={{color: colors.text}}>{formEnd}</Text>
               </TouchableOpacity>
            </View>
         </View>
 
-        <View style={styles.rowBtns}>
-          <TouchableOpacity style={styles.cancelBtn} onPress={()=>setCreating(false)}><Text style={styles.cancelBtnText}>Cancel</Text></TouchableOpacity>
-          <TouchableOpacity style={[styles.saveBtn, {backgroundColor: '#3B82F6'}]} onPress={saveHandler}><Text style={styles.saveBtnText}>Save</Text></TouchableOpacity>
+        <View style={dynamicStyles.rowBtns}>
+          <TouchableOpacity style={dynamicStyles.cancelBtn} onPress={()=>setCreating(false)}><Text style={dynamicStyles.cancelBtnText}>Cancel</Text></TouchableOpacity>
+          <TouchableOpacity style={[dynamicStyles.saveBtn, {backgroundColor: colors.primary}]} onPress={saveHandler}><Text style={dynamicStyles.saveBtnText}>Save</Text></TouchableOpacity>
         </View>
       </View>
     );
@@ -284,34 +290,34 @@ export default function HealthScreen() {
         <>
           {renderTimeFilterBlock()}
           {renderCustomDateFilters()}
-          <View style={styles.createCard}>{renderCreationCard('Medical', handleSaveMed, isCreatingMed, setIsCreatingMed)}</View>
+          <View style={dynamicStyles.createCard}>{renderCreationCard('Medical', handleSaveMed, isCreatingMed, setIsCreatingMed)}</View>
         </>
       }
       contentContainerStyle={{padding: 16, paddingBottom: 100}}
-      ListEmptyComponent={<Text style={{textAlign:'center', color:'#94A3B8', marginTop: 40}}>No medical records found.</Text>}
+      ListEmptyComponent={<Text style={{textAlign:'center', color: colors.textSecondary, marginTop: 40}}>No medical records found.</Text>}
       renderItem={({item}) => (
-        <View style={styles.card}>
+        <View style={dynamicStyles.card}>
           <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'flex-start'}}>
             <View style={{flex: 1, paddingRight: 10}}>
-              <Text style={{fontSize:20, fontWeight:'900', color: '#0F172A'}}>{item.topic}</Text>
-              {item.description ? <Text style={{fontSize:14, color:'#64748B', marginTop: 6}}>{item.description}</Text> : null}
+              <Text style={{fontSize:20, fontWeight:'900', color: colors.text}}>{item.topic}</Text>
+              {item.description ? <Text style={{fontSize:14, color: colors.textSecondary, marginTop: 6}}>{item.description}</Text> : null}
             </View>
             <View style={{flexDirection: 'row', gap: 12}}>
               <TouchableOpacity onPress={()=> openEditMedical(item)}>
-                <Ionicons name="pencil-outline" size={20} color="#64748B"/>
+                <Ionicons name="pencil-outline" size={20} color={colors.textSecondary}/>
               </TouchableOpacity>
               <TouchableOpacity onPress={()=> {
                   Alert.alert('Delete', 'Delete medical record?', [
                     {text:'Cancel'}, {text:'Delete', style:'destructive', onPress:() => { deleteMedical(email!, item.id); loadData(); }}
                   ]);
               }}>
-                <Ionicons name="trash-outline" size={20} color="#EF4444"/>
+                <Ionicons name="trash-outline" size={20} color={colors.danger}/>
               </TouchableOpacity>
             </View>
           </View>
-          <View style={{marginTop: 16, backgroundColor: '#F1F5F9', padding: 10, borderRadius: 8}}>
-             <Text style={{fontSize:13, fontWeight:'700', color: '#475569'}}>Timeline:</Text>
-             <Text style={{fontSize:13, color: '#64748B', marginTop: 4}}>{item.start_date}   ➔   {item.end_date}</Text>
+          <View style={{marginTop: 16, backgroundColor: colors.border, padding: 10, borderRadius: 8}}>
+             <Text style={{fontSize:13, fontWeight:'700', color: colors.textSecondary}}>Timeline:</Text>
+             <Text style={{fontSize:13, color: colors.textSecondary, marginTop: 4}}>{item.start_date}   ➔   {item.end_date}</Text>
           </View>
         </View>
       )}
@@ -326,12 +332,12 @@ export default function HealthScreen() {
      const colorTheme = isDiet ? '#10B981' : '#4F46E5';
 
      return (
-       <View style={styles.card}>
+       <View style={dynamicStyles.card}>
           <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'flex-start', marginBottom: 12}}>
-            <Text style={{fontSize:20, fontWeight:'900', color: '#0F172A', flex: 1}}>{item.name}</Text>
+            <Text style={{fontSize:20, fontWeight:'900', color: colors.text, flex: 1}}>{item.name}</Text>
             <View style={{flexDirection: 'row', gap: 12}}>
               <TouchableOpacity onPress={()=> isDiet ? openEditDiet(item as DietPlan) : openEditFitness(item as FitnessPlan)}>
-                <Ionicons name="pencil-outline" size={20} color="#64748B"/>
+                <Ionicons name="pencil-outline" size={20} color={colors.textSecondary}/>
               </TouchableOpacity>
               <TouchableOpacity onPress={()=> {
                   Alert.alert('Delete', `Delete ${isDiet ? 'diet' : 'fitness'} plan?`, [
@@ -340,25 +346,25 @@ export default function HealthScreen() {
                     }}
                   ]);
               }}>
-                <Ionicons name="trash-outline" size={20} color="#EF4444"/>
+                <Ionicons name="trash-outline" size={20} color={colors.danger}/>
               </TouchableOpacity>
             </View>
           </View>
 
-          {item.description ? <Text style={{fontSize:14, color:'#64748B', marginBottom: 12}}>{item.description}</Text> : null}
+          {item.description ? <Text style={{fontSize:14, color: colors.textSecondary, marginBottom: 12}}>{item.description}</Text> : null}
 
           {/* Progress Bar Header */}
           <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'flex-end', marginBottom: 6}}>
-            <Text style={{fontSize:13, fontWeight:'700', color:'#475569'}}>Days Complete: {completedCount} / {totalDays}</Text>
+            <Text style={{fontSize:13, fontWeight:'700', color: colors.textSecondary}}>Days Complete: {completedCount} / {totalDays}</Text>
             <Text style={{fontSize:16, fontWeight:'900', color: colorTheme}}>{pct}%</Text>
           </View>
 
-          <View style={{height:10, backgroundColor:'#E2E8F0', borderRadius:5, overflow:'hidden', marginBottom: 16}}>
+          <View style={{height:10, backgroundColor: colors.border, borderRadius:5, overflow:'hidden', marginBottom: 16}}>
              <View style={{height:'100%', backgroundColor: colorTheme, width:`${pct}%` as any}} />
           </View>
 
-          <Text style={{fontSize:13, fontWeight:'700', color:'#475569', marginBottom: 8}}>Track Daily Progress:</Text>
-          <View style={styles.gridWrap}>
+          <Text style={{fontSize:13, fontWeight:'700', color: colors.textSecondary, marginBottom: 8}}>Track Daily Progress:</Text>
+          <View style={dynamicStyles.gridWrap}>
              {datesArray.map(dStr => {
                const dObj = new Date(dStr);
                const dayLabel = dObj.getDate().toString();
@@ -369,16 +375,16 @@ export default function HealthScreen() {
                return (
                  <TouchableOpacity 
                    key={dStr} 
-                   style={[styles.gridBox, isTicked && {backgroundColor: colorTheme, borderColor: colorTheme}]}
+                   style={[dynamicStyles.gridBox, isTicked && {backgroundColor: colorTheme, borderColor: colorTheme}]}
                    onPress={() => canSelect && toggleDayAction(isDiet ? 'diet' : 'fitness', item.id, dStr)}
                    disabled={!canSelect}
                  >
-                   <Text style={[styles.gridText, isTicked && {color: '#FFF'}]}>{dayLabel}</Text>
+                   <Text style={[dynamicStyles.gridText, isTicked && {color: '#FFF'}]}>{dayLabel}</Text>
                  </TouchableOpacity>
                );
              })}
           </View>
-          <Text style={{fontSize:11, color:'#94A3B8', marginTop: 10, textAlign:'center'}}>Completed dates are highlighted. Tap today's date to track!</Text>
+          <Text style={{fontSize:11, color: colors.textSecondary, marginTop: 10, textAlign:'center'}}>Completed dates are highlighted. Tap today's date to track!</Text>
        </View>
      );
   }
@@ -387,26 +393,26 @@ export default function HealthScreen() {
   const renderEditModal = (visible: boolean, onClose: () => void, onSave: () => void, titleHeader: string, themeColor: string) => (
       <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
         <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={{flex:1}}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={onClose}><Text style={{fontSize:16, color:'#64748B'}}>Cancel</Text></TouchableOpacity>
+          <View style={dynamicStyles.modalHeader}>
+            <TouchableOpacity onPress={onClose}><Text style={{fontSize:16, color: colors.textSecondary}}>Cancel</Text></TouchableOpacity>
             <Text style={{fontSize:18, fontWeight:'700'}}>{titleHeader}</Text>
             <TouchableOpacity onPress={onSave}><Text style={{fontSize:16, fontWeight:'700', color: themeColor}}>Save</Text></TouchableOpacity>
           </View>
           <ScrollView style={{padding:20}}>
-            <TextInput style={styles.titleInput} placeholder="Topic / Name" value={editTopic} onChangeText={setEditTopic} autoFocus />
-            <TextInput style={styles.input} placeholder="Description (Optional)" value={editDesc} onChangeText={setEditDesc} />
+            <TextInput style={dynamicStyles.titleInput} placeholder="Topic / Name" value={editTopic} onChangeText={setEditTopic} autoFocus />
+            <TextInput style={dynamicStyles.input} placeholder="Description (Optional)" value={editDesc} onChangeText={setEditDesc} />
             
             <View style={{flexDirection:'row', gap:10, marginBottom: 16}}>
               <View style={{flex:1}}>
-                  <Text style={styles.selectorLabel}>Start Date</Text>
-                  <TouchableOpacity style={styles.input} onPress={()=>setShowDatePicker('editStart')}>
-                    <Text style={{color: '#334155'}}>{editStart}</Text>
+                  <Text style={dynamicStyles.selectorLabel}>Start Date</Text>
+                  <TouchableOpacity style={dynamicStyles.input} onPress={()=>setShowDatePicker('editStart')}>
+                    <Text style={{color: colors.text}}>{editStart}</Text>
                   </TouchableOpacity>
               </View>
               <View style={{flex:1}}>
-                  <Text style={styles.selectorLabel}>End Date</Text>
-                  <TouchableOpacity style={styles.input} onPress={()=>setShowDatePicker('editEnd')}>
-                    <Text style={{color: '#334155'}}>{editEnd}</Text>
+                  <Text style={dynamicStyles.selectorLabel}>End Date</Text>
+                  <TouchableOpacity style={dynamicStyles.input} onPress={()=>setShowDatePicker('editEnd')}>
+                    <Text style={{color: colors.text}}>{editEnd}</Text>
                   </TouchableOpacity>
               </View>
             </View>
@@ -415,26 +421,68 @@ export default function HealthScreen() {
       </Modal>
   );
 
+  const dynamicStyles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    headerArea: { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 10 },
+    pageTitle: { fontSize: 28, fontWeight: '800', color: colors.text },
+    
+    mainTabRow: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 10, gap: 10 },
+    mainTab: { flex: 1, paddingVertical: 10, borderRadius: 20, backgroundColor: colors.border, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
+    mainTabActive: { backgroundColor: colors.text, borderColor: colors.text },
+    mainTabText: { fontSize: 13, fontWeight: '700', color: colors.textSecondary },
+    mainTabTextActive: { color: colors.card },
+
+    segmentBlock: { flexDirection: 'row', backgroundColor: colors.border, borderRadius: 10, padding: 4, marginBottom: 16 },
+    segmentBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8 },
+    segmentBtnActive: { backgroundColor: colors.card, shadowColor:'#000', shadowOffset: {width:0, height:2}, shadowOpacity:0.06, shadowRadius:4, elevation: 2 },
+    segmentText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
+    segmentTextActive: { color: colors.text, fontWeight: '800' },
+
+    card: { backgroundColor: colors.card, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOffset:{width:0, height:2}, shadowOpacity:0.04, shadowRadius:8, elevation:2 },
+
+    input: { backgroundColor: colors.background, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: colors.text, borderWidth: 1, borderColor: colors.border, marginBottom: 12 },
+    titleInput: { backgroundColor: colors.card, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, fontSize: 18, fontWeight: '700', color: colors.text, borderWidth: 1, borderColor: colors.border, marginBottom: 12 },
+    selectorLabel: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, marginBottom: 6 },
+
+    createCard: { backgroundColor: colors.card, borderRadius: 16, marginBottom: 16, borderWidth: 1, borderColor: colors.border, shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3, overflow: 'hidden' },
+    createCollapsed: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
+    createIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+    createCollapsedText: { flex: 1, fontSize: 15, color: colors.textSecondary, fontWeight: '500' },
+    createExpanded: { padding: 16 },
+
+    rowBtns: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 4 },
+    cancelBtn: { paddingVertical: 8, paddingHorizontal: 16, justifyContent: 'center' },
+    cancelBtnText: { color: colors.textSecondary, fontWeight: '600', fontSize: 14 },
+    saveBtn: { paddingVertical: 8, paddingHorizontal: 20, borderRadius: 20, justifyContent: 'center' },
+    saveBtnText: { color: colors.card, fontWeight: '700', fontSize: 14 },
+
+    gridWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    gridBox: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset:{width:0, height:1}, shadowOpacity:0.05, shadowRadius:2, elevation:1 },
+    gridText: { fontSize: 13, fontWeight: '700', color: colors.textSecondary },
+
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderColor: colors.border },
+  });
+
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={styles.headerArea}>
-        <Text style={styles.pageTitle}>Health</Text>
+    <KeyboardAvoidingView style={dynamicStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={dynamicStyles.headerArea}>
+        <Text style={dynamicStyles.pageTitle}>Health</Text>
       </View>
 
-      <View style={styles.mainTabRow}>
+      <View style={dynamicStyles.mainTabRow}>
         {(['Medical', 'Diet', 'Fitness'] as TabType[]).map(t => (
-          <TouchableOpacity key={t} style={[styles.mainTab, activeTab===t && styles.mainTabActive]} onPress={()=>setActiveTab(t)}>
-            <Text style={[styles.mainTabText, activeTab===t && styles.mainTabTextActive]}>{t}</Text>
+          <TouchableOpacity key={t} style={[dynamicStyles.mainTab, activeTab===t && dynamicStyles.mainTabActive]} onPress={()=>setActiveTab(t)}>
+            <Text style={[dynamicStyles.mainTabText, activeTab===t && dynamicStyles.mainTabTextActive]}>{t}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {loading ? <View style={{flex:1, justifyContent:'center'}}><ActivityIndicator size="large" color="#3B82F6" /></View> : 
+      {loading ? <View style={{flex:1, justifyContent:'center'}}><ActivityIndicator size="large" color={colors.primary} /></View> : 
         activeTab === 'Medical' ? renderMedical() :
         activeTab === 'Diet' ? (
-          <FlatList data={filteredDiet} keyExtractor={d=>d.id} ListHeaderComponent={<>{renderTimeFilterBlock()}{renderCustomDateFilters()}<View style={styles.createCard}>{renderCreationCard('Diet', handleSaveDiet, isCreatingDiet, setIsCreatingDiet)}</View></>} contentContainerStyle={{padding: 16, paddingBottom: 100}} ListEmptyComponent={<Text style={{textAlign:'center', color:'#94A3B8', marginTop: 40}}>No diet plans.</Text>} renderItem={({item}) => renderPlanCard(item, true)} />
+          <FlatList data={filteredDiet} keyExtractor={d=>d.id} ListHeaderComponent={<>{renderTimeFilterBlock()}{renderCustomDateFilters()}<View style={dynamicStyles.createCard}>{renderCreationCard('Diet', handleSaveDiet, isCreatingDiet, setIsCreatingDiet)}</View></>} contentContainerStyle={{padding: 16, paddingBottom: 100}} ListEmptyComponent={<Text style={{textAlign:'center', color: colors.textSecondary, marginTop: 40}}>No diet plans.</Text>} renderItem={({item}) => renderPlanCard(item, true)} />
         ) : (
-          <FlatList data={filteredFitness} keyExtractor={f=>f.id} ListHeaderComponent={<>{renderTimeFilterBlock()}{renderCustomDateFilters()}<View style={styles.createCard}>{renderCreationCard('Fitness', handleSaveFit, isCreatingFit, setIsCreatingFit)}</View></>} contentContainerStyle={{padding: 16, paddingBottom: 100}} ListEmptyComponent={<Text style={{textAlign:'center', color:'#94A3B8', marginTop: 40}}>No fitness plans.</Text>} renderItem={({item}) => renderPlanCard(item, false)} />
+          <FlatList data={filteredFitness} keyExtractor={f=>f.id} ListHeaderComponent={<>{renderTimeFilterBlock()}{renderCustomDateFilters()}<View style={dynamicStyles.createCard}>{renderCreationCard('Fitness', handleSaveFit, isCreatingFit, setIsCreatingFit)}</View></>} contentContainerStyle={{padding: 16, paddingBottom: 100}} ListEmptyComponent={<Text style={{textAlign:'center', color: colors.textSecondary, marginTop: 40}}>No fitness plans.</Text>} renderItem={({item}) => renderPlanCard(item, false)} />
         )
       }
 
@@ -451,44 +499,4 @@ export default function HealthScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  headerArea: { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 10 },
-  pageTitle: { fontSize: 28, fontWeight: '800', color: '#0F172A' },
-  
-  mainTabRow: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 10, gap: 10 },
-  mainTab: { flex: 1, paddingVertical: 10, borderRadius: 20, backgroundColor: '#F1F5F9', alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
-  mainTabActive: { backgroundColor: '#1E293B', borderColor: '#1E293B' },
-  mainTabText: { fontSize: 13, fontWeight: '700', color: '#64748B' },
-  mainTabTextActive: { color: '#FFF' },
 
-  segmentBlock: { flexDirection: 'row', backgroundColor: '#F1F5F9', borderRadius: 10, padding: 4, marginBottom: 16 },
-  segmentBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8 },
-  segmentBtnActive: { backgroundColor: '#FFF', shadowColor:'#000', shadowOffset: {width:0, height:2}, shadowOpacity:0.06, shadowRadius:4, elevation: 2 },
-  segmentText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
-  segmentTextActive: { color: '#0F172A', fontWeight: '800' },
-
-  card: { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset:{width:0, height:2}, shadowOpacity:0.04, shadowRadius:8, elevation:2 },
-
-  input: { backgroundColor: '#F8FAFC', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: '#334155', borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 12 },
-  titleInput: { backgroundColor: '#FFF', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, fontSize: 18, fontWeight: '700', color: '#0F172A', borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 12 },
-  selectorLabel: { fontSize: 13, fontWeight: '600', color: '#64748B', marginBottom: 6 },
-
-  createCard: { backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#3B82F6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3, overflow: 'hidden' },
-  createCollapsed: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
-  createIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  createCollapsedText: { flex: 1, fontSize: 15, color: '#64748B', fontWeight: '500' },
-  createExpanded: { padding: 16 },
-
-  rowBtns: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 4 },
-  cancelBtn: { paddingVertical: 8, paddingHorizontal: 16, justifyContent: 'center' },
-  cancelBtnText: { color: '#64748B', fontWeight: '600', fontSize: 14 },
-  saveBtn: { paddingVertical: 8, paddingHorizontal: 20, borderRadius: 20, justifyContent: 'center' },
-  saveBtnText: { color: '#FFF', fontWeight: '700', fontSize: 14 },
-
-  gridWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  gridBox: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFF', borderWidth: 1, borderColor: '#CBD5E1', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset:{width:0, height:1}, shadowOpacity:0.05, shadowRadius:2, elevation:1 },
-  gridText: { fontSize: 13, fontWeight: '700', color: '#64748B' },
-
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderColor: '#F1F5F9' },
-});

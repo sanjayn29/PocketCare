@@ -1,3 +1,5 @@
+import { getColors } from '@/constants/styles'
+import { useColorScheme } from '@/hooks/use-color-scheme'
 import { useGreeting } from '@/hooks/use-greeting'
 import { saveUserToFirestore } from '@/lib/save-user'
 import { useUser } from '@clerk/expo'
@@ -7,9 +9,11 @@ import { StyleSheet, Text, View } from 'react-native'
 
 export default function HomeScreen() {
   const { user } = useUser()
+  const colorScheme = useColorScheme()
+  const isDark = colorScheme === 'dark'
+  const colors = getColors(isDark)
   const greeting = useGreeting(user?.firstName || 'User')
 
-  // Save user data to Firebase when they're logged in
   useEffect(() => {
     if (user) {
       const email = user.emailAddresses[0]?.emailAddress
@@ -31,52 +35,56 @@ export default function HomeScreen() {
     }
   }, [user])
 
+  const dynamicStyles = StyleSheet.create({
+    container: {
+      flex: 1,
+      paddingTop: 60,
+      paddingHorizontal: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+    },
+    title: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      marginBottom: 20,
+      position: 'absolute',
+      top: 60,
+      left: 20,
+      color: colors.primary,
+    },
+    animation: {
+      width: 250,
+      height: 250,
+      marginBottom: 20,
+    },
+    greetingMessage: {
+      fontSize: 24,
+      fontWeight: '600',
+      marginBottom: 8,
+      textAlign: 'center',
+      color: colors.text,
+    },
+    motivational: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginBottom: 20,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+  })
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>PocketCare</Text>
+    <View style={dynamicStyles.container}>
+      <Text style={dynamicStyles.title}>PocketCare ✨</Text>
       <LottieView
         source={require('../../assets/animations/Morphing.json')}
         autoPlay
         loop
-        style={styles.animation}
+        style={dynamicStyles.animation}
       />
-      <Text style={styles.greetingMessage}>{greeting.message}</Text>
-      <Text style={styles.motivational}>{greeting.motivational}</Text>
+      <Text style={dynamicStyles.greetingMessage}>{greeting.message}</Text>
+      <Text style={dynamicStyles.motivational}>{greeting.motivational}</Text>
     </View>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    position: 'absolute',
-    top: 60,
-    left: 20,
-  },
-  animation: {
-    width: 250,
-    height: 250,
-    marginBottom: 20,
-  },
-  greetingMessage: {
-    fontSize: 24,
-    fontWeight: '600',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  motivational: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-})

@@ -1,5 +1,7 @@
 
 import FloatingActionButton from '@/components/FloatingActionButton'
+import { getColors } from '@/constants/styles'
+import { useColorScheme } from '@/hooks/use-color-scheme'
 import { getAIResponse, getProductivityInsight } from '@/lib/ai-service'
 import { useUser } from '@clerk/expo'
 import React, { useEffect, useRef, useState } from 'react'
@@ -24,6 +26,10 @@ interface Message {
 
 export default function AIScreen() {
   const { user } = useUser()
+  const colorScheme = useColorScheme()
+  const isDark = colorScheme === 'dark'
+  const colors = getColors(isDark)
+  
   const email = user?.emailAddresses?.[0]?.emailAddress
   const [messages, setMessages] = useState<Message[]>([])
   const [inputText, setInputText] = useState('')
@@ -32,11 +38,9 @@ export default function AIScreen() {
   const [insight, setInsight] = useState('')
   const flatListRef = useRef<FlatList>(null)
 
-  // Load productivity insight on mount
   useEffect(() => {
     if (email) {
       loadInsight()
-      // Add welcome message
       setMessages([
         {
           id: '0',
@@ -57,7 +61,6 @@ export default function AIScreen() {
   const handleSendMessage = async () => {
     if (!inputText.trim() || !email) return
 
-    // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       text: inputText,
@@ -70,7 +73,6 @@ export default function AIScreen() {
     setLoading(true)
     setShowInsight(false)
 
-    // Get AI response
     const conversationHistory = messages.map((msg) => ({
       role: msg.isUser ? 'user' : 'assistant',
       content: msg.text,
@@ -88,7 +90,6 @@ export default function AIScreen() {
     setMessages((prev) => [...prev, aiMessage])
     setLoading(false)
 
-    // Auto-scroll to bottom
     setTimeout(() => {
       flatListRef.current?.scrollToEnd({ animated: true })
     }, 100)
@@ -97,20 +98,20 @@ export default function AIScreen() {
   const renderMessage = (item: Message) => (
     <View
       style={[
-        styles.messageContainer,
-        item.isUser ? styles.userMessageContainer : styles.aiMessageContainer,
+        dynamicStyles.messageContainer,
+        item.isUser ? dynamicStyles.userMessageContainer : dynamicStyles.aiMessageContainer,
       ]}
     >
       <View
         style={[
-          styles.messageBubble,
-          item.isUser ? styles.userBubble : styles.aiBubble,
+          dynamicStyles.messageBubble,
+          item.isUser ? dynamicStyles.userBubble : dynamicStyles.aiBubble,
         ]}
       >
         <Text
           style={[
-            styles.messageText,
-            item.isUser ? styles.userText : styles.aiText,
+            dynamicStyles.messageText,
+            item.isUser ? dynamicStyles.userText : dynamicStyles.aiText,
           ]}
         >
           {item.text}
@@ -119,14 +120,142 @@ export default function AIScreen() {
     </View>
   )
 
+  const dynamicStyles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      paddingHorizontal: 16,
+      paddingTop: 12,
+      paddingBottom: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    headerTitle: {
+      fontSize: 22,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 4,
+    },
+    headerSubtitle: {
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    messagesContent: {
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+      flexGrow: 1,
+    },
+    messageContainer: {
+      marginVertical: 6,
+      flexDirection: 'row',
+    },
+    userMessageContainer: {
+      justifyContent: 'flex-end',
+    },
+    aiMessageContainer: {
+      justifyContent: 'flex-start',
+    },
+    messageBubble: {
+      maxWidth: '85%',
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      borderRadius: 12,
+    },
+    userBubble: {
+      backgroundColor: colors.primary,
+    },
+    aiBubble: {
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    messageText: {
+      fontSize: 14,
+      lineHeight: 18,
+    },
+    userText: {
+      color: colors.text,
+    },
+    aiText: {
+      color: colors.text,
+    },
+    loadingContainer: {
+      alignItems: 'center',
+      paddingVertical: 16,
+    },
+    insightCard: {
+      marginHorizontal: 12,
+      marginVertical: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      backgroundColor: colors.card,
+      borderRadius: 10,
+      borderLeftWidth: 4,
+      borderLeftColor: colors.primary,
+    },
+    insightTitle: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.primary,
+      marginBottom: 6,
+    },
+    insightText: {
+      fontSize: 13,
+      color: colors.text,
+      lineHeight: 18,
+    },
+    inputWrapper: {
+      paddingBottom: 80,
+    },
+    inputContainer: {
+      flexDirection: 'row',
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      backgroundColor: colors.background,
+      gap: 8,
+    },
+    input: {
+      flex: 1,
+      backgroundColor: colors.card,
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      color: colors.text,
+      fontSize: 14,
+      maxHeight: 100,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    sendButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 10,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    sendButtonDisabled: {
+      backgroundColor: colors.border,
+    },
+    sendButtonText: {
+      color: colors.text,
+      fontWeight: '600',
+      fontSize: 14,
+    },
+  })
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+      style={dynamicStyles.container}
     >
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>🤖 Pocket AI</Text>
-        <Text style={styles.headerSubtitle}>Your Personal Assistant</Text>
+      <View style={dynamicStyles.header}>
+        <Text style={dynamicStyles.headerTitle}>🤖 Pocket AI</Text>
+        <Text style={dynamicStyles.headerSubtitle}>Your Personal Assistant</Text>
       </View>
 
       <FlatList
@@ -134,19 +263,19 @@ export default function AIScreen() {
         data={messages}
         renderItem={({ item }) => renderMessage(item)}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.messagesContent}
+        contentContainerStyle={dynamicStyles.messagesContent}
         scrollEnabled={true}
         ListFooterComponent={
           <>
             {loading && (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#4a9eff" />
+              <View style={dynamicStyles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.primary} />
               </View>
             )}
             {showInsight && insight && (
-              <View style={styles.insightCard}>
-                <Text style={styles.insightTitle}>💡 Productivity Tip</Text>
-                <Text style={styles.insightText}>{insight}</Text>
+              <View style={dynamicStyles.insightCard}>
+                <Text style={dynamicStyles.insightTitle}>💡 Productivity Tip</Text>
+                <Text style={dynamicStyles.insightText}>{insight}</Text>
               </View>
             )}
           </>
@@ -156,23 +285,23 @@ export default function AIScreen() {
         }}
       />
 
-      <View style={styles.inputWrapper}>
-        <View style={styles.inputContainer}>
+      <View style={dynamicStyles.inputWrapper}>
+        <View style={dynamicStyles.inputContainer}>
           <TextInput
-            style={styles.input}
+            style={dynamicStyles.input}
             placeholder="Ask me anything..."
-            placeholderTextColor="#7a8099"
+            placeholderTextColor={colors.textSecondary}
             value={inputText}
             onChangeText={setInputText}
             multiline
             editable={!loading}
           />
           <TouchableOpacity
-            style={[styles.sendButton, loading && styles.sendButtonDisabled]}
+            style={[dynamicStyles.sendButton, loading && dynamicStyles.sendButtonDisabled]}
             onPress={handleSendMessage}
             disabled={loading || !inputText.trim()}
           >
-            <Text style={styles.sendButtonText}>Send</Text>
+            <Text style={dynamicStyles.sendButtonText}>Send</Text>
           </TouchableOpacity>
         </View>
         <FloatingActionButton />
@@ -180,131 +309,3 @@ export default function AIScreen() {
     </KeyboardAvoidingView>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0a0e27',
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1a1f3a',
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: '#7a8099',
-  },
-  messagesContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    flexGrow: 1,
-  },
-  messageContainer: {
-    marginVertical: 6,
-    flexDirection: 'row',
-  },
-  userMessageContainer: {
-    justifyContent: 'flex-end',
-  },
-  aiMessageContainer: {
-    justifyContent: 'flex-start',
-  },
-  messageBubble: {
-    maxWidth: '85%',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  userBubble: {
-    backgroundColor: '#4a9eff',
-  },
-  aiBubble: {
-    backgroundColor: '#161b33',
-    borderWidth: 1,
-    borderColor: '#1a1f3a',
-  },
-  messageText: {
-    fontSize: 14,
-    lineHeight: 18,
-  },
-  userText: {
-    color: '#fff',
-  },
-  aiText: {
-    color: '#e0e0e0',
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    paddingVertical: 16,
-  },
-  insightCard: {
-    marginHorizontal: 12,
-    marginVertical: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    backgroundColor: '#161b33',
-    borderRadius: 10,
-    borderLeftWidth: 4,
-    borderLeftColor: '#ffa500',
-  },
-  insightTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#ffa500',
-    marginBottom: 6,
-  },
-  insightText: {
-    fontSize: 13,
-    color: '#e0e0e0',
-    lineHeight: 18,
-  },
-  inputWrapper: {
-    paddingBottom: 80,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#1a1f3a',
-    backgroundColor: '#0a0e27',
-    gap: 8,
-  },
-  input: {
-    flex: 1,
-    backgroundColor: '#161b33',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: '#fff',
-    fontSize: 14,
-    maxHeight: 100,
-    borderWidth: 1,
-    borderColor: '#1a1f3a',
-  },
-  sendButton: {
-    backgroundColor: '#4a9eff',
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sendButtonDisabled: {
-    backgroundColor: '#1a1f3a',
-  },
-  sendButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-})

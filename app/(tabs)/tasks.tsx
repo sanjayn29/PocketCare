@@ -1,4 +1,6 @@
 import FloatingActionButton from '@/components/FloatingActionButton';
+import { getColors } from '@/constants/styles';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -33,6 +35,407 @@ export type ExtendedTask = Task & {
 export default function TasksScreen() {
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress;
+  
+  const colorScheme = useColorScheme()
+  const isDark = colorScheme === 'dark'
+  const colors = getColors(isDark)
+  
+  const dynamicStyles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background, 
+    },
+    headerArea: {
+      paddingHorizontal: 20,
+      marginTop: 20,
+      marginBottom: 10,
+    },
+    pageTitle: {
+      fontSize: 28,
+      fontWeight: '800',
+      color: colors.text,
+    },
+    filterRow: {
+      flexDirection: 'row',
+      paddingHorizontal: 20,
+      marginBottom: 16,
+      gap: 10,
+      flexWrap: 'wrap',
+    },
+    filterChip: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 20,
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    filterChipActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    filterChipText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    filterChipTextActive: {
+      color: '#FFFFFF',
+    },
+    center: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    emptyWrap: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 60,
+    },
+    emptyText: {
+      color: colors.textSecondary,
+      fontSize: 16,
+      marginTop: 12,
+      fontWeight: '500',
+    },
+    listContent: {
+      paddingHorizontal: 16,
+      paddingBottom: 100, 
+    },
+    // Task Card
+    taskCard: {
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      marginBottom: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    taskCardCompleted: {
+      backgroundColor: colors.background,
+      borderColor: colors.border,
+      opacity: 0.8,
+    },
+    checkboxArea: {
+      padding: 16,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    taskContent: {
+      flex: 1,
+      paddingVertical: 14,
+      paddingRight: 10,
+    },
+    taskHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    taskTitle: {
+      fontSize: 17,
+      fontWeight: '700',
+      color: colors.text,
+      flex: 1,
+      marginRight: 8,
+    },
+    taskTitleCompleted: {
+      color: colors.textSecondary,
+      textDecorationLine: 'line-through',
+    },
+    taskDesc: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 20,
+      marginBottom: 8,
+    },
+    taskDescCompleted: {
+      color: colors.textSecondary,
+    },
+    dueDateRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      flexWrap: 'wrap',
+    },
+    overdueBadge: {
+      marginLeft: 6,
+      backgroundColor: colors.danger,
+      borderWidth: 1,
+      borderColor: colors.danger,
+      borderRadius: 10,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+    },
+    overdueBadgeText: {
+      color: colors.card,
+      fontSize: 10,
+      fontWeight: '800',
+    },
+    dueDateText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: '500',
+    },
+    dueDateTextCompleted: {
+      color: colors.textSecondary,
+    },
+    priorityBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 8,
+    },
+    priorityText: {
+      fontSize: 10,
+      fontWeight: '800',
+    },
+    deleteArea: {
+      padding: 16,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    // Inline Create Styles
+    createCard: {
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      marginBottom: 20,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.08,
+      shadowRadius: 10,
+      elevation: 3,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: 'hidden',
+    },
+    createCollapsed: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 16,
+      gap: 12,
+    },
+    createCollapsedText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      fontWeight: '500',
+    },
+    createExpanded: {
+      padding: 16,
+    },
+    createTitleInput: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 12,
+      paddingVertical: 4,
+    },
+    createContentInput: {
+      fontSize: 15,
+      color: colors.text,
+      minHeight: 50,
+      textAlignVertical: 'top',
+      marginBottom: 12,
+    },
+    dateInputWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+      borderRadius: 10,
+      marginBottom: 16,
+    },
+    dateInputText: {
+      fontSize: 14,
+      color: colors.text,
+      fontWeight: '500',
+    },
+    prioritySelectorRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    selectorLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      marginRight: 10,
+    },
+    priorityOptions: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    priorityOption: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    priorityOptionSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    priorityOptionText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    priorityOptionTextSelected: {
+      color: '#FFFFFF',
+    },
+    createActions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: 12,
+      borderTopWidth: 1,
+      borderTopColor: '#F1F5F9',
+      paddingTop: 12,
+    },
+    cancelBtn: {
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      justifyContent: 'center',
+    },
+    cancelBtnText: {
+      color: colors.textSecondary,
+      fontWeight: '600',
+      fontSize: 14,
+    },
+    saveBtn: {
+      backgroundColor: colors.primary,
+      paddingVertical: 8,
+      paddingHorizontal: 20,
+      borderRadius: 20,
+      justifyContent: 'center',
+    },
+    saveBtnText: {
+      color: '#FFFFFF',
+      fontWeight: '700',
+      fontSize: 14,
+    },
+    // Modal styles (Edit)
+    modalContainer: {
+      flex: 1,
+      backgroundColor: colors.card,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 20,
+      borderBottomWidth: 1,
+      borderColor: colors.border,
+    },
+    modalBody: {
+      padding: 20,
+      flex: 1,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    cancelText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+    },
+    saveHeaderBtnText: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.primary,
+    },
+    titleInput: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 20,
+    },
+    contentInput: {
+      flex: 1,
+      fontSize: 16,
+      color: colors.text,
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      padding: 16,
+    },
+    // Dropdown Filter Styles
+    filterRowSecondary: {
+      flexDirection: 'row',
+      paddingHorizontal: 20,
+      marginBottom: 16,
+      gap: 12,
+    },
+    dropdownContainer: {
+      flex: 1,
+      position: 'relative',
+    },
+    dropdownBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 20,
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      gap: 6,
+    },
+    dropdownBtnActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    dropdownBtnText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      flex: 1,
+    },
+    dropdownBtnTextActive: {
+      color: '#FFFFFF',
+    },
+    dropdownMenu: {
+      position: 'absolute',
+      top: 48,
+      left: 0,
+      right: 0,
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      zIndex: 1000,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 5,
+    },
+    dropdownItem: {
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: '#F1F5F9',
+    },
+    dropdownItemActive: {
+      backgroundColor: colors.background,
+    },
+    dropdownItemText: {
+      fontSize: 14,
+      color: colors.text,
+      fontWeight: '500',
+    },
+    dropdownItemTextActive: {
+      color: colors.primary,
+      fontWeight: '600',
+    },
+  });
   
   const [tasks, setTasks] = useState<ExtendedTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -290,8 +693,8 @@ export default function TasksScreen() {
     };
     const style = colors[priority];
     return (
-      <View style={[styles.priorityBadge, { backgroundColor: style.bg }]}>
-        <Text style={[styles.priorityText, { color: style.text }]}>{priority.toUpperCase()}</Text>
+      <View style={[dynamicStyles.priorityBadge, { backgroundColor: style.bg }]}>
+        <Text style={[dynamicStyles.priorityText, { color: style.text }]}>{priority.toUpperCase()}</Text>
       </View>
     );
   };
@@ -302,10 +705,12 @@ export default function TasksScreen() {
     const isCompleted = item.status === 'completed';
     const hasDueDate = !!item.due_date && isValidDateOnlyString(item.due_date);
     const isOverdue = hasDueDate && !isCompleted && item.due_date < todayStr;
+
+
     return (
-      <View style={[styles.taskCard, item.isGoalTask && { borderColor: '#E0E7FF', borderWidth: 1.5 }, isCompleted && styles.taskCardCompleted]}>
+      <View style={[dynamicStyles.taskCard, item.isGoalTask && { borderColor: '#E0E7FF', borderWidth: 1.5 }, isCompleted && dynamicStyles.taskCardCompleted]}>
         <TouchableOpacity 
-          style={styles.checkboxArea} 
+          style={[dynamicStyles.checkboxArea]}
           onPress={() => toggleTaskStatus(item)}
           activeOpacity={0.6}
         >
@@ -317,33 +722,33 @@ export default function TasksScreen() {
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={styles.taskContent} 
+          style={[dynamicStyles.taskContent]}
           onPress={() => openEditModal(item)}
           activeOpacity={0.7}
         >
-          <View style={styles.taskHeaderRow}>
-            <Text style={[styles.taskTitle, item.isGoalTask && { color: '#1D4ED8' }, isCompleted && styles.taskTitleCompleted]} numberOfLines={1}>
+          <View style={[dynamicStyles.taskHeaderRow]}>
+            <Text style={[dynamicStyles.taskTitle, item.isGoalTask && { color: colors.primary }, isCompleted && dynamicStyles.taskTitleCompleted]} numberOfLines={1}>
               {item.title}
             </Text>
             <PriorityBadge priority={item.priority} />
           </View>
           
           {item.description ? (
-            <Text style={[styles.taskDesc, item.isGoalTask && { color: '#0F172A', fontWeight: '500' }, isCompleted && styles.taskDescCompleted]} numberOfLines={2}>
+            <Text style={[dynamicStyles.taskDesc, item.isGoalTask && { color: colors.text, fontWeight: '500' }, isCompleted && dynamicStyles.taskDescCompleted]} numberOfLines={2}>
               {item.description}
             </Text>
           ) : null}
           
           <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4}}>
              {item.due_date ? (
-               <View style={styles.dueDateRow}>
+               <View style={[dynamicStyles.dueDateRow]}>
                  <Ionicons name="calendar-outline" size={14} color={isCompleted ? "#94A3B8" : "#64748B"} />
-                 <Text style={[styles.dueDateText, isCompleted && styles.dueDateTextCompleted]}>
+                 <Text style={[dynamicStyles.dueDateText, isCompleted && dynamicStyles.dueDateTextCompleted]}>
                    Due: {item.due_date}
                  </Text>
                  {isOverdue && (
-                   <View style={styles.overdueBadge}>
-                     <Text style={styles.overdueBadgeText}>DUE DATE ENDED</Text>
+                   <View style={[dynamicStyles.overdueBadge]}>
+                     <Text style={[dynamicStyles.overdueBadgeText]}>DUE DATE ENDED</Text>
                    </View>
                  )}
                </View>
@@ -358,8 +763,8 @@ export default function TasksScreen() {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.deleteArea} onPress={() => handleDelete(item.id)} hitSlop={10}>
-          <Ionicons name="trash-outline" size={20} color={item.isGoalTask ? "#CBD5E1" : "#FF5252"} />
+        <TouchableOpacity style={[dynamicStyles.deleteArea]} onPress={() => handleDelete(item.id)} hitSlop={10}>
+          <Ionicons name="trash-outline" size={20} color={item.isGoalTask ? "#CBD5E1" : colors.danger} />
         </TouchableOpacity>
       </View>
     );
@@ -372,16 +777,16 @@ export default function TasksScreen() {
     selected: TaskPriority; 
     onSelect: (p: TaskPriority) => void 
   }) => (
-    <View style={styles.prioritySelectorRow}>
-      <Text style={styles.selectorLabel}>Priority:</Text>
-      <View style={styles.priorityOptions}>
+    <View style={[dynamicStyles.prioritySelectorRow]}>
+      <Text style={[dynamicStyles.selectorLabel]}>Priority:</Text>
+      <View style={[dynamicStyles.priorityOptions]}>
         {(['low', 'medium', 'high'] as TaskPriority[]).map(p => (
           <TouchableOpacity 
             key={p} 
-            style={[styles.priorityOption, selected === p && styles.priorityOptionSelected]}
+            style={[dynamicStyles.priorityOption, selected === p && dynamicStyles.priorityOptionSelected]}
             onPress={() => onSelect(p)}
           >
-            <Text style={[styles.priorityOptionText, selected === p && styles.priorityOptionTextSelected]}>
+            <Text style={[dynamicStyles.priorityOptionText, selected === p && dynamicStyles.priorityOptionTextSelected]}>
               {p.charAt(0).toUpperCase() + p.slice(1)}
             </Text>
           </TouchableOpacity>
@@ -429,11 +834,11 @@ export default function TasksScreen() {
   });
 
   const renderListHeader = () => (
-    <View style={styles.createCard}>
+    <View style={[dynamicStyles.createCard]}>
       {isCreating ? (
-        <View style={styles.createExpanded}>
+        <View style={[dynamicStyles.createExpanded]}>
           <TextInput
-            style={styles.createTitleInput}
+            style={[dynamicStyles.createTitleInput]}
             placeholder="Task Title"
             placeholderTextColor="#94A3B8"
             value={newTitle}
@@ -441,7 +846,7 @@ export default function TasksScreen() {
             autoFocus
           />
           <TextInput
-            style={styles.createContentInput}
+            style={[dynamicStyles.createContentInput]}
             placeholder="Description (Optional)"
             placeholderTextColor="#94A3B8"
             multiline
@@ -452,11 +857,11 @@ export default function TasksScreen() {
           <PrioritySelector selected={newPriority} onSelect={setNewPriority} />
           
           <TouchableOpacity 
-            style={styles.dateInputWrapper}
+            style={[dynamicStyles.dateInputWrapper]}
             onPress={() => setShowDatePicker(true)}
           >
             <Ionicons name="calendar-outline" size={18} color="#64748B" style={{ marginRight: 8 }} />
-            <Text style={[styles.dateInputText, !newDueDate && { color: '#94A3B8' }]}>
+            <Text style={[dynamicStyles.dateInputText, !newDueDate && { color: colors.textSecondary }]}>
               {newDueDate ? `Due: ${newDueDate}` : 'Select Due Date (Optional)'}
             </Text>
           </TouchableOpacity>
@@ -470,9 +875,9 @@ export default function TasksScreen() {
             />
           )}
           
-          <View style={styles.createActions}>
+          <View style={[dynamicStyles.createActions]}>
             <TouchableOpacity 
-              style={styles.cancelBtn} 
+              style={[dynamicStyles.cancelBtn]}
               onPress={() => {
                 setIsCreating(false);
                 setNewTitle('');
@@ -481,30 +886,30 @@ export default function TasksScreen() {
                 Keyboard.dismiss();
               }}
             >
-              <Text style={styles.cancelBtnText}>Cancel</Text>
+              <Text style={[dynamicStyles.cancelBtnText]}>Cancel</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={styles.saveBtn} 
+              style={[dynamicStyles.saveBtn]}
               onPress={handleSaveNewTask}
               disabled={isSavingNew}
             >
               {isSavingNew ? (
                 <ActivityIndicator size="small" color="#FFF" />
               ) : (
-                <Text style={styles.saveBtnText}>Save Task</Text>
+                <Text style={[dynamicStyles.saveBtnText]}>Save Task</Text>
               )}
             </TouchableOpacity>
           </View>
         </View>
       ) : (
         <TouchableOpacity 
-          style={styles.createCollapsed} 
+          style={[dynamicStyles.createCollapsed]}
           activeOpacity={0.8}
           onPress={() => setIsCreating(true)}
         >
           <Ionicons name="add-circle-outline" size={22} color="#1D4ED8" />
-          <Text style={styles.createCollapsedText}>Add a new task...</Text>
+          <Text style={[dynamicStyles.createCollapsedText]}>Add a new task...</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -512,87 +917,86 @@ export default function TasksScreen() {
 
   return (
     <KeyboardAvoidingView 
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={[dynamicStyles.container]}
     >
-
       
-      <View style={styles.headerArea}>
-        <Text style={styles.pageTitle}>My Tasks</Text>
+      <View style={[dynamicStyles.headerArea]}>
+        <Text style={[dynamicStyles.pageTitle]}>My Tasks</Text>
       </View>
 
-      <View style={styles.filterRow}>
+      <View style={[dynamicStyles.filterRow]}>
         <TouchableOpacity 
-          style={[styles.filterChip, filterMode === 'all' && styles.filterChipActive]}
+          style={[dynamicStyles.filterChip, filterMode === 'all' && dynamicStyles.filterChipActive]}
           onPress={() => setFilterMode('all')}
         >
-          <Text style={[styles.filterChipText, filterMode === 'all' && styles.filterChipTextActive]}>All Tasks</Text>
+          <Text style={[dynamicStyles.filterChipText, filterMode === 'all' && dynamicStyles.filterChipTextActive]}>All Tasks</Text>
         </TouchableOpacity>
         <TouchableOpacity 
-          style={[styles.filterChip, filterMode === 'today' && styles.filterChipActive]}
+          style={[dynamicStyles.filterChip, filterMode === 'today' && dynamicStyles.filterChipActive]}
           onPress={() => setFilterMode('today')}
         >
-          <Text style={[styles.filterChipText, filterMode === 'today' && styles.filterChipTextActive]}>Today Only</Text>
+          <Text style={[dynamicStyles.filterChipText, filterMode === 'today' && dynamicStyles.filterChipTextActive]}>Today Only</Text>
         </TouchableOpacity>
         <TouchableOpacity 
-          style={[styles.filterChip, filterMode === 'pending' && styles.filterChipActive]}
+          style={[dynamicStyles.filterChip, filterMode === 'pending' && dynamicStyles.filterChipActive]}
           onPress={() => setFilterMode('pending')}
         >
-          <Text style={[styles.filterChipText, filterMode === 'pending' && styles.filterChipTextActive]}>Pending</Text>
+          <Text style={[dynamicStyles.filterChipText, filterMode === 'pending' && dynamicStyles.filterChipTextActive]}>Pending</Text>
         </TouchableOpacity>
         <TouchableOpacity 
-          style={[styles.filterChip, filterMode === 'completed' && styles.filterChipActive]}
+          style={[dynamicStyles.filterChip, filterMode === 'completed' && dynamicStyles.filterChipActive]}
           onPress={() => setFilterMode('completed')}
         >
-          <Text style={[styles.filterChipText, filterMode === 'completed' && styles.filterChipTextActive]}>Completed</Text>
+          <Text style={[dynamicStyles.filterChipText, filterMode === 'completed' && dynamicStyles.filterChipTextActive]}>Completed</Text>
         </TouchableOpacity>
         <TouchableOpacity 
-          style={[styles.filterChip, filterMode === 'overdue' && styles.filterChipActive]}
+          style={[dynamicStyles.filterChip, filterMode === 'overdue' && dynamicStyles.filterChipActive]}
           onPress={() => setFilterMode('overdue')}
         >
-          <Text style={[styles.filterChipText, filterMode === 'overdue' && styles.filterChipTextActive]}>Overdue</Text>
+          <Text style={[dynamicStyles.filterChipText, filterMode === 'overdue' && dynamicStyles.filterChipTextActive]}>Overdue</Text>
         </TouchableOpacity>
       </View>
 
       {/* Skill and Goal Filters */}
-      <View style={styles.filterRowSecondary}>
+      <View style={[dynamicStyles.filterRowSecondary]}>
         {/* Skill Filter */}
-        <View style={styles.dropdownContainer}>
+        <View style={[dynamicStyles.dropdownContainer]}>
           <TouchableOpacity 
-            style={[styles.dropdownBtn, selectedSkillFilter && styles.dropdownBtnActive]}
+            style={[dynamicStyles.dropdownBtn, selectedSkillFilter && dynamicStyles.dropdownBtnActive]}
             onPress={() => {
               setShowSkillDropdown(!showSkillDropdown);
               setShowGoalDropdown(false);
             }}
           >
             <Ionicons name="bulb-outline" size={16} color={selectedSkillFilter ? '#FFFFFF' : '#64748B'} />
-            <Text style={[styles.dropdownBtnText, selectedSkillFilter && styles.dropdownBtnTextActive]}>
+            <Text style={[dynamicStyles.dropdownBtnText, selectedSkillFilter && dynamicStyles.dropdownBtnTextActive]}>
               {selectedSkillFilter ? skills.find(s => s.id === selectedSkillFilter)?.name || 'Skill' : 'Skill'}
             </Text>
             <Ionicons name={showSkillDropdown ? 'chevron-up' : 'chevron-down'} size={16} color={selectedSkillFilter ? '#FFFFFF' : '#64748B'} />
           </TouchableOpacity>
           
           {showSkillDropdown && (
-            <View style={styles.dropdownMenu}>
+            <View style={[dynamicStyles.dropdownMenu]}>
               <TouchableOpacity 
-                style={styles.dropdownItem}
+                style={[dynamicStyles.dropdownItem]}
                 onPress={() => {
                   setSelectedSkillFilter(null);
                   setShowSkillDropdown(false);
                 }}
               >
-                <Text style={styles.dropdownItemText}>All Skills</Text>
+                <Text style={[dynamicStyles.dropdownItemText]}>All Skills</Text>
               </TouchableOpacity>
               {skills.map(skill => (
                 <TouchableOpacity 
                   key={skill.id}
-                  style={[styles.dropdownItem, selectedSkillFilter === skill.id && styles.dropdownItemActive]}
+                  style={[dynamicStyles.dropdownItem, selectedSkillFilter === skill.id && dynamicStyles.dropdownItemActive]}
                   onPress={() => {
                     setSelectedSkillFilter(skill.id);
                     setShowSkillDropdown(false);
                   }}
                 >
-                  <Text style={[styles.dropdownItemText, selectedSkillFilter === skill.id && styles.dropdownItemTextActive]}>
+                  <Text style={[dynamicStyles.dropdownItemText, selectedSkillFilter === skill.id && dynamicStyles.dropdownItemTextActive]}>
                     {skill.name}
                   </Text>
                 </TouchableOpacity>
@@ -602,42 +1006,42 @@ export default function TasksScreen() {
         </View>
 
         {/* Goal Filter */}
-        <View style={styles.dropdownContainer}>
+        <View style={[dynamicStyles.dropdownContainer]}>
           <TouchableOpacity 
-            style={[styles.dropdownBtn, selectedGoalFilter && styles.dropdownBtnActive]}
+            style={[dynamicStyles.dropdownBtn, selectedGoalFilter && dynamicStyles.dropdownBtnActive]}
             onPress={() => {
               setShowGoalDropdown(!showGoalDropdown);
               setShowSkillDropdown(false);
             }}
           >
             <Ionicons name="flag-outline" size={16} color={selectedGoalFilter ? '#FFFFFF' : '#64748B'} />
-            <Text style={[styles.dropdownBtnText, selectedGoalFilter && styles.dropdownBtnTextActive]}>
+            <Text style={[dynamicStyles.dropdownBtnText, selectedGoalFilter && dynamicStyles.dropdownBtnTextActive]}>
               {selectedGoalFilter ? goals.find(g => g.id === selectedGoalFilter)?.title || 'Goal' : 'Goal'}
             </Text>
             <Ionicons name={showGoalDropdown ? 'chevron-up' : 'chevron-down'} size={16} color={selectedGoalFilter ? '#FFFFFF' : '#64748B'} />
           </TouchableOpacity>
           
           {showGoalDropdown && (
-            <View style={styles.dropdownMenu}>
+            <View style={[dynamicStyles.dropdownMenu]}>
               <TouchableOpacity 
-                style={styles.dropdownItem}
+                style={[dynamicStyles.dropdownItem]}
                 onPress={() => {
                   setSelectedGoalFilter(null);
                   setShowGoalDropdown(false);
                 }}
               >
-                <Text style={styles.dropdownItemText}>All Goals</Text>
+                <Text style={[dynamicStyles.dropdownItemText]}>All Goals</Text>
               </TouchableOpacity>
               {goals.map(goal => (
                 <TouchableOpacity 
                   key={goal.id}
-                  style={[styles.dropdownItem, selectedGoalFilter === goal.id && styles.dropdownItemActive]}
+                  style={[dynamicStyles.dropdownItem, selectedGoalFilter === goal.id && dynamicStyles.dropdownItemActive]}
                   onPress={() => {
                     setSelectedGoalFilter(goal.id);
                     setShowGoalDropdown(false);
                   }}
                 >
-                  <Text style={[styles.dropdownItemText, selectedGoalFilter === goal.id && styles.dropdownItemTextActive]}>
+                  <Text style={[dynamicStyles.dropdownItemText, selectedGoalFilter === goal.id && dynamicStyles.dropdownItemTextActive]}>
                     {goal.title}
                   </Text>
                 </TouchableOpacity>
@@ -648,7 +1052,7 @@ export default function TasksScreen() {
       </View>
 
       {loading ? (
-        <View style={styles.center}>
+        <View style={[dynamicStyles.center]}>
           <ActivityIndicator size="large" color="#1D4ED8" />
         </View>
       ) : (
@@ -657,15 +1061,15 @@ export default function TasksScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderTask}
           ListHeaderComponent={renderListHeader()}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={dynamicStyles.listContent}
           onRefresh={handleRefresh}
           refreshing={refreshing}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           ListEmptyComponent={
-             <View style={styles.emptyWrap}>
+             <View style={[dynamicStyles.emptyWrap]}>
                <Ionicons name="checkbox-outline" size={60} color="#CBD5E1" />
-               <Text style={styles.emptyText}>No tasks pending. You're all caught up!</Text>
+               <Text style={[dynamicStyles.emptyText]}>No tasks pending. You're all caught up!</Text>
              </View>
           }
         />
@@ -680,25 +1084,25 @@ export default function TasksScreen() {
       >
         <KeyboardAvoidingView 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalContainer}
+          style={[dynamicStyles.modalContainer]}
         >
-          <View style={styles.modalHeader}>
+          <View style={[dynamicStyles.modalHeader]}>
             <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={[dynamicStyles.cancelText]}>Cancel</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Edit Task</Text>
+            <Text style={[dynamicStyles.modalTitle]}>Edit Task</Text>
             <TouchableOpacity onPress={handleSaveEdit} disabled={isSavingEdit}>
               {isSavingEdit ? (
                 <ActivityIndicator size="small" color="#1D4ED8" />
               ) : (
-                <Text style={styles.saveHeaderBtnText}>Save</Text>
+                <Text style={[dynamicStyles.saveHeaderBtnText]}>Save</Text>
               )}
             </TouchableOpacity>
           </View>
 
-          <View style={styles.modalBody}>
+          <View style={[dynamicStyles.modalBody]}>
             <TextInput
-              style={styles.titleInput}
+              style={[dynamicStyles.titleInput]}
               placeholder="Task Title"
               placeholderTextColor="#94A3B8"
               value={editTitle}
@@ -708,11 +1112,11 @@ export default function TasksScreen() {
             <PrioritySelector selected={editPriority} onSelect={setEditPriority} />
             
             <TouchableOpacity 
-              style={[styles.dateInputWrapper, { marginBottom: 20 }]}
+              style={[dynamicStyles.dateInputWrapper, { marginBottom: 20 }]}
               onPress={() => setShowEditDatePicker(true)}
             >
               <Ionicons name="calendar-outline" size={18} color="#64748B" style={{ marginRight: 8 }} />
-              <Text style={[styles.dateInputText, !editDueDate && { color: '#94A3B8' }]}>
+              <Text style={[dynamicStyles.dateInputText, !editDueDate && { color: colors.textSecondary }]}>
                 {editDueDate ? `Due: ${editDueDate}` : 'Select Due Date'}
               </Text>
             </TouchableOpacity>
@@ -727,7 +1131,7 @@ export default function TasksScreen() {
             )}
             
             <TextInput
-              style={styles.contentInput}
+              style={[dynamicStyles.contentInput]}
               placeholder="Description"
               placeholderTextColor="#94A3B8"
               multiline
@@ -744,400 +1148,5 @@ export default function TasksScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC', 
-  },
-  headerArea: {
-    paddingHorizontal: 20,
-    marginTop: 20,
-    marginBottom: 10,
-  },
-  pageTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#0F172A',
-  },
-  filterRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 16,
-    gap: 10,
-    flexWrap: 'wrap',
-  },
-  filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#F1F5F9',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  filterChipActive: {
-    backgroundColor: '#1D4ED8',
-    borderColor: '#1D4ED8',
-  },
-  filterChipText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#64748B',
-  },
-  filterChipTextActive: {
-    color: '#FFFFFF',
-  },
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 60,
-  },
-  emptyText: {
-    color: '#64748B',
-    fontSize: 16,
-    marginTop: 12,
-    fontWeight: '500',
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 100, 
-  },
-  // Task Card
-  taskCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-  },
-  taskCardCompleted: {
-    backgroundColor: '#F8FAFC',
-    borderColor: '#E2E8F0',
-    opacity: 0.8,
-  },
-  checkboxArea: {
-    padding: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  taskContent: {
-    flex: 1,
-    paddingVertical: 14,
-    paddingRight: 10,
-  },
-  taskHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  taskTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#1E293B',
-    flex: 1,
-    marginRight: 8,
-  },
-  taskTitleCompleted: {
-    color: '#94A3B8',
-    textDecorationLine: 'line-through',
-  },
-  taskDesc: {
-    fontSize: 14,
-    color: '#475569',
-    lineHeight: 20,
-    marginBottom: 8,
-  },
-  taskDescCompleted: {
-    color: '#94A3B8',
-  },
-  dueDateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    flexWrap: 'wrap',
-  },
-  overdueBadge: {
-    marginLeft: 6,
-    backgroundColor: '#FEE2E2',
-    borderWidth: 1,
-    borderColor: '#FECACA',
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  overdueBadgeText: {
-    color: '#B91C1C',
-    fontSize: 10,
-    fontWeight: '800',
-  },
-  dueDateText: {
-    fontSize: 12,
-    color: '#64748B',
-    fontWeight: '500',
-  },
-  dueDateTextCompleted: {
-    color: '#94A3B8',
-  },
-  priorityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  priorityText: {
-    fontSize: 10,
-    fontWeight: '800',
-  },
-  deleteArea: {
-    padding: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  // Inline Create Styles
-  createCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    marginBottom: 20,
-    shadowColor: '#1D4ED8',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    overflow: 'hidden',
-  },
-  createCollapsed: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    gap: 12,
-  },
-  createCollapsedText: {
-    fontSize: 16,
-    color: '#64748B',
-    fontWeight: '500',
-  },
-  createExpanded: {
-    padding: 16,
-  },
-  createTitleInput: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 12,
-    paddingVertical: 4,
-  },
-  createContentInput: {
-    fontSize: 15,
-    color: '#334155',
-    minHeight: 50,
-    textAlignVertical: 'top',
-    marginBottom: 12,
-  },
-  dateInputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderRadius: 10,
-    marginBottom: 16,
-  },
-  dateInputText: {
-    fontSize: 14,
-    color: '#334155',
-    fontWeight: '500',
-  },
-  prioritySelectorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  selectorLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#64748B',
-    marginRight: 10,
-  },
-  priorityOptions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  priorityOption: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    backgroundColor: '#FFFFFF',
-  },
-  priorityOptionSelected: {
-    backgroundColor: '#1D4ED8',
-    borderColor: '#1D4ED8',
-  },
-  priorityOptionText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#64748B',
-  },
-  priorityOptionTextSelected: {
-    color: '#FFFFFF',
-  },
-  createActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-    paddingTop: 12,
-  },
-  cancelBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    justifyContent: 'center',
-  },
-  cancelBtnText: {
-    color: '#64748B',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  saveBtn: {
-    backgroundColor: '#1D4ED8',
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    justifyContent: 'center',
-  },
-  saveBtnText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  // Modal styles (Edit)
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderColor: '#F1F5F9',
-  },
-  modalBody: {
-    padding: 20,
-    flex: 1,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0F172A',
-  },
-  cancelText: {
-    fontSize: 16,
-    color: '#64748B',
-  },
-  saveHeaderBtnText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1D4ED8',
-  },
-  titleInput: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 20,
-  },
-  contentInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#334155',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    padding: 16,
-  },
-  // Dropdown Filter Styles
-  filterRowSecondary: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 16,
-    gap: 12,
-  },
-  dropdownContainer: {
-    flex: 1,
-    position: 'relative',
-  },
-  dropdownBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#F1F5F9',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    gap: 6,
-  },
-  dropdownBtnActive: {
-    backgroundColor: '#1D4ED8',
-    borderColor: '#1D4ED8',
-  },
-  dropdownBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#64748B',
-    flex: 1,
-  },
-  dropdownBtnTextActive: {
-    color: '#FFFFFF',
-  },
-  dropdownMenu: {
-    position: 'absolute',
-    top: 48,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    zIndex: 1000,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  dropdownItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  dropdownItemActive: {
-    backgroundColor: '#EFF6FF',
-  },
-  dropdownItemText: {
-    fontSize: 14,
-    color: '#334155',
-    fontWeight: '500',
-  },
-  dropdownItemTextActive: {
-    color: '#1D4ED8',
-    fontWeight: '600',
-  },
-});
+
 

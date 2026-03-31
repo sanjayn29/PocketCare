@@ -1,31 +1,39 @@
 import FloatingActionButton from '@/components/FloatingActionButton';
+import { getColors } from '@/constants/styles';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator, Alert, FlatList,
-    Keyboard, KeyboardAvoidingView, Modal, Platform,
-    ScrollView, StyleSheet, Text, TextInput,
-    TouchableOpacity, View,
+  ActivityIndicator, Alert, FlatList,
+  Keyboard, KeyboardAvoidingView, Modal, Platform,
+  ScrollView, StyleSheet,
+  Text, TextInput,
+  TouchableOpacity, View
 } from 'react-native';
 import {
-    Skill, SkillLevel, SkillTask,
-    addSkill, deleteSkill, getSkills, updateSkill,
+  Skill, SkillLevel, SkillTask,
+  addSkill, deleteSkill, getSkills, updateSkill,
 } from '../../lib/skills-service';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
-
-const LEVEL_CONFIG: Record<SkillLevel, { label: string; color: string; bg: string }> = {
-  beginner:     { label: 'Beginner',     color: '#059669', bg: '#DCFCE7' },
-  intermediate: { label: 'Intermediate', color: '#D97706', bg: '#FEF9C3' },
-  advanced:     { label: 'Advanced',     color: '#7E22CE', bg: '#F3E8FF' },
-};
 
 // ─── component ──────────────────────────────────────────────────────────────
 
 export default function SkillsScreen() {
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress;
+
+  const colorScheme = useColorScheme()
+  const isDark = colorScheme === 'dark'
+  const colors = getColors(isDark)
+
+  // Move LEVEL_CONFIG inside component to use dynamic colors
+  const LEVEL_CONFIG: Record<SkillLevel, { label: string; color: string; bg: string }> = {
+    beginner:     { label: 'Beginner',     color: colors.success, bg: '#DCFCE7' },
+    intermediate: { label: 'Intermediate', color: colors.secondary, bg: '#FEF9C3' },
+    advanced:     { label: 'Advanced',     color: colors.primary, bg: '#F3E8FF' },
+  };
 
   const [skills, setSkills] = useState<Skill[]>([]);
   const [loading, setLoading] = useState(true);
@@ -168,28 +176,90 @@ export default function SkillsScreen() {
     ]);
   };
 
+  const dynamicStyles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    headerArea: { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 12 },
+    pageTitle: { fontSize: 28, fontWeight: '800', color: colors.text },
+    pageSubtitle: { fontSize: 13, color: colors.textSecondary, fontWeight: '500', marginTop: 2 },
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    listContent: { paddingHorizontal: 16, paddingBottom: 120 },
+    emptyWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 60 },
+    emptyText: { color: colors.textSecondary, fontSize: 16, marginTop: 12, fontWeight: '500' },
+    createCard: { backgroundColor: colors.card, borderRadius: 16, marginBottom: 20, borderWidth: 1, borderColor: colors.border, shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3, overflow: 'hidden' },
+    createCollapsed: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
+    createCollapsedText: { fontSize: 16, color: colors.textSecondary, fontWeight: '500' },
+    createExpanded: { padding: 16 },
+    createTitleInput: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 14, paddingVertical: 4 },
+    selectorLabel: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, marginBottom: 8 },
+    levelRow: { flexDirection: 'row', gap: 8, marginBottom: 16, flexWrap: 'wrap' },
+    levelChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
+    levelChipText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, textTransform: 'capitalize' },
+    createActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, borderTopWidth: 1, borderTopColor: colors.background, paddingTop: 12, marginTop: 4 },
+    cancelBtn: { paddingVertical: 8, paddingHorizontal: 16, justifyContent: 'center' },
+    cancelBtnText: { color: colors.textSecondary, fontWeight: '600', fontSize: 14 },
+    saveBtn: { backgroundColor: colors.primary, paddingVertical: 8, paddingHorizontal: 20, borderRadius: 20, justifyContent: 'center' },
+    saveBtnText: { color: colors.text, fontWeight: '700', fontSize: 14 },
+    taskRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.background, padding: 10, borderRadius: 10, marginBottom: 8, borderWidth: 1, borderColor: colors.border },
+    taskRowText: { flex: 1, fontSize: 14, color: colors.text, fontWeight: '500' },
+    taskEditInput: { flex: 1, fontSize: 14, color: colors.text, borderBottomWidth: 1, borderBottomColor: colors.primary, padding: 0 },
+    addTaskRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
+    addTaskInput: { flex: 1, backgroundColor: colors.background, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: colors.text },
+    addTaskBtn: { width: 42, height: 42, borderRadius: 10, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+    skillCard: { backgroundColor: colors.card, borderRadius: 16, marginBottom: 14, flexDirection: 'row', borderWidth: 1, borderColor: colors.border, shadowColor: colors.text, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+    skillMain: { flex: 1, padding: 16 },
+    skillHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+    skillName: { fontSize: 17, fontWeight: '700', color: colors.text, flex: 1, marginRight: 8 },
+    levelBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
+    levelBadgeText: { fontSize: 11, fontWeight: '800' },
+    progressArea: { backgroundColor: colors.background, padding: 10, borderRadius: 10, marginBottom: 10, borderWidth: 1, borderColor: colors.border },
+    progressHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+    progressLabel: { fontSize: 12, fontWeight: '600', color: colors.text },
+    progressPct: { fontSize: 12, fontWeight: '800', color: colors.text },
+    progressTrack: { height: 8, backgroundColor: colors.border, borderRadius: 4, overflow: 'hidden' },
+    progressFill: { height: '100%', borderRadius: 4 },
+    previewRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+    previewText: { fontSize: 13, color: colors.text, fontWeight: '500' },
+    previewDone: { color: colors.textSecondary, textDecorationLine: 'line-through' },
+    moreText: { fontSize: 12, color: colors.textSecondary, marginTop: 4 },
+    deleteArea: { paddingHorizontal: 14, justifyContent: 'flex-start', alignItems: 'center', paddingTop: 18 },
+    modalContainer: { flex: 1, backgroundColor: colors.card },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: colors.border },
+    modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
+    cancelText: { fontSize: 16, color: colors.textSecondary },
+    saveHeaderText: { fontSize: 16, fontWeight: '700', color: colors.primary },
+    modalBody: { padding: 20, flex: 1 },
+    titleInput: { fontSize: 22, fontWeight: '700', color: colors.text, marginBottom: 18, borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 8 },
+    filterSection: { paddingHorizontal: 16, paddingVertical: 14, backgroundColor: colors.background, marginBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
+    filterLabel: { fontSize: 12, fontWeight: '700', color: colors.textSecondary, marginBottom: 10, textTransform: 'uppercase' },
+    filterRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', alignItems: 'center' },
+    filterChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+    filterChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    filterChipText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, textTransform: 'capitalize' },
+    filterChipTextActive: { color: colors.text },
+  });
+
   // ─── Render ──────────────────────────────────────────────────────────────
 
   const renderListHeader = () => (
     <View>
       {/* Filter Section */}
-      <View style={styles.filterSection}>
-        <Text style={styles.filterLabel}>Filter by Level</Text>
-        <View style={styles.filterRow}>
+      <View style={dynamicStyles.filterSection}>
+        <Text style={dynamicStyles.filterLabel}>Filter by Level</Text>
+        <View style={dynamicStyles.filterRow}>
           <TouchableOpacity
-            style={[styles.filterChip, levelFilter === 'all' && styles.filterChipActive]}
+            style={[dynamicStyles.filterChip, levelFilter === 'all' && dynamicStyles.filterChipActive]}
             onPress={() => setLevelFilter('all')}
           >
-            <Text style={[styles.filterChipText, levelFilter === 'all' && styles.filterChipTextActive]}>All</Text>
+            <Text style={[dynamicStyles.filterChipText, levelFilter === 'all' && dynamicStyles.filterChipTextActive]}>All</Text>
           </TouchableOpacity>
 
           {(['beginner', 'intermediate', 'advanced'] as SkillLevel[]).map(l => (
             <TouchableOpacity
               key={l}
-              style={[styles.filterChip, levelFilter === l && styles.filterChipActive]}
+              style={[dynamicStyles.filterChip, levelFilter === l && dynamicStyles.filterChipActive]}
               onPress={() => setLevelFilter(l)}
             >
-              <Text style={[styles.filterChipText, levelFilter === l && styles.filterChipTextActive]}>
+              <Text style={[dynamicStyles.filterChipText, levelFilter === l && dynamicStyles.filterChipTextActive]}>
                 {LEVEL_CONFIG[l].label}
               </Text>
             </TouchableOpacity>
@@ -198,28 +268,28 @@ export default function SkillsScreen() {
       </View>
 
       {/* Create Skill Card */}
-      <View style={styles.createCard}>
+      <View style={dynamicStyles.createCard}>
       {isCreating ? (
-        <View style={styles.createExpanded}>
+        <View style={dynamicStyles.createExpanded}>
           <TextInput
-            style={styles.createTitleInput}
+            style={dynamicStyles.createTitleInput}
             placeholder="Skill Name"
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={colors.textSecondary}
             value={newName}
             onChangeText={setNewName}
             autoFocus
           />
 
           {/* Level Selector */}
-          <Text style={styles.selectorLabel}>Level:</Text>
-          <View style={styles.levelRow}>
+          <Text style={dynamicStyles.selectorLabel}>Level:</Text>
+          <View style={dynamicStyles.levelRow}>
             {(['beginner', 'intermediate', 'advanced'] as SkillLevel[]).map(l => (
               <TouchableOpacity
                 key={l}
-                style={[styles.levelChip, newLevel === l && { backgroundColor: LEVEL_CONFIG[l].color }]}
+                style={[dynamicStyles.levelChip, newLevel === l && { backgroundColor: LEVEL_CONFIG[l].color }]}
                 onPress={() => setNewLevel(l)}
               >
-                <Text style={[styles.levelChipText, newLevel === l && { color: '#FFF' }]}>
+                <Text style={[dynamicStyles.levelChipText, newLevel === l && { color: colors.text }]}>
                   {LEVEL_CONFIG[l].label}
                 </Text>
               </TouchableOpacity>
@@ -227,43 +297,43 @@ export default function SkillsScreen() {
           </View>
 
           {/* Progress Tasks */}
-          <Text style={styles.selectorLabel}>Progress Tasks:</Text>
+          <Text style={dynamicStyles.selectorLabel}>Progress Tasks:</Text>
           {newTasks.map(t => (
-            <View style={styles.taskRow} key={t.id}>
-              <Ionicons name="ellipse-outline" size={20} color="#94A3B8" />
-              <Text style={styles.taskRowText}>{t.title}</Text>
+            <View style={dynamicStyles.taskRow} key={t.id}>
+              <Ionicons name="ellipse-outline" size={20} color={colors.textSecondary} />
+              <Text style={dynamicStyles.taskRowText}>{t.title}</Text>
               <TouchableOpacity onPress={() => removeNewTask(t.id)}>
-                <Ionicons name="close-circle" size={18} color="#EF4444" />
+                <Ionicons name="close-circle" size={18} color={colors.danger} />
               </TouchableOpacity>
             </View>
           ))}
-          <View style={styles.addTaskRow}>
+          <View style={dynamicStyles.addTaskRow}>
             <TextInput
-              style={styles.addTaskInput}
+              style={dynamicStyles.addTaskInput}
               placeholder="Add a progress task…"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={colors.textSecondary}
               value={newTaskTitle}
               onChangeText={setNewTaskTitle}
               onSubmitEditing={addNewTask}
             />
-            <TouchableOpacity style={styles.addTaskBtn} onPress={addNewTask}>
-              <Ionicons name="add" size={20} color="#FFF" />
+            <TouchableOpacity style={dynamicStyles.addTaskBtn} onPress={addNewTask}>
+              <Ionicons name="add" size={20} color={colors.text} />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.createActions}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => setIsCreating(false)}>
-              <Text style={styles.cancelBtnText}>Cancel</Text>
+          <View style={dynamicStyles.createActions}>
+            <TouchableOpacity style={dynamicStyles.cancelBtn} onPress={() => setIsCreating(false)}>
+              <Text style={dynamicStyles.cancelBtnText}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.saveBtn} onPress={handleSaveSkill} disabled={isSavingNew}>
-              {isSavingNew ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.saveBtnText}>Add Skill</Text>}
+            <TouchableOpacity style={dynamicStyles.saveBtn} onPress={handleSaveSkill} disabled={isSavingNew}>
+              {isSavingNew ? <ActivityIndicator size="small" color={colors.text} /> : <Text style={dynamicStyles.saveBtnText}>Add Skill</Text>}
             </TouchableOpacity>
           </View>
         </View>
       ) : (
-        <TouchableOpacity style={styles.createCollapsed} onPress={() => setIsCreating(true)}>
-          <Ionicons name="flash-outline" size={22} color="#7E22CE" />
-          <Text style={styles.createCollapsedText}>Track a new skill…</Text>
+        <TouchableOpacity style={dynamicStyles.createCollapsed} onPress={() => setIsCreating(true)}>
+          <Ionicons name="flash-outline" size={22} color={colors.primary} />
+          <Text style={dynamicStyles.createCollapsedText}>Track a new skill…</Text>
         </TouchableOpacity>
       )}
       </View>
@@ -277,70 +347,70 @@ export default function SkillsScreen() {
     const cfg = LEVEL_CONFIG[item.level] || LEVEL_CONFIG.beginner;
 
     return (
-      <View style={styles.skillCard}>
-        <TouchableOpacity style={styles.skillMain} onPress={() => openEditModal(item)} activeOpacity={0.75}>
+      <View style={dynamicStyles.skillCard}>
+        <TouchableOpacity style={dynamicStyles.skillMain} onPress={() => openEditModal(item)} activeOpacity={0.75}>
           {/* Header */}
-          <View style={styles.skillHeader}>
-            <Text style={styles.skillName} numberOfLines={1}>{item.name}</Text>
-            <View style={[styles.levelBadge, { backgroundColor: cfg.bg }]}>
-              <Text style={[styles.levelBadgeText, { color: cfg.color }]}>{cfg.label}</Text>
+          <View style={dynamicStyles.skillHeader}>
+            <Text style={dynamicStyles.skillName} numberOfLines={1}>{item.name}</Text>
+            <View style={[dynamicStyles.levelBadge, { backgroundColor: cfg.bg }]}>
+              <Text style={[dynamicStyles.levelBadgeText, { color: cfg.color }]}>{cfg.label}</Text>
             </View>
           </View>
 
           {/* Progress Bar */}
-          <View style={styles.progressArea}>
-            <View style={styles.progressHeader}>
-              <Text style={styles.progressLabel}>{done} / {total} tasks completed</Text>
-              <Text style={styles.progressPct}>{pct}%</Text>
+          <View style={dynamicStyles.progressArea}>
+            <View style={dynamicStyles.progressHeader}>
+              <Text style={dynamicStyles.progressLabel}>{done} / {total} tasks completed</Text>
+              <Text style={dynamicStyles.progressPct}>{pct}%</Text>
             </View>
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${pct}%`, backgroundColor: pct >= 100 ? '#22C55E' : '#7E22CE' }]} />
+            <View style={dynamicStyles.progressTrack}>
+              <View style={[dynamicStyles.progressFill, { width: `${pct}%`, backgroundColor: pct >= 100 ? colors.success : colors.primary }]} />
             </View>
           </View>
 
           {/* Task list preview */}
           {item.progress.slice(0, 3).map(t => (
-            <View style={styles.previewRow} key={t.id}>
-              <Ionicons name={t.completed ? 'checkmark-circle' : 'ellipse-outline'} size={16} color={t.completed ? '#22C55E' : '#94A3B8'} />
-              <Text style={[styles.previewText, t.completed && styles.previewDone]}>{t.title}</Text>
+            <View style={dynamicStyles.previewRow} key={t.id}>
+              <Ionicons name={t.completed ? 'checkmark-circle' : 'ellipse-outline'} size={16} color={t.completed ? colors.success : colors.textSecondary} />
+              <Text style={[dynamicStyles.previewText, t.completed && dynamicStyles.previewDone]}>{t.title}</Text>
             </View>
           ))}
           {item.progress.length > 3 && (
-            <Text style={styles.moreText}>+{item.progress.length - 3} more tasks…</Text>
+            <Text style={dynamicStyles.moreText}>+{item.progress.length - 3} more tasks…</Text>
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.deleteArea} onPress={() => handleDelete(item.id)} hitSlop={10}>
-          <Ionicons name="trash-outline" size={20} color="#FF5252" />
+        <TouchableOpacity style={dynamicStyles.deleteArea} onPress={() => handleDelete(item.id)} hitSlop={10}>
+          <Ionicons name="trash-outline" size={20} color={colors.danger} />
         </TouchableOpacity>
       </View>
     );
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={styles.headerArea}>
-        <Text style={styles.pageTitle}>My Skills</Text>
-        <Text style={styles.pageSubtitle}>Track your learning progress</Text>
+    <KeyboardAvoidingView style={dynamicStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={dynamicStyles.headerArea}>
+        <Text style={dynamicStyles.pageTitle}>My Skills</Text>
+        <Text style={dynamicStyles.pageSubtitle}>Track your learning progress</Text>
       </View>
 
       {loading ? (
-        <View style={styles.center}><ActivityIndicator size="large" color="#7E22CE" /></View>
+        <View style={dynamicStyles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
         <FlatList
           data={getFilteredSkills()}
           keyExtractor={item => item.id}
           renderItem={renderSkill}
           ListHeaderComponent={renderListHeader()}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={dynamicStyles.listContent}
           onRefresh={handleRefresh}
           refreshing={refreshing}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <Ionicons name="school-outline" size={60} color="#CBD5E1" />
-              <Text style={styles.emptyText}>No skills tracked yet.</Text>
+            <View style={dynamicStyles.emptyWrap}>
+              <Ionicons name="school-outline" size={60} color={colors.textSecondary} />
+              <Text style={dynamicStyles.emptyText}>No skills tracked yet.</Text>
             </View>
           }
         />
@@ -348,48 +418,49 @@ export default function SkillsScreen() {
 
       {/* ── Edit Modal ── */}
       <Modal visible={modalVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setModalVisible(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setModalVisible(false)}><Text style={styles.cancelText}>Cancel</Text></TouchableOpacity>
-            <Text style={styles.modalTitle}>Edit Skill</Text>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={dynamicStyles.modalContainer}>
+          <View style={dynamicStyles.modalHeader}>
+            <TouchableOpacity onPress={() => setModalVisible(false)}><Text style={dynamicStyles.cancelText}>Cancel</Text></TouchableOpacity>
+            <Text style={dynamicStyles.modalTitle}>Edit Skill</Text>
             <TouchableOpacity onPress={handleSaveEdit} disabled={isSavingEdit}>
-              {isSavingEdit ? <ActivityIndicator size="small" color="#7E22CE" /> : <Text style={styles.saveHeaderText}>Save</Text>}
+              {isSavingEdit ? <ActivityIndicator size="small" color={colors.primary} /> : <Text style={dynamicStyles.saveHeaderText}>Save</Text>}
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled">
+          <ScrollView style={dynamicStyles.modalBody} keyboardShouldPersistTaps="handled">
             <TextInput
-              style={styles.titleInput}
+              style={dynamicStyles.titleInput}
               placeholder="Skill Name"
+              placeholderTextColor={colors.textSecondary}
               value={editName}
               onChangeText={setEditName}
             />
 
-            <Text style={styles.selectorLabel}>Level:</Text>
-            <View style={styles.levelRow}>
+            <Text style={dynamicStyles.selectorLabel}>Level:</Text>
+            <View style={dynamicStyles.levelRow}>
               {(['beginner', 'intermediate', 'advanced'] as SkillLevel[]).map(l => (
                 <TouchableOpacity
                   key={l}
-                  style={[styles.levelChip, editLevel === l && { backgroundColor: LEVEL_CONFIG[l].color }]}
+                  style={[dynamicStyles.levelChip, editLevel === l && { backgroundColor: LEVEL_CONFIG[l].color }]}
                   onPress={() => setEditLevel(l)}
                 >
-                  <Text style={[styles.levelChipText, editLevel === l && { color: '#FFF' }]}>
+                  <Text style={[dynamicStyles.levelChipText, editLevel === l && { color: colors.text }]}>
                     {LEVEL_CONFIG[l].label}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
 
-            <Text style={styles.selectorLabel}>Progress Tasks:</Text>
+            <Text style={dynamicStyles.selectorLabel}>Progress Tasks:</Text>
             {editTasks.map(t => (
-              <View style={styles.taskRow} key={t.id}>
+              <View style={dynamicStyles.taskRow} key={t.id}>
                 <TouchableOpacity onPress={() => toggleEditTask(t.id)}>
-                  <Ionicons name={t.completed ? 'checkmark-circle' : 'ellipse-outline'} size={22} color={t.completed ? '#22C55E' : '#94A3B8'} />
+                  <Ionicons name={t.completed ? 'checkmark-circle' : 'ellipse-outline'} size={22} color={t.completed ? colors.success : colors.textSecondary} />
                 </TouchableOpacity>
 
                 {editingTaskId === t.id ? (
                   <TextInput
-                    style={styles.taskEditInput}
+                    style={dynamicStyles.taskEditInput}
                     value={editingTaskText}
                     onChangeText={setEditingTaskText}
                     autoFocus
@@ -397,31 +468,31 @@ export default function SkillsScreen() {
                     onBlur={saveRenameTask}
                   />
                 ) : (
-                  <Text style={[styles.taskRowText, t.completed && { color: '#94A3B8', textDecorationLine: 'line-through' }]}>{t.title}</Text>
+                  <Text style={[dynamicStyles.taskRowText, t.completed && { color: colors.textSecondary, textDecorationLine: 'line-through' }]}>{t.title}</Text>
                 )}
 
                 <View style={{ flexDirection: 'row', gap: 10 }}>
                   {editingTaskId === t.id ? (
-                    <TouchableOpacity onPress={saveRenameTask}><Ionicons name="checkmark" size={20} color="#7E22CE" /></TouchableOpacity>
+                    <TouchableOpacity onPress={saveRenameTask}><Ionicons name="checkmark" size={20} color={colors.primary} /></TouchableOpacity>
                   ) : (
-                    <TouchableOpacity onPress={() => startRenameTask(t)}><Ionicons name="pencil-outline" size={18} color="#64748B" /></TouchableOpacity>
+                    <TouchableOpacity onPress={() => startRenameTask(t)}><Ionicons name="pencil-outline" size={18} color={colors.textSecondary} /></TouchableOpacity>
                   )}
-                  <TouchableOpacity onPress={() => removeEditTask(t.id)}><Ionicons name="trash-outline" size={18} color="#FF5252" /></TouchableOpacity>
+                  <TouchableOpacity onPress={() => removeEditTask(t.id)}><Ionicons name="trash-outline" size={18} color={colors.danger} /></TouchableOpacity>
                 </View>
               </View>
             ))}
 
-            <View style={[styles.addTaskRow, { marginBottom: 40 }]}>
+            <View style={[dynamicStyles.addTaskRow, { marginBottom: 40 }]}>
               <TextInput
-                style={styles.addTaskInput}
+                style={dynamicStyles.addTaskInput}
                 placeholder="Add a progress task…"
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor={colors.textSecondary}
                 value={editTaskTitle}
                 onChangeText={setEditTaskTitle}
                 onSubmitEditing={addEditTask}
               />
-              <TouchableOpacity style={styles.addTaskBtn} onPress={addEditTask}>
-                <Ionicons name="add" size={20} color="#FFF" />
+              <TouchableOpacity style={dynamicStyles.addTaskBtn} onPress={addEditTask}>
+                <Ionicons name="add" size={20} color={colors.text} />
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -433,76 +504,3 @@ export default function SkillsScreen() {
   );
 }
 
-// ─── styles ──────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  headerArea: { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 12 },
-  pageTitle: { fontSize: 28, fontWeight: '800', color: '#0F172A' },
-  pageSubtitle: { fontSize: 13, color: '#64748B', fontWeight: '500', marginTop: 2 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  listContent: { paddingHorizontal: 16, paddingBottom: 120 },
-  emptyWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 60 },
-  emptyText: { color: '#64748B', fontSize: 16, marginTop: 12, fontWeight: '500' },
-
-  // Create card
-  createCard: { backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 20, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#7E22CE', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3, overflow: 'hidden' },
-  createCollapsed: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
-  createCollapsedText: { fontSize: 16, color: '#64748B', fontWeight: '500' },
-  createExpanded: { padding: 16 },
-  createTitleInput: { fontSize: 18, fontWeight: '700', color: '#0F172A', marginBottom: 14, paddingVertical: 4 },
-  selectorLabel: { fontSize: 13, fontWeight: '600', color: '#64748B', marginBottom: 8 },
-  levelRow: { flexDirection: 'row', gap: 8, marginBottom: 16, flexWrap: 'wrap' },
-  levelChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' },
-  levelChipText: { fontSize: 13, fontWeight: '600', color: '#64748B', textTransform: 'capitalize' },
-  createActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 12, marginTop: 4 },
-  cancelBtn: { paddingVertical: 8, paddingHorizontal: 16, justifyContent: 'center' },
-  cancelBtnText: { color: '#64748B', fontWeight: '600', fontSize: 14 },
-  saveBtn: { backgroundColor: '#7E22CE', paddingVertical: 8, paddingHorizontal: 20, borderRadius: 20, justifyContent: 'center' },
-  saveBtnText: { color: '#FFF', fontWeight: '700', fontSize: 14 },
-
-  // Task rows in form
-  taskRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#F8FAFC', padding: 10, borderRadius: 10, marginBottom: 8, borderWidth: 1, borderColor: '#F1F5F9' },
-  taskRowText: { flex: 1, fontSize: 14, color: '#334155', fontWeight: '500' },
-  taskEditInput: { flex: 1, fontSize: 14, color: '#0F172A', borderBottomWidth: 1, borderBottomColor: '#7E22CE', padding: 0 },
-  addTaskRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
-  addTaskInput: { flex: 1, backgroundColor: '#F1F5F9', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: '#334155' },
-  addTaskBtn: { width: 42, height: 42, borderRadius: 10, backgroundColor: '#7E22CE', alignItems: 'center', justifyContent: 'center' },
-
-  // Skill Card
-  skillCard: { backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 14, flexDirection: 'row', borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-  skillMain: { flex: 1, padding: 16 },
-  skillHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  skillName: { fontSize: 17, fontWeight: '700', color: '#1E293B', flex: 1, marginRight: 8 },
-  levelBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
-  levelBadgeText: { fontSize: 11, fontWeight: '800' },
-  progressArea: { backgroundColor: '#F8FAFC', padding: 10, borderRadius: 10, marginBottom: 10, borderWidth: 1, borderColor: '#F1F5F9' },
-  progressHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  progressLabel: { fontSize: 12, fontWeight: '600', color: '#475569' },
-  progressPct: { fontSize: 12, fontWeight: '800', color: '#0F172A' },
-  progressTrack: { height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 4 },
-  previewRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  previewText: { fontSize: 13, color: '#475569', fontWeight: '500' },
-  previewDone: { color: '#94A3B8', textDecorationLine: 'line-through' },
-  moreText: { fontSize: 12, color: '#94A3B8', marginTop: 4 },
-  deleteArea: { paddingHorizontal: 14, justifyContent: 'flex-start', alignItems: 'center', paddingTop: 18 },
-
-  // Modal
-  modalContainer: { flex: 1, backgroundColor: '#FFF' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderColor: '#F1F5F9' },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: '#0F172A' },
-  cancelText: { fontSize: 16, color: '#64748B' },
-  saveHeaderText: { fontSize: 16, fontWeight: '700', color: '#7E22CE' },
-  modalBody: { padding: 20, flex: 1 },
-  titleInput: { fontSize: 22, fontWeight: '700', color: '#0F172A', marginBottom: 18, borderBottomWidth: 1, borderBottomColor: '#E2E8F0', paddingBottom: 8 },
-
-  // Filter Section
-  filterSection: { paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#F8FAFC', marginBottom: 12, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-  filterLabel: { fontSize: 12, fontWeight: '700', color: '#64748B', marginBottom: 10, textTransform: 'uppercase' },
-  filterRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', alignItems: 'center' },
-  filterChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0' },
-  filterChipActive: { backgroundColor: '#7E22CE', borderColor: '#7E22CE' },
-  filterChipText: { fontSize: 13, fontWeight: '600', color: '#64748B', textTransform: 'capitalize' },
-  filterChipTextActive: { color: '#FFFFFF' },
-});

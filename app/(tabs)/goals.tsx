@@ -1,4 +1,6 @@
 import FloatingActionButton from '@/components/FloatingActionButton';
+import { getColors } from '@/constants/styles';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator, Alert,
@@ -22,6 +24,10 @@ import { addGoal, deleteGoal, getGoals, Goal, GoalCategory, GoalPriority, GoalTa
 export default function GoalsScreen() {
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress;
+  
+  const colorScheme = useColorScheme()
+  const isDark = colorScheme === 'dark'
+  const colors = getColors(isDark)
   
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -239,20 +245,112 @@ export default function GoalsScreen() {
 
   const CategoryBadge = ({ category }: { category: GoalCategory }) => {
     const safeCat = category || 'personal';
-    const colors = {
-      career: { bg: '#E0E7FF', text: '#2563EB', icon: 'briefcase' },
-      health: { bg: '#DCFCE7', text: '#059669', icon: 'fitness' },
-      finance: { bg: '#FEF9C3', text: '#D97706', icon: 'cash' },
-      personal: { bg: '#F3E8FF', text: '#7E22CE', icon: 'person' },
+    const categoryColors = {
+      career: { bg: colors.background, text: colors.primary, icon: 'briefcase' },
+      health: { bg: colors.background, text: colors.success, icon: 'fitness' },
+      finance: { bg: colors.background, text: colors.secondary, icon: 'cash' },
+      personal: { bg: colors.background, text: colors.primary, icon: 'person' },
     };
-    const style = colors[safeCat] || colors.personal;
+    const style = categoryColors[safeCat] || categoryColors.personal;
     return (
-      <View style={[styles.categoryBadge, { backgroundColor: style.bg }]}>
+      <View style={[dynamicStyles.categoryBadge, { backgroundColor: style.bg }]}>
         <Ionicons name={style.icon as any} size={10} color={style.text} style={{ marginRight: 4 }} />
-        <Text style={[styles.categoryText, { color: style.text }]}>{safeCat.toUpperCase()}</Text>
+        <Text style={[dynamicStyles.categoryText, { color: style.text }]}>{safeCat.toUpperCase()}</Text>
       </View>
     );
   };
+
+  const dynamicStyles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    headerArea: { paddingHorizontal: 20, marginTop: 20, marginBottom: 10 },
+    pageTitle: { fontSize: 28, fontWeight: '800', color: colors.text },
+    filterRow: { flexDirection: 'row', paddingHorizontal: 20, marginBottom: 16, gap: 10 },
+    filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
+    filterChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    filterChipText: { fontSize: 14, fontWeight: '600', color: colors.textSecondary },
+    filterChipTextActive: { color: colors.text },
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    emptyWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 60 },
+    emptyText: { color: colors.textSecondary, fontSize: 16, marginTop: 12, fontWeight: '500' },
+    listContent: { paddingHorizontal: 16, paddingBottom: 100 },
+    goalCard: { backgroundColor: colors.card, borderRadius: 16, marginBottom: 16, flexDirection: 'row', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2, borderWidth: 1, borderColor: colors.border },
+    goalCardCompleted: { backgroundColor: colors.background, borderColor: colors.border, opacity: 0.85 },
+    goalContent: { flex: 1, padding: 16 },
+    goalHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+    goalTitle: { fontSize: 17, fontWeight: '700', color: colors.text, flex: 1, marginRight: 8 },
+    goalTitleCompleted: { color: colors.textSecondary },
+    goalDesc: { fontSize: 14, color: colors.text, lineHeight: 20, marginBottom: 10 },
+    goalDescCompleted: { color: colors.textSecondary },
+    targetDateRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
+    targetDateText: { fontSize: 12, color: colors.textSecondary, fontWeight: '600' },
+    targetDateTextCompleted: { color: colors.textSecondary },
+    daysBadge: { marginLeft: 2 },
+    daysBadgeText: { fontSize: 11, color: colors.primary, fontWeight: '700' },
+    categoryBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+    categoryText: { fontSize: 10, fontWeight: '800' },
+    deleteArea: { padding: 16, justifyContent: 'flex-start', alignItems: 'center' },
+    progressArea: { marginTop: 6, backgroundColor: colors.background, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.border },
+    progressHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+    progressLabel: { fontSize: 12, fontWeight: '600', color: colors.text },
+    progressValue: { fontSize: 12, fontWeight: '800', color: colors.text },
+    progressBarWrapper: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    progressBarTrack: { flex: 1, height: 8, backgroundColor: colors.border, borderRadius: 4, overflow: 'hidden' },
+    progressBarFill: { height: '100%', borderRadius: 4 },
+    createCard: { backgroundColor: colors.card, borderRadius: 16, marginBottom: 20, shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
+    createCollapsed: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
+    createCollapsedText: { fontSize: 16, color: colors.textSecondary, fontWeight: '500' },
+    createExpanded: { padding: 16 },
+    createTitleInput: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 12, paddingVertical: 4 },
+    createContentInput: { fontSize: 15, color: colors.text, minHeight: 50, textAlignVertical: 'top', marginBottom: 12 },
+    inlineRow: { flexDirection: 'row', marginBottom: 16 },
+    smallInput: { backgroundColor: colors.background, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: colors.text },
+    dateInputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, paddingHorizontal: 12, paddingVertical: 12, borderRadius: 10, marginBottom: 16 },
+    dateInputText: { fontSize: 14, color: colors.text, fontWeight: '500' },
+    selectorLabelRow: { marginBottom: 8 },
+    selectorLabel: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, marginBottom: 6 },
+    categoryOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
+    catOption: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card },
+    catOptionActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    catOptionText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, textTransform: 'capitalize' },
+    catOptionTextActive: { color: colors.text },
+    createActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, borderTopWidth: 1, borderTopColor: colors.background, paddingTop: 12 },
+    cancelBtn: { paddingVertical: 8, paddingHorizontal: 16, justifyContent: 'center' },
+    cancelBtnText: { color: colors.textSecondary, fontWeight: '600', fontSize: 14 },
+    saveBtn: { backgroundColor: colors.primary, paddingVertical: 8, paddingHorizontal: 20, borderRadius: 20, justifyContent: 'center' },
+    saveBtnText: { color: colors.text, fontWeight: '700', fontSize: 14 },
+    modalContainer: { flex: 1, backgroundColor: colors.card },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderColor: colors.border },
+    modalBody: { padding: 20, flex: 1 },
+    modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
+    cancelText: { fontSize: 16, color: colors.textSecondary },
+    saveHeaderBtnText: { fontSize: 16, fontWeight: '700', color: colors.primary },
+    titleInput: { fontSize: 24, fontWeight: '700', color: colors.text, marginBottom: 20 },
+    contentInput: { fontSize: 16, color: colors.text, backgroundColor: colors.background, borderRadius: 12, padding: 16, marginBottom: 20 },
+    subtaskSection: { marginBottom: 20 },
+    subtaskList: { marginBottom: 12 },
+    subtaskRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, padding: 12, borderRadius: 10, marginBottom: 8, borderWidth: 1, borderColor: colors.border },
+    subtaskCheckbox: { marginRight: 10 },
+    subtaskText: { flex: 1, fontSize: 15, color: colors.text, fontWeight: '500' },
+    subtaskTextCompleted: { color: colors.textSecondary, textDecorationLine: 'line-through' },
+    subtaskEditInput: { flex: 1, fontSize: 15, color: colors.text, padding: 0, borderBottomWidth: 1, borderBottomColor: colors.primary, marginRight: 10 },
+    subtaskActionBtn: { padding: 4 },
+    addSubtaskRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    addSubtaskInput: { flex: 1, backgroundColor: colors.background, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 12, fontSize: 14, color: colors.text },
+    addSubtaskBtn: { width: 44, height: 44, borderRadius: 10, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+    lockedProgressRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, padding: 16, borderRadius: 10, marginBottom: 16, gap: 10 },
+    lockedProgressText: { flex: 1, fontSize: 13, color: colors.textSecondary, lineHeight: 18 },
+    filterRowSecondary: { flexDirection: 'row', paddingHorizontal: 20, marginBottom: 16, gap: 12 },
+    dropdownContainer: { flex: 1, position: 'relative' },
+    dropdownBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, gap: 6 },
+    dropdownBtnActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    dropdownBtnText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, flex: 1 },
+    dropdownBtnTextActive: { color: colors.text },
+    dropdownMenu: { position: 'absolute', top: 48, left: 0, right: 0, backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.border, zIndex: 1000, shadowColor: colors.text, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 5 },
+    dropdownItem: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.background },
+    dropdownItemActive: { backgroundColor: colors.background },
+    dropdownItemText: { fontSize: 14, color: colors.text, fontWeight: '500' },
+    dropdownItemTextActive: { color: colors.primary, fontWeight: '600' },
+  });
 
   const getDaysRemainingText = (deadline: string, isCompleted: boolean) => {
     if (!deadline || isCompleted) return null;
@@ -279,33 +377,33 @@ export default function GoalsScreen() {
     const hasTasks = item.tasks && item.tasks.length > 0;
 
     return (
-      <View style={[styles.goalCard, isCompleted && styles.goalCardCompleted]}>
-        <View style={styles.goalContent}>
+      <View style={[dynamicStyles.goalCard, isCompleted && dynamicStyles.goalCardCompleted]}>
+        <View style={dynamicStyles.goalContent}>
           <TouchableOpacity onPress={() => openEditModal(item)} activeOpacity={0.7}>
-            <View style={styles.goalHeaderRow}>
-              <Text style={[styles.goalTitle, isCompleted && styles.goalTitleCompleted]} numberOfLines={1}>
+            <View style={dynamicStyles.goalHeaderRow}>
+              <Text style={[dynamicStyles.goalTitle, isCompleted && dynamicStyles.goalTitleCompleted]} numberOfLines={1}>
                 {item.title}
               </Text>
               <CategoryBadge category={safeCat} />
             </View>
             
             {item.description ? (
-              <Text style={[styles.goalDesc, isCompleted && styles.goalDescCompleted]} numberOfLines={2}>
+              <Text style={[dynamicStyles.goalDesc, isCompleted && dynamicStyles.goalDescCompleted]} numberOfLines={2}>
                 {item.description}
               </Text>
             ) : null}
             
             {userDeadline ? (
-              <View style={styles.targetDateRow}>
+              <View style={dynamicStyles.targetDateRow}>
                 <Ionicons name="calendar-outline" size={12} color={isCompleted ? "#94A3B8" : "#8B5CF6"} />
-                <Text style={[styles.targetDateText, isCompleted && styles.targetDateTextCompleted]}>
+                <Text style={[dynamicStyles.targetDateText, isCompleted && dynamicStyles.targetDateTextCompleted]}>
                   Deadline: {userDeadline}
                 </Text>
                 
                 {getDaysRemainingText(userDeadline, isCompleted) && (
-                  <View style={styles.daysBadge}>
+                  <View style={dynamicStyles.daysBadge}>
                     <Text style={[
-                      styles.daysBadgeText, 
+                      dynamicStyles.daysBadgeText, 
                       getDaysRemainingText(userDeadline, isCompleted)?.includes('Overdue') && { color: '#EF4444' }
                     ]}>
                       • {getDaysRemainingText(userDeadline, isCompleted)}
@@ -316,17 +414,17 @@ export default function GoalsScreen() {
             ) : null}
           </TouchableOpacity>
 
-          <View style={styles.progressArea}>
-             <View style={styles.progressHeader}>
-                <Text style={styles.progressLabel}>
+          <View style={dynamicStyles.progressArea}>
+             <View style={dynamicStyles.progressHeader}>
+                <Text style={dynamicStyles.progressLabel}>
                    {currentVal} / {targetVal} {hasTasks ? 'tasks completed' : safeUnit}
                 </Text>
-                <Text style={styles.progressValue}>{Math.round(progressPercent)}%</Text>
+                <Text style={dynamicStyles.progressValue}>{Math.round(progressPercent)}%</Text>
              </View>
-             <View style={styles.progressBarWrapper}>
-               <View style={styles.progressBarTrack}>
+             <View style={dynamicStyles.progressBarWrapper}>
+               <View style={dynamicStyles.progressBarTrack}>
                  <View style={[
-                   styles.progressBarFill, 
+                   dynamicStyles.progressBarFill, 
                    { width: `${progressPercent}%`, backgroundColor: progressPercent >= 100 ? '#22C55E' : '#3B82F6' }
                  ]} />
                </View>
@@ -334,72 +432,72 @@ export default function GoalsScreen() {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.deleteArea} onPress={() => handleDelete(item.id)} hitSlop={10}>
-          <Ionicons name="trash-outline" size={20} color="#FF5252" />
+        <TouchableOpacity style={dynamicStyles.deleteArea} onPress={() => handleDelete(item.id)} hitSlop={10}>
+          <Ionicons name="trash-outline" size={20} color={colors.danger} />
         </TouchableOpacity>
       </View>
     );
   };
 
   const renderListHeader = () => (
-    <View style={styles.createCard}>
+    <View style={dynamicStyles.createCard}>
       {isCreating ? (
-        <View style={styles.createExpanded}>
-          <TextInput style={styles.createTitleInput} placeholder="Goal Title" placeholderTextColor="#94A3B8" value={newTitle} onChangeText={setNewTitle} />
-          <TextInput style={styles.createContentInput} placeholder="Description (Optional)" placeholderTextColor="#94A3B8" multiline value={newDesc} onChangeText={setNewDesc} />
+        <View style={dynamicStyles.createExpanded}>
+          <TextInput style={dynamicStyles.createTitleInput} placeholder="Goal Title" placeholderTextColor="#94A3B8" value={newTitle} onChangeText={setNewTitle} />
+          <TextInput style={dynamicStyles.createContentInput} placeholder="Description (Optional)" placeholderTextColor="#94A3B8" multiline value={newDesc} onChangeText={setNewDesc} />
           
-          <View style={styles.selectorLabelRow}><Text style={styles.selectorLabel}>Category:</Text></View>
-          <View style={styles.categoryOptions}>
+          <View style={dynamicStyles.selectorLabelRow}><Text style={dynamicStyles.selectorLabel}>Category:</Text></View>
+          <View style={dynamicStyles.categoryOptions}>
             {(['health', 'finance', 'career', 'personal'] as GoalCategory[]).map(c => (
-              <TouchableOpacity key={c} style={[styles.catOption, newCategory === c && styles.catOptionActive]} onPress={() => setNewCategory(c)}>
-                <Text style={[styles.catOptionText, newCategory === c && styles.catOptionTextActive]}>{c}</Text>
+              <TouchableOpacity key={c} style={[dynamicStyles.catOption, newCategory === c && dynamicStyles.catOptionActive]} onPress={() => setNewCategory(c)}>
+                <Text style={[dynamicStyles.catOptionText, newCategory === c && dynamicStyles.catOptionTextActive]}>{c}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          <View style={styles.selectorLabelRow}><Text style={styles.selectorLabel}>Priority:</Text></View>
-          <View style={styles.categoryOptions}>
+          <View style={dynamicStyles.selectorLabelRow}><Text style={dynamicStyles.selectorLabel}>Priority:</Text></View>
+          <View style={dynamicStyles.categoryOptions}>
             {(['low', 'medium', 'high'] as GoalPriority[]).map(p => (
-              <TouchableOpacity key={p} style={[styles.catOption, newPriority === p && styles.catOptionActive]} onPress={() => setNewPriority(p)}>
-                <Text style={[styles.catOptionText, newPriority === p && styles.catOptionTextActive]}>{p}</Text>
+              <TouchableOpacity key={p} style={[dynamicStyles.catOption, newPriority === p && dynamicStyles.catOptionActive]} onPress={() => setNewPriority(p)}>
+                <Text style={[dynamicStyles.catOptionText, newPriority === p && dynamicStyles.catOptionTextActive]}>{p}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
           {/* Subtasks Section for Creation */}
-          <View style={styles.subtaskSection}>
-             <Text style={styles.selectorLabel}>Initial Goal Tasks</Text>
-             <View style={styles.subtaskList}>
+          <View style={dynamicStyles.subtaskSection}>
+             <Text style={dynamicStyles.selectorLabel}>Initial Goal Tasks</Text>
+             <View style={dynamicStyles.subtaskList}>
                {newTasks.map(t => (
-                 <View style={styles.subtaskRow} key={t.id}>
-                    <TouchableOpacity onPress={() => toggleNewTask(t.id)} style={styles.subtaskCheckbox}>
+                 <View style={dynamicStyles.subtaskRow} key={t.id}>
+                    <TouchableOpacity onPress={() => toggleNewTask(t.id)} style={dynamicStyles.subtaskCheckbox}>
                       <Ionicons name={t.completed ? "checkmark-circle" : "ellipse-outline"} size={24} color={t.completed ? "#22C55E" : "#94A3B8"} />
                     </TouchableOpacity>
                     {editingNewTaskId === t.id ? (
                       <TextInput
-                        style={styles.subtaskEditInput} value={editingNewTaskTitle} onChangeText={setEditingNewTaskTitle}
+                        style={dynamicStyles.subtaskEditInput} value={editingNewTaskTitle} onChangeText={setEditingNewTaskTitle}
                         autoFocus onSubmitEditing={saveEditingNewTask} onBlur={saveEditingNewTask}
                       />
                     ) : (
-                      <Text style={[styles.subtaskText, t.completed && styles.subtaskTextCompleted]}>{t.title}</Text>
+                      <Text style={[dynamicStyles.subtaskText, t.completed && dynamicStyles.subtaskTextCompleted]}>{t.title}</Text>
                     )}
                     {editingNewTaskId === t.id ? (
-                      <TouchableOpacity onPress={saveEditingNewTask} style={styles.subtaskActionBtn}><Ionicons name="checkmark" size={20} color="#2563EB" /></TouchableOpacity>
+                      <TouchableOpacity onPress={saveEditingNewTask} style={dynamicStyles.subtaskActionBtn}><Ionicons name="checkmark" size={20} color="#2563EB" /></TouchableOpacity>
                     ) : (
                       <View style={{ flexDirection: 'row', gap: 12 }}>
-                        <TouchableOpacity onPress={() => startEditingNewTask(t)} style={styles.subtaskActionBtn}><Ionicons name="pencil-outline" size={18} color="#64748B" /></TouchableOpacity>
-                        <TouchableOpacity onPress={() => removeNewTask(t.id)} style={styles.subtaskActionBtn}><Ionicons name="trash-outline" size={18} color="#FF5252" /></TouchableOpacity>
+                        <TouchableOpacity onPress={() => startEditingNewTask(t)} style={dynamicStyles.subtaskActionBtn}><Ionicons name="pencil-outline" size={18} color="#64748B" /></TouchableOpacity>
+                        <TouchableOpacity onPress={() => removeNewTask(t.id)} style={dynamicStyles.subtaskActionBtn}><Ionicons name="trash-outline" size={18} color="#FF5252" /></TouchableOpacity>
                       </View>
                     )}
                  </View>
                ))}
              </View>
-             <View style={styles.addSubtaskRow}>
+             <View style={dynamicStyles.addSubtaskRow}>
                 <TextInput 
-                  style={styles.addSubtaskInput} placeholder="Add a task to automatically track progress..." 
+                  style={dynamicStyles.addSubtaskInput} placeholder="Add a task to automatically track progress..." 
                   value={newSubtaskTitle} onChangeText={setNewSubtaskTitle} onSubmitEditing={handleAddNewSubtask}
                 />
-                <TouchableOpacity style={styles.addSubtaskBtn} onPress={handleAddNewSubtask}>
+                <TouchableOpacity style={dynamicStyles.addSubtaskBtn} onPress={handleAddNewSubtask}>
                    <Ionicons name="add" size={20} color="#FFF" />
                 </TouchableOpacity>
              </View>
@@ -407,97 +505,97 @@ export default function GoalsScreen() {
 
           {/* Dynamic Progress Configuration */}
           {newTasks.length === 0 ? (
-             <View style={styles.inlineRow}>
-                <TextInput style={[styles.smallInput, { flex: 1 }]} placeholder="Target Metric (e.g. 10)" placeholderTextColor="#94A3B8" keyboardType="numeric" value={newTargetValue} onChangeText={setNewTargetValue} />
-                <TextInput style={[styles.smallInput, { flex: 1, marginLeft: 10 }]} placeholder="Unit (e.g. kg)" placeholderTextColor="#94A3B8" value={newUnit} onChangeText={setNewUnit} />
+             <View style={dynamicStyles.inlineRow}>
+                <TextInput style={[dynamicStyles.smallInput, { flex: 1 }]} placeholder="Target Metric (e.g. 10)" placeholderTextColor="#94A3B8" keyboardType="numeric" value={newTargetValue} onChangeText={setNewTargetValue} />
+                <TextInput style={[dynamicStyles.smallInput, { flex: 1, marginLeft: 10 }]} placeholder="Unit (e.g. kg)" placeholderTextColor="#94A3B8" value={newUnit} onChangeText={setNewUnit} />
              </View>
           ) : (
-             <View style={styles.lockedProgressRow}>
+             <View style={dynamicStyles.lockedProgressRow}>
                <Ionicons name="lock-closed" size={14} color="#64748B" />
-               <Text style={styles.lockedProgressText}>Goal targets will dynamically calculate based on the {newTasks.length} {newTasks.length === 1 ? 'task' : 'tasks'} mapped above.</Text>
+               <Text style={dynamicStyles.lockedProgressText}>Goal targets will dynamically calculate based on the {newTasks.length} {newTasks.length === 1 ? 'task' : 'tasks'} mapped above.</Text>
              </View>
           )}
 
-          <TouchableOpacity style={styles.dateInputWrapper} onPress={() => setShowDatePicker(true)}>
+          <TouchableOpacity style={dynamicStyles.dateInputWrapper} onPress={() => setShowDatePicker(true)}>
             <Ionicons name="calendar-outline" size={18} color="#64748B" style={{ marginRight: 8 }} />
-            <Text style={[styles.dateInputText, !newDeadline && { color: '#94A3B8' }]}>
+            <Text style={[dynamicStyles.dateInputText, !newDeadline && { color: '#94A3B8' }]}>
               {newDeadline ? `Deadline: ${newDeadline}` : 'Select Deadline'}
             </Text>
           </TouchableOpacity>
           {showDatePicker && <DateTimePicker value={newDeadline ? new Date(newDeadline) : new Date()} mode="date" display="default" onChange={handleDateChange} />}
           
-          <View style={styles.createActions}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => setIsCreating(false)}><Text style={styles.cancelBtnText}>Cancel</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.saveBtn} onPress={handleSaveNewGoal} disabled={isSavingNew}>
-              {isSavingNew ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.saveBtnText}>Set Goal</Text>}
+          <View style={dynamicStyles.createActions}>
+            <TouchableOpacity style={dynamicStyles.cancelBtn} onPress={() => setIsCreating(false)}><Text style={dynamicStyles.cancelBtnText}>Cancel</Text></TouchableOpacity>
+            <TouchableOpacity style={dynamicStyles.saveBtn} onPress={handleSaveNewGoal} disabled={isSavingNew}>
+              {isSavingNew ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={dynamicStyles.saveBtnText}>Set Goal</Text>}
             </TouchableOpacity>
           </View>
         </View>
       ) : (
-        <TouchableOpacity style={styles.createCollapsed} activeOpacity={0.8} onPress={() => setIsCreating(true)}>
-          <Ionicons name="flag-outline" size={22} color="#1D4ED8" />
-          <Text style={styles.createCollapsedText}>Set a new milestone goal...</Text>
+        <TouchableOpacity style={dynamicStyles.createCollapsed} activeOpacity={0.8} onPress={() => setIsCreating(true)}>
+          <Ionicons name="flag-outline" size={22} color={colors.primary} />
+          <Text style={dynamicStyles.createCollapsedText}>Set a new milestone goal...</Text>
         </TouchableOpacity>
       )}
     </View>
   );
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={dynamicStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 
-      <View style={styles.headerArea}><Text style={styles.pageTitle}>My Goals</Text></View>
+      <View style={dynamicStyles.headerArea}><Text style={dynamicStyles.pageTitle}>My Goals</Text></View>
 
-      <View style={styles.filterRow}>
-        <TouchableOpacity style={[styles.filterChip, filterMode === 'all' && styles.filterChipActive]} onPress={() => setFilterMode('all')}>
-          <Text style={[styles.filterChipText, filterMode === 'all' && styles.filterChipTextActive]}>All</Text>
+      <View style={dynamicStyles.filterRow}>
+        <TouchableOpacity style={[dynamicStyles.filterChip, filterMode === 'all' && dynamicStyles.filterChipActive]} onPress={() => setFilterMode('all')}>
+          <Text style={[dynamicStyles.filterChipText, filterMode === 'all' && dynamicStyles.filterChipTextActive]}>All</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.filterChip, filterMode === 'active' && styles.filterChipActive]} onPress={() => setFilterMode('active')}>
-          <Text style={[styles.filterChipText, filterMode === 'active' && styles.filterChipTextActive]}>Active</Text>
+        <TouchableOpacity style={[dynamicStyles.filterChip, filterMode === 'active' && dynamicStyles.filterChipActive]} onPress={() => setFilterMode('active')}>
+          <Text style={[dynamicStyles.filterChipText, filterMode === 'active' && dynamicStyles.filterChipTextActive]}>Active</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.filterChip, filterMode === 'achieved' && styles.filterChipActive]} onPress={() => setFilterMode('achieved')}>
-          <Text style={[styles.filterChipText, filterMode === 'achieved' && styles.filterChipTextActive]}>Achieved</Text>
+        <TouchableOpacity style={[dynamicStyles.filterChip, filterMode === 'achieved' && dynamicStyles.filterChipActive]} onPress={() => setFilterMode('achieved')}>
+          <Text style={[dynamicStyles.filterChipText, filterMode === 'achieved' && dynamicStyles.filterChipTextActive]}>Achieved</Text>
         </TouchableOpacity>
       </View>
 
       {/* Category and Priority Filters */}
-      <View style={styles.filterRowSecondary}>
+      <View style={dynamicStyles.filterRowSecondary}>
         {/* Category Filter */}
-        <View style={styles.dropdownContainer}>
+        <View style={dynamicStyles.dropdownContainer}>
           <TouchableOpacity 
-            style={[styles.dropdownBtn, selectedCategoryFilter && styles.dropdownBtnActive]}
+            style={[dynamicStyles.dropdownBtn, selectedCategoryFilter && dynamicStyles.dropdownBtnActive]}
             onPress={() => {
               setShowCategoryDropdown(!showCategoryDropdown);
               setShowPriorityDropdown(false);
             }}
           >
             <Ionicons name="layers-outline" size={16} color={selectedCategoryFilter ? '#FFFFFF' : '#64748B'} />
-            <Text style={[styles.dropdownBtnText, selectedCategoryFilter && styles.dropdownBtnTextActive]}>
+            <Text style={[dynamicStyles.dropdownBtnText, selectedCategoryFilter && dynamicStyles.dropdownBtnTextActive]}>
               {selectedCategoryFilter ? selectedCategoryFilter.charAt(0).toUpperCase() + selectedCategoryFilter.slice(1) : 'Category'}
             </Text>
             <Ionicons name={showCategoryDropdown ? 'chevron-up' : 'chevron-down'} size={16} color={selectedCategoryFilter ? '#FFFFFF' : '#64748B'} />
           </TouchableOpacity>
           
           {showCategoryDropdown && (
-            <View style={styles.dropdownMenu}>
+            <View style={dynamicStyles.dropdownMenu}>
               <TouchableOpacity 
-                style={styles.dropdownItem}
+                style={dynamicStyles.dropdownItem}
                 onPress={() => {
                   setSelectedCategoryFilter(null);
                   setShowCategoryDropdown(false);
                 }}
               >
-                <Text style={styles.dropdownItemText}>All Categories</Text>
+                <Text style={dynamicStyles.dropdownItemText}>All Categories</Text>
               </TouchableOpacity>
               {['health', 'finance', 'career', 'personal'].map((category) => (
                 <TouchableOpacity 
                   key={category}
-                  style={[styles.dropdownItem, selectedCategoryFilter === category && styles.dropdownItemActive]}
+                  style={[dynamicStyles.dropdownItem, selectedCategoryFilter === category && dynamicStyles.dropdownItemActive]}
                   onPress={() => {
                     setSelectedCategoryFilter(category as GoalCategory);
                     setShowCategoryDropdown(false);
                   }}
                 >
-                  <Text style={[styles.dropdownItemText, selectedCategoryFilter === category && styles.dropdownItemTextActive]}>
+                  <Text style={[dynamicStyles.dropdownItemText, selectedCategoryFilter === category && dynamicStyles.dropdownItemTextActive]}>
                     {category.charAt(0).toUpperCase() + category.slice(1)}
                   </Text>
                 </TouchableOpacity>
@@ -507,42 +605,42 @@ export default function GoalsScreen() {
         </View>
 
         {/* Priority Filter */}
-        <View style={styles.dropdownContainer}>
+        <View style={dynamicStyles.dropdownContainer}>
           <TouchableOpacity 
-            style={[styles.dropdownBtn, selectedPriorityFilter && styles.dropdownBtnActive]}
+            style={[dynamicStyles.dropdownBtn, selectedPriorityFilter && dynamicStyles.dropdownBtnActive]}
             onPress={() => {
               setShowPriorityDropdown(!showPriorityDropdown);
               setShowCategoryDropdown(false);
             }}
           >
             <Ionicons name="flame-outline" size={16} color={selectedPriorityFilter ? '#FFFFFF' : '#64748B'} />
-            <Text style={[styles.dropdownBtnText, selectedPriorityFilter && styles.dropdownBtnTextActive]}>
+            <Text style={[dynamicStyles.dropdownBtnText, selectedPriorityFilter && dynamicStyles.dropdownBtnTextActive]}>
               {selectedPriorityFilter ? selectedPriorityFilter.charAt(0).toUpperCase() + selectedPriorityFilter.slice(1) : 'Priority'}
             </Text>
             <Ionicons name={showPriorityDropdown ? 'chevron-up' : 'chevron-down'} size={16} color={selectedPriorityFilter ? '#FFFFFF' : '#64748B'} />
           </TouchableOpacity>
           
           {showPriorityDropdown && (
-            <View style={styles.dropdownMenu}>
+            <View style={dynamicStyles.dropdownMenu}>
               <TouchableOpacity 
-                style={styles.dropdownItem}
+                style={dynamicStyles.dropdownItem}
                 onPress={() => {
                   setSelectedPriorityFilter(null);
                   setShowPriorityDropdown(false);
                 }}
               >
-                <Text style={styles.dropdownItemText}>All Priorities</Text>
+                <Text style={dynamicStyles.dropdownItemText}>All Priorities</Text>
               </TouchableOpacity>
               {['low', 'medium', 'high'].map((priority) => (
                 <TouchableOpacity 
                   key={priority}
-                  style={[styles.dropdownItem, selectedPriorityFilter === priority && styles.dropdownItemActive]}
+                  style={[dynamicStyles.dropdownItem, selectedPriorityFilter === priority && dynamicStyles.dropdownItemActive]}
                   onPress={() => {
                     setSelectedPriorityFilter(priority as GoalPriority);
                     setShowPriorityDropdown(false);
                   }}
                 >
-                  <Text style={[styles.dropdownItemText, selectedPriorityFilter === priority && styles.dropdownItemTextActive]}>
+                  <Text style={[dynamicStyles.dropdownItemText, selectedPriorityFilter === priority && dynamicStyles.dropdownItemTextActive]}>
                     {priority.charAt(0).toUpperCase() + priority.slice(1)}
                   </Text>
                 </TouchableOpacity>
@@ -553,22 +651,22 @@ export default function GoalsScreen() {
       </View>
 
       {loading ? (
-        <View style={styles.center}><ActivityIndicator size="large" color="#1D4ED8" /></View>
+        <View style={dynamicStyles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
         <FlatList
           data={filteredGoals}
           keyExtractor={(item) => item.id}
           renderItem={renderGoal}
           ListHeaderComponent={renderListHeader()}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={dynamicStyles.listContent}
           onRefresh={handleRefresh}
           refreshing={refreshing}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           ListEmptyComponent={
-             <View style={styles.emptyWrap}>
+             <View style={dynamicStyles.emptyWrap}>
                <Ionicons name="trophy-outline" size={60} color="#CBD5E1" />
-               <Text style={styles.emptyText}>You haven't set any goals yet.</Text>
+               <Text style={dynamicStyles.emptyText}>You haven't set any goals yet.</Text>
              </View>
           }
         />
@@ -576,100 +674,100 @@ export default function GoalsScreen() {
 
       {/* Edit Goal / Task Modal */}
       <Modal visible={modalVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setModalVisible(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setModalVisible(false)}><Text style={styles.cancelText}>Cancel</Text></TouchableOpacity>
-            <Text style={styles.modalTitle}>Manage Goal</Text>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={dynamicStyles.modalContainer}>
+          <View style={dynamicStyles.modalHeader}>
+            <TouchableOpacity onPress={() => setModalVisible(false)}><Text style={dynamicStyles.cancelText}>Cancel</Text></TouchableOpacity>
+            <Text style={dynamicStyles.modalTitle}>Manage Goal</Text>
             <TouchableOpacity onPress={handleSaveEdit} disabled={isSavingEdit}>
-              {isSavingEdit ? <ActivityIndicator size="small" color="#1D4ED8" /> : <Text style={styles.saveHeaderBtnText}>Save</Text>}
+              {isSavingEdit ? <ActivityIndicator size="small" color={colors.primary} /> : <Text style={dynamicStyles.saveHeaderBtnText}>Save</Text>}
             </TouchableOpacity>
           </View>
           
-          <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled">
-            <TextInput style={styles.titleInput} placeholder="Goal Title" value={editTitle} onChangeText={setEditTitle} />
-            <TextInput style={styles.contentInput} placeholder="Description" multiline textAlignVertical="top" value={editDesc} onChangeText={setEditDesc} />
+          <ScrollView style={dynamicStyles.modalBody} keyboardShouldPersistTaps="handled">
+            <TextInput style={dynamicStyles.titleInput} placeholder="Goal Title" value={editTitle} onChangeText={setEditTitle} />
+            <TextInput style={dynamicStyles.contentInput} placeholder="Description" multiline textAlignVertical="top" value={editDesc} onChangeText={setEditDesc} />
 
-            <View style={styles.selectorLabelRow}><Text style={styles.selectorLabel}>Category:</Text></View>
-            <View style={styles.categoryOptions}>
+            <View style={dynamicStyles.selectorLabelRow}><Text style={dynamicStyles.selectorLabel}>Category:</Text></View>
+            <View style={dynamicStyles.categoryOptions}>
               {(['health', 'finance', 'career', 'personal'] as GoalCategory[]).map(c => (
-                <TouchableOpacity key={c} style={[styles.catOption, editCategory === c && styles.catOptionActive]} onPress={() => setEditCategory(c)}>
-                  <Text style={[styles.catOptionText, editCategory === c && styles.catOptionTextActive]}>{c}</Text>
+                <TouchableOpacity key={c} style={[dynamicStyles.catOption, editCategory === c && dynamicStyles.catOptionActive]} onPress={() => setEditCategory(c)}>
+                  <Text style={[dynamicStyles.catOptionText, editCategory === c && dynamicStyles.catOptionTextActive]}>{c}</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
-            <View style={styles.selectorLabelRow}><Text style={styles.selectorLabel}>Priority:</Text></View>
-            <View style={styles.categoryOptions}>
+            <View style={dynamicStyles.selectorLabelRow}><Text style={dynamicStyles.selectorLabel}>Priority:</Text></View>
+            <View style={dynamicStyles.categoryOptions}>
               {(['low', 'medium', 'high'] as GoalPriority[]).map(p => (
-                <TouchableOpacity key={p} style={[styles.catOption, editPriority === p && styles.catOptionActive]} onPress={() => setEditPriority(p)}>
-                  <Text style={[styles.catOptionText, editPriority === p && styles.catOptionTextActive]}>{p}</Text>
+                <TouchableOpacity key={p} style={[dynamicStyles.catOption, editPriority === p && dynamicStyles.catOptionActive]} onPress={() => setEditPriority(p)}>
+                  <Text style={[dynamicStyles.catOptionText, editPriority === p && dynamicStyles.catOptionTextActive]}>{p}</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             {/* Subtasks System */}
-            <View style={styles.subtaskSection}>
-               <Text style={styles.selectorLabel}>Goal Tasks</Text>
-               <View style={styles.subtaskList}>
+            <View style={dynamicStyles.subtaskSection}>
+               <Text style={dynamicStyles.selectorLabel}>Goal Tasks</Text>
+               <View style={dynamicStyles.subtaskList}>
                  {editTasks.map(t => (
-                   <View style={styles.subtaskRow} key={t.id}>
-                      <TouchableOpacity onPress={() => toggleTask(t.id)} style={styles.subtaskCheckbox}>
+                   <View style={dynamicStyles.subtaskRow} key={t.id}>
+                      <TouchableOpacity onPress={() => toggleTask(t.id)} style={dynamicStyles.subtaskCheckbox}>
                         <Ionicons name={t.completed ? "checkmark-circle" : "ellipse-outline"} size={24} color={t.completed ? "#22C55E" : "#94A3B8"} />
                       </TouchableOpacity>
                       
                       {editingTaskId === t.id ? (
                         <TextInput
-                          style={styles.subtaskEditInput} value={editingTaskTitle} onChangeText={setEditingTaskTitle}
+                          style={dynamicStyles.subtaskEditInput} value={editingTaskTitle} onChangeText={setEditingTaskTitle}
                           autoFocus onSubmitEditing={saveEditingTask} onBlur={saveEditingTask}
                         />
                       ) : (
-                        <Text style={[styles.subtaskText, t.completed && styles.subtaskTextCompleted]}>{t.title}</Text>
+                        <Text style={[dynamicStyles.subtaskText, t.completed && dynamicStyles.subtaskTextCompleted]}>{t.title}</Text>
                       )}
 
                       {editingTaskId === t.id ? (
-                        <TouchableOpacity onPress={saveEditingTask} style={styles.subtaskActionBtn}><Ionicons name="checkmark" size={20} color="#2563EB" /></TouchableOpacity>
+                        <TouchableOpacity onPress={saveEditingTask} style={dynamicStyles.subtaskActionBtn}><Ionicons name="checkmark" size={20} color="#2563EB" /></TouchableOpacity>
                       ) : (
                         <View style={{ flexDirection: 'row', gap: 12 }}>
-                          <TouchableOpacity onPress={() => startEditingTask(t)} style={styles.subtaskActionBtn}><Ionicons name="pencil-outline" size={18} color="#64748B" /></TouchableOpacity>
-                          <TouchableOpacity onPress={() => removeTask(t.id)} style={styles.subtaskActionBtn}><Ionicons name="trash-outline" size={18} color="#FF5252" /></TouchableOpacity>
+                          <TouchableOpacity onPress={() => startEditingTask(t)} style={dynamicStyles.subtaskActionBtn}><Ionicons name="pencil-outline" size={18} color="#64748B" /></TouchableOpacity>
+                          <TouchableOpacity onPress={() => removeTask(t.id)} style={dynamicStyles.subtaskActionBtn}><Ionicons name="trash-outline" size={18} color="#FF5252" /></TouchableOpacity>
                         </View>
                       )}
                    </View>
                  ))}
                </View>
 
-               <View style={styles.addSubtaskRow}>
+               <View style={dynamicStyles.addSubtaskRow}>
                   <TextInput 
-                    style={styles.addSubtaskInput} placeholder="Add a new goal task..." 
+                    style={dynamicStyles.addSubtaskInput} placeholder="Add a new goal task..." 
                     value={newTaskTitle} onChangeText={setNewTaskTitle} onSubmitEditing={handleAddSubtask}
                   />
-                  <TouchableOpacity style={styles.addSubtaskBtn} onPress={handleAddSubtask}>
+                  <TouchableOpacity style={dynamicStyles.addSubtaskBtn} onPress={handleAddSubtask}>
                      <Ionicons name="add" size={20} color="#FFF" />
                   </TouchableOpacity>
                </View>
             </View>
 
             {editTasks.length === 0 ? (
-               <View style={styles.inlineRow}>
+               <View style={dynamicStyles.inlineRow}>
                   <View style={{flex: 1}}>
-                     <Text style={styles.selectorLabel}>Current Progress</Text>
-                     <TextInput style={styles.smallInput} keyboardType="numeric" value={editCurrentValue} onChangeText={setEditCurrentValue} />
+                     <Text style={dynamicStyles.selectorLabel}>Current Progress</Text>
+                     <TextInput style={dynamicStyles.smallInput} keyboardType="numeric" value={editCurrentValue} onChangeText={setEditCurrentValue} />
                   </View>
                   <View style={{flex: 1, marginLeft: 10}}>
-                     <Text style={styles.selectorLabel}>Target Value</Text>
-                     <TextInput style={styles.smallInput} keyboardType="numeric" value={editTargetValue} onChangeText={setEditTargetValue} />
+                     <Text style={dynamicStyles.selectorLabel}>Target Value</Text>
+                     <TextInput style={dynamicStyles.smallInput} keyboardType="numeric" value={editTargetValue} onChangeText={setEditTargetValue} />
                   </View>
                </View>
             ) : (
-               <View style={styles.lockedProgressRow}>
+               <View style={dynamicStyles.lockedProgressRow}>
                  <Ionicons name="lock-closed" size={14} color="#64748B" />
-                 <Text style={styles.lockedProgressText}>Goal progress and target metrics are dynamically mapped to your saved task completion flow.</Text>
+                 <Text style={dynamicStyles.lockedProgressText}>Goal progress and target metrics are dynamically mapped to your saved task completion flow.</Text>
                </View>
             )}
 
-            <TouchableOpacity style={[styles.dateInputWrapper, { marginBottom: 40 }]} onPress={() => setShowEditDatePicker(true)}>
+            <TouchableOpacity style={[dynamicStyles.dateInputWrapper, { marginBottom: 40 }]} onPress={() => setShowEditDatePicker(true)}>
               <Ionicons name="calendar-outline" size={18} color="#64748B" style={{ marginRight: 8 }} />
-              <Text style={styles.dateInputText}>{editDeadline ? `Deadline: ${editDeadline}` : 'Select Deadline'}</Text>
+              <Text style={dynamicStyles.dateInputText}>{editDeadline ? `Deadline: ${editDeadline}` : 'Select Deadline'}</Text>
             </TouchableOpacity>
             {showEditDatePicker && <DateTimePicker value={editDeadline ? new Date(editDeadline) : new Date()} mode="date" display="default" onChange={handleEditDateChange} />}
             
@@ -680,157 +778,3 @@ export default function GoalsScreen() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  headerArea: { paddingHorizontal: 20, marginTop: 20, marginBottom: 10 },
-  pageTitle: { fontSize: 28, fontWeight: '800', color: '#0F172A' },
-  filterRow: { flexDirection: 'row', paddingHorizontal: 20, marginBottom: 16, gap: 10 },
-  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' },
-  filterChipActive: { backgroundColor: '#1D4ED8', borderColor: '#1D4ED8' },
-  filterChipText: { fontSize: 14, fontWeight: '600', color: '#64748B' },
-  filterChipTextActive: { color: '#FFFFFF' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 60 },
-  emptyText: { color: '#64748B', fontSize: 16, marginTop: 12, fontWeight: '500' },
-  listContent: { paddingHorizontal: 16, paddingBottom: 100 },
-  goalCard: { backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 16, flexDirection: 'row', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2, borderWidth: 1, borderColor: '#F1F5F9' },
-  goalCardCompleted: { backgroundColor: '#F8FAFC', borderColor: '#E2E8F0', opacity: 0.85 },
-  goalContent: { flex: 1, padding: 16 },
-  goalHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  goalTitle: { fontSize: 17, fontWeight: '700', color: '#1E293B', flex: 1, marginRight: 8 },
-  goalTitleCompleted: { color: '#64748B' },
-  goalDesc: { fontSize: 14, color: '#475569', lineHeight: 20, marginBottom: 10 },
-  goalDescCompleted: { color: '#94A3B8' },
-  targetDateRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
-  targetDateText: { fontSize: 12, color: '#64748B', fontWeight: '600' },
-  targetDateTextCompleted: { color: '#94A3B8' },
-  daysBadge: { marginLeft: 2 },
-  daysBadgeText: { fontSize: 11, color: '#8B5CF6', fontWeight: '700' },
-  categoryBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  categoryText: { fontSize: 10, fontWeight: '800' },
-  deleteArea: { padding: 16, justifyContent: 'flex-start', alignItems: 'center' },
-  progressArea: { marginTop: 6, backgroundColor: '#F8FAFC', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#F1F5F9' },
-  progressHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  progressLabel: { fontSize: 12, fontWeight: '600', color: '#475569' },
-  progressValue: { fontSize: 12, fontWeight: '800', color: '#0F172A' },
-  progressBarWrapper: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  progressBarTrack: { flex: 1, height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden' },
-  progressBarFill: { height: '100%', borderRadius: 4 },
-  createCard: { backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 20, shadowColor: '#1D4ED8', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3, borderWidth: 1, borderColor: '#E2E8F0', overflow: 'hidden' },
-  createCollapsed: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
-  createCollapsedText: { fontSize: 16, color: '#64748B', fontWeight: '500' },
-  createExpanded: { padding: 16 },
-  createTitleInput: { fontSize: 18, fontWeight: '700', color: '#0F172A', marginBottom: 12, paddingVertical: 4 },
-  createContentInput: { fontSize: 15, color: '#334155', minHeight: 50, textAlignVertical: 'top', marginBottom: 12 },
-  inlineRow: { flexDirection: 'row', marginBottom: 16 },
-  smallInput: { backgroundColor: '#F1F5F9', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: '#334155' },
-  dateInputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', paddingHorizontal: 12, paddingVertical: 12, borderRadius: 10, marginBottom: 16 },
-  dateInputText: { fontSize: 14, color: '#334155', fontWeight: '500' },
-  selectorLabelRow: { marginBottom: 8 },
-  selectorLabel: { fontSize: 13, fontWeight: '600', color: '#64748B', marginBottom: 6 },
-  categoryOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
-  catOption: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#E2E8F0', backgroundColor: '#FFFFFF' },
-  catOptionActive: { backgroundColor: '#1D4ED8', borderColor: '#1D4ED8' },
-  catOptionText: { fontSize: 13, fontWeight: '600', color: '#64748B', textTransform: 'capitalize' },
-  catOptionTextActive: { color: '#FFFFFF' },
-  createActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 12 },
-  cancelBtn: { paddingVertical: 8, paddingHorizontal: 16, justifyContent: 'center' },
-  cancelBtnText: { color: '#64748B', fontWeight: '600', fontSize: 14 },
-  saveBtn: { backgroundColor: '#1D4ED8', paddingVertical: 8, paddingHorizontal: 20, borderRadius: 20, justifyContent: 'center' },
-  saveBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
-  modalContainer: { flex: 1, backgroundColor: '#FFFFFF' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderColor: '#F1F5F9' },
-  modalBody: { padding: 20, flex: 1 },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: '#0F172A' },
-  cancelText: { fontSize: 16, color: '#64748B' },
-  saveHeaderBtnText: { fontSize: 16, fontWeight: '700', color: '#1D4ED8' },
-  titleInput: { fontSize: 24, fontWeight: '700', color: '#0F172A', marginBottom: 20 },
-  contentInput: { fontSize: 16, color: '#334155', backgroundColor: '#F8FAFC', borderRadius: 12, padding: 16, marginBottom: 20 },
-  
-  // Tasks Section
-  subtaskSection: { marginBottom: 20 },
-  subtaskList: { marginBottom: 12 },
-  subtaskRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', padding: 12, borderRadius: 10, marginBottom: 8, borderWidth: 1, borderColor: '#F1F5F9' },
-  subtaskCheckbox: { marginRight: 10 },
-  subtaskText: { flex: 1, fontSize: 15, color: '#334155', fontWeight: '500' },
-  subtaskTextCompleted: { color: '#94A3B8', textDecorationLine: 'line-through' },
-  subtaskEditInput: { flex: 1, fontSize: 15, color: '#0F172A', padding: 0, borderBottomWidth: 1, borderBottomColor: '#1D4ED8', marginRight: 10 },
-  subtaskActionBtn: { padding: 4 },
-  addSubtaskRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  addSubtaskInput: { flex: 1, backgroundColor: '#F1F5F9', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 12, fontSize: 14, color: '#334155' },
-  addSubtaskBtn: { width: 44, height: 44, borderRadius: 10, backgroundColor: '#1D4ED8', alignItems: 'center', justifyContent: 'center' },
-
-  lockedProgressRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F1F5F9', padding: 16, borderRadius: 10, marginBottom: 16, gap: 10 },
-  lockedProgressText: { flex: 1, fontSize: 13, color: '#64748B', lineHeight: 18 },
-
-  // Dropdown Filter Styles
-  filterRowSecondary: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 16,
-    gap: 12,
-  },
-  dropdownContainer: {
-    flex: 1,
-    position: 'relative',
-  },
-  dropdownBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#F1F5F9',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    gap: 6,
-  },
-  dropdownBtnActive: {
-    backgroundColor: '#1D4ED8',
-    borderColor: '#1D4ED8',
-  },
-  dropdownBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#64748B',
-    flex: 1,
-  },
-  dropdownBtnTextActive: {
-    color: '#FFFFFF',
-  },
-  dropdownMenu: {
-    position: 'absolute',
-    top: 48,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    zIndex: 1000,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  dropdownItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  dropdownItemActive: {
-    backgroundColor: '#EFF6FF',
-  },
-  dropdownItemText: {
-    fontSize: 14,
-    color: '#334155',
-    fontWeight: '500',
-  },
-  dropdownItemTextActive: {
-    color: '#1D4ED8',
-    fontWeight: '600',
-  },
-});

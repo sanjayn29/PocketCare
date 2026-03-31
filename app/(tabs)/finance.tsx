@@ -1,33 +1,37 @@
 import FloatingActionButton from '@/components/FloatingActionButton';
+import { getColors } from '@/constants/styles';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-    ActivityIndicator, Alert,
-    Dimensions,
-    FlatList,
-    Keyboard,
-    KeyboardAvoidingView,
-    Modal, Platform, ScrollView, StyleSheet, Switch, Text,
-    TextInput, TouchableOpacity, View
+  ActivityIndicator, Alert,
+  Dimensions,
+  FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal, Platform, ScrollView,
+  StyleSheet,
+  Switch, Text,
+  TextInput, TouchableOpacity, View
 } from 'react-native';
 import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
 import {
-    addDebt,
-    addFinanceGoal,
-    addTransaction,
-    Debt,
-    DebtInterestType,
-    deleteDebt,
-    deleteFinanceGoal,
-    deleteTransaction,
-    FinanceGoal, getFinanceData,
-    Transaction,
-    TransactionType,
-    updateDebt,
-    updateFinanceGoal,
-    updateTransaction
+  addDebt,
+  addFinanceGoal,
+  addTransaction,
+  Debt,
+  DebtInterestType,
+  deleteDebt,
+  deleteFinanceGoal,
+  deleteTransaction,
+  FinanceGoal, getFinanceData,
+  Transaction,
+  TransactionType,
+  updateDebt,
+  updateFinanceGoal,
+  updateTransaction
 } from '../../lib/finance-service';
 
 const screenWidth = Dimensions.get('window').width;
@@ -43,6 +47,56 @@ type ChartType = 'Pie' | 'Line' | 'Bar';
 export default function FinanceScreen() {
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress;
+
+  const colorScheme = useColorScheme()
+  const isDark = colorScheme === 'dark'
+  const colors = getColors(isDark)
+
+  const dynamicStyles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    headerArea: { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 10 },
+    pageTitle: { fontSize: 28, fontWeight: '800', color: colors.text },
+    
+    mainTabRow: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 10, flexWrap:'wrap', gap:6 },
+    mainTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: colors.border, borderWidth: 1, borderColor: colors.border },
+    mainTabActive: { backgroundColor: colors.text, borderColor: colors.text },
+    mainTabText: { fontSize: 13, fontWeight: '700', color: colors.textSecondary },
+    mainTabTextActive: { color: colors.card },
+
+    segmentBlock: { flexDirection: 'row', backgroundColor: colors.border, borderRadius: 12, padding: 4, marginBottom: 16 },
+    segmentBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8 },
+    segmentBtnActive: { backgroundColor: colors.card, shadowColor: '#000', shadowOffset:{width:0, height:1}, shadowOpacity:0.05, shadowRadius:2, elevation:1 },
+    segmentText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, textTransform: 'capitalize' },
+    segmentTextActive: { color: colors.text },
+
+    summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 20 },
+    summaryBox: { width: '48%', padding: 16, borderRadius: 16, borderWidth: 1 },
+    summaryLabel: { fontSize: 13, color: colors.textSecondary, fontWeight: '600', marginBottom: 4 },
+    summaryVal: { fontSize: 20, fontWeight: '800' },
+
+    emptyBox: { backgroundColor: colors.card, padding: 30, borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: colors.border, marginTop: 20 },
+    chartArea: { backgroundColor: colors.card, borderRadius: 16, padding: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center', marginTop: 10 },
+
+    card: { backgroundColor: colors.card, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOffset:{width:0, height:2}, shadowOpacity:0.04, shadowRadius:8, elevation:2, flexDirection: 'row', justifyContent: 'space-between' },
+
+    input: { backgroundColor: colors.background, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: colors.text, borderWidth: 1, borderColor: colors.border, marginBottom: 12 },
+    titleInput: { backgroundColor: colors.card, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, fontSize: 18, fontWeight: '700', color: colors.text, borderWidth: 1, borderColor: colors.border, marginBottom: 12 },
+    selectorLabel: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, marginBottom: 8 },
+
+    createCard: { backgroundColor: colors.card, borderRadius: 16, marginBottom: 16, borderWidth: 1, borderColor: colors.border, shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3, overflow: 'hidden' },
+    createCollapsed: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
+    createIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+    createCollapsedText: { flex: 1, fontSize: 15, color: colors.textSecondary, fontWeight: '500' },
+    createExpanded: { padding: 16 },
+
+    rowBtns: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 4 },
+    cancelBtn: { paddingVertical: 8, paddingHorizontal: 16, justifyContent: 'center' },
+    cancelBtnText: { color: colors.textSecondary, fontWeight: '600', fontSize: 14 },
+    saveBtn: { paddingVertical: 8, paddingHorizontal: 20, borderRadius: 20, justifyContent: 'center' },
+    saveBtnText: { color: colors.card, fontWeight: '700', fontSize: 14 },
+
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderColor: colors.border },
+  });
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -270,8 +324,8 @@ export default function FinanceScreen() {
   const netBalance = totalIncome - totalExpense;
 
   const pieData = [
-    { name: 'Income', amount: totalIncome, color: '#10B981', legendFontColor: '#333', legendFontSize: 13 },
-    { name: 'Expense', amount: totalExpense, color: '#EF4444', legendFontColor: '#333', legendFontSize: 13 }
+    { name: 'Income', amount: totalIncome, color: colors.success, legendFontColor: '#333', legendFontSize: 13 },
+    { name: 'Expense', amount: totalExpense, color: colors.danger, legendFontColor: '#333', legendFontSize: 13 }
   ];
 
   const lineData = useMemo(() => {
@@ -429,102 +483,102 @@ export default function FinanceScreen() {
 
   // ── Inline Creation Cards
   const renderTxCard = () => (
-    <View style={styles.createCard}>
+    <View style={dynamicStyles.createCard}>
       {isCreatingTx ? (
-        <View style={styles.createExpanded}>
-          <View style={styles.segmentBlock}>
-            <TouchableOpacity style={[styles.segmentBtn, txType==='income' && {backgroundColor:'#10B981'}]} onPress={()=>setTxType('income')}>
-              <Text style={[styles.segmentText, txType==='income' && {color:'#FFF'}]}>Income</Text>
+        <View style={dynamicStyles.createExpanded}>
+          <View style={dynamicStyles.segmentBlock}>
+            <TouchableOpacity style={[dynamicStyles.segmentBtn, txType==='income' && {backgroundColor:'#10B981'}]} onPress={()=>setTxType('income')}>
+              <Text style={[dynamicStyles.segmentText, txType==='income' && {color:'#FFF'}]}>Income</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.segmentBtn, txType==='expense' && {backgroundColor:'#EF4444'}]} onPress={()=>setTxType('expense')}>
-              <Text style={[styles.segmentText, txType==='expense' && {color:'#FFF'}]}>Expense</Text>
+            <TouchableOpacity style={[dynamicStyles.segmentBtn, txType==='expense' && {backgroundColor:'#EF4444'}]} onPress={()=>setTxType('expense')}>
+              <Text style={[dynamicStyles.segmentText, txType==='expense' && {color:'#FFF'}]}>Expense</Text>
             </TouchableOpacity>
           </View>
-          <TextInput style={styles.input} placeholder="Amount (e.g. 50)" keyboardType="numeric" value={txAmount} onChangeText={setTxAmount} />
-          <TextInput style={styles.input} placeholder="Category (e.g. Food, Salary)" value={txCategory} onChangeText={setTxCategory} />
-          <TextInput style={styles.input} placeholder="Note (Optional)" value={txNote} onChangeText={setTxNote} />
-          <TouchableOpacity style={styles.input} onPress={()=>setShowDatePicker('txDate')}>
-            <Text style={{color: '#334155'}}>{txDate ? txDate : 'Select Date'}</Text>
+          <TextInput style={dynamicStyles.input} placeholder="Amount (e.g. 50)" keyboardType="numeric" value={txAmount} onChangeText={setTxAmount} />
+          <TextInput style={dynamicStyles.input} placeholder="Category (e.g. Food, Salary)" value={txCategory} onChangeText={setTxCategory} />
+          <TextInput style={dynamicStyles.input} placeholder="Note (Optional)" value={txNote} onChangeText={setTxNote} />
+          <TouchableOpacity style={dynamicStyles.input} onPress={()=>setShowDatePicker('txDate')}>
+            <Text style={{color: colors.text}}>{txDate ? txDate : 'Select Date'}</Text>
           </TouchableOpacity>
-          <View style={styles.rowBtns}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={()=>setIsCreatingTx(false)}><Text style={styles.cancelBtnText}>Cancel</Text></TouchableOpacity>
-            <TouchableOpacity style={[styles.saveBtn, {backgroundColor: txType === 'income' ? '#10B981' : '#EF4444'}]} onPress={handleSaveTx}><Text style={styles.saveBtnText}>Save</Text></TouchableOpacity>
+          <View style={dynamicStyles.rowBtns}>
+            <TouchableOpacity style={dynamicStyles.cancelBtn} onPress={()=>setIsCreatingTx(false)}><Text style={dynamicStyles.cancelBtnText}>Cancel</Text></TouchableOpacity>
+            <TouchableOpacity style={[dynamicStyles.saveBtn, {backgroundColor: txType === 'income' ? '#10B981' : '#EF4444'}]} onPress={handleSaveTx}><Text style={dynamicStyles.saveBtnText}>Save</Text></TouchableOpacity>
           </View>
         </View>
       ) : (
-        <TouchableOpacity style={styles.createCollapsed} onPress={()=>setIsCreatingTx(true)}>
-          <View style={[styles.createIconWrap, {backgroundColor: '#EFF6FF'}]}>
+        <TouchableOpacity style={dynamicStyles.createCollapsed} onPress={()=>setIsCreatingTx(true)}>
+          <View style={[dynamicStyles.createIconWrap, {backgroundColor: '#EFF6FF'}]}>
              <Ionicons name="swap-horizontal" size={20} color="#3B82F6" />
           </View>
-          <Text style={styles.createCollapsedText}>Add new transaction...</Text>
+          <Text style={dynamicStyles.createCollapsedText}>Add new transaction...</Text>
         </TouchableOpacity>
       )}
     </View>
   );
 
   const renderDebtCard = () => (
-    <View style={styles.createCard}>
+    <View style={dynamicStyles.createCard}>
       {isCreatingDebt ? (
-        <View style={styles.createExpanded}>
-          <TextInput style={styles.titleInput} placeholder="To Whom" value={debtTo} onChangeText={setDebtTo} autoFocus />
-          <TextInput style={styles.input} placeholder="Amount" keyboardType="numeric" value={debtAmount} onChangeText={setDebtAmount} />
-          <TextInput style={styles.input} placeholder="Description" value={debtDesc} onChangeText={setDebtDesc} />
+        <View style={dynamicStyles.createExpanded}>
+          <TextInput style={dynamicStyles.titleInput} placeholder="To Whom" value={debtTo} onChangeText={setDebtTo} autoFocus />
+          <TextInput style={dynamicStyles.input} placeholder="Amount" keyboardType="numeric" value={debtAmount} onChangeText={setDebtAmount} />
+          <TextInput style={dynamicStyles.input} placeholder="Description" value={debtDesc} onChangeText={setDebtDesc} />
           
-          <Text style={styles.selectorLabel}>Interest Type:</Text>
-          <View style={[styles.segmentBlock, {marginBottom: 12}]}>
+          <Text style={dynamicStyles.selectorLabel}>Interest Type:</Text>
+          <View style={[dynamicStyles.segmentBlock, {marginBottom: 12}]}>
             {(['none','simple','compound'] as DebtInterestType[]).map(i => (
-              <TouchableOpacity key={i} style={[styles.segmentBtn, debtInterest===i && styles.segmentBtnActive]} onPress={()=>setDebtInterest(i)}>
-                <Text style={[styles.segmentText, debtInterest===i && styles.segmentTextActive]}>{i}</Text>
+              <TouchableOpacity key={i} style={[dynamicStyles.segmentBtn, debtInterest===i && dynamicStyles.segmentBtnActive]} onPress={()=>setDebtInterest(i)}>
+                <Text style={[dynamicStyles.segmentText, debtInterest===i && dynamicStyles.segmentTextActive]}>{i}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
           {debtInterest !== 'none' && (
-            <TextInput style={styles.input} placeholder="Interest Rate % (per yr)" keyboardType="numeric" value={debtInterestRate} onChangeText={setDebtInterestRate} />
+            <TextInput style={dynamicStyles.input} placeholder="Interest Rate % (per yr)" keyboardType="numeric" value={debtInterestRate} onChangeText={setDebtInterestRate} />
           )}
 
-          <Text style={styles.selectorLabel}>Given Date:</Text>
-          <TouchableOpacity style={styles.input} onPress={()=>setShowDatePicker('debtGiven')}>
-            <Text style={{color: '#334155'}}>{debtGivenDate}</Text>
+          <Text style={dynamicStyles.selectorLabel}>Given Date:</Text>
+          <TouchableOpacity style={dynamicStyles.input} onPress={()=>setShowDatePicker('debtGiven')}>
+            <Text style={{color: colors.text}}>{debtGivenDate}</Text>
           </TouchableOpacity>
-          <Text style={styles.selectorLabel}>Due Date (Optional):</Text>
-          <TouchableOpacity style={styles.input} onPress={()=>setShowDatePicker('debtDue')}>
+          <Text style={dynamicStyles.selectorLabel}>Due Date (Optional):</Text>
+          <TouchableOpacity style={dynamicStyles.input} onPress={()=>setShowDatePicker('debtDue')}>
             <Text style={{color: debtDueDate ? '#334155' : '#94A3B8'}}>{debtDueDate || 'Select Due Date'}</Text>
           </TouchableOpacity>
-          <View style={styles.rowBtns}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={()=>setIsCreatingDebt(false)}><Text style={styles.cancelBtnText}>Cancel</Text></TouchableOpacity>
-            <TouchableOpacity style={[styles.saveBtn, {backgroundColor: '#F59E0B'}]} onPress={handleSaveDebt}><Text style={styles.saveBtnText}>Save</Text></TouchableOpacity>
+          <View style={dynamicStyles.rowBtns}>
+            <TouchableOpacity style={dynamicStyles.cancelBtn} onPress={()=>setIsCreatingDebt(false)}><Text style={dynamicStyles.cancelBtnText}>Cancel</Text></TouchableOpacity>
+            <TouchableOpacity style={[dynamicStyles.saveBtn, {backgroundColor: '#F59E0B'}]} onPress={handleSaveDebt}><Text style={dynamicStyles.saveBtnText}>Save</Text></TouchableOpacity>
           </View>
         </View>
       ) : (
-        <TouchableOpacity style={styles.createCollapsed} onPress={()=>setIsCreatingDebt(true)}>
-          <View style={[styles.createIconWrap, {backgroundColor: '#FFFBEB'}]}>
+        <TouchableOpacity style={dynamicStyles.createCollapsed} onPress={()=>setIsCreatingDebt(true)}>
+          <View style={[dynamicStyles.createIconWrap, {backgroundColor: '#FFFBEB'}]}>
              <Ionicons name="cash-outline" size={20} color="#F59E0B" />
           </View>
-          <Text style={styles.createCollapsedText}>Track a new debt...</Text>
+          <Text style={dynamicStyles.createCollapsedText}>Track a new debt...</Text>
         </TouchableOpacity>
       )}
     </View>
   );
 
   const renderGoalCard = () => (
-    <View style={styles.createCard}>
+    <View style={dynamicStyles.createCard}>
       {isCreatingGoal ? (
-        <View style={styles.createExpanded}>
-          <TextInput style={styles.titleInput} placeholder="Goal Title" value={goalTitle} onChangeText={setGoalTitle} autoFocus />
-          <TextInput style={styles.input} placeholder="Target Amount" keyboardType="numeric" value={goalTarget} onChangeText={setGoalTarget} />
-          <TextInput style={styles.input} placeholder="Description" value={goalDesc} onChangeText={setGoalDesc} />
-          <View style={styles.rowBtns}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={()=>setIsCreatingGoal(false)}><Text style={styles.cancelBtnText}>Cancel</Text></TouchableOpacity>
-            <TouchableOpacity style={[styles.saveBtn, {backgroundColor: '#3B82F6'}]} onPress={handleSaveGoal}><Text style={styles.saveBtnText}>Save</Text></TouchableOpacity>
+        <View style={dynamicStyles.createExpanded}>
+          <TextInput style={dynamicStyles.titleInput} placeholder="Goal Title" value={goalTitle} onChangeText={setGoalTitle} autoFocus />
+          <TextInput style={dynamicStyles.input} placeholder="Target Amount" keyboardType="numeric" value={goalTarget} onChangeText={setGoalTarget} />
+          <TextInput style={dynamicStyles.input} placeholder="Description" value={goalDesc} onChangeText={setGoalDesc} />
+          <View style={dynamicStyles.rowBtns}>
+            <TouchableOpacity style={dynamicStyles.cancelBtn} onPress={()=>setIsCreatingGoal(false)}><Text style={dynamicStyles.cancelBtnText}>Cancel</Text></TouchableOpacity>
+            <TouchableOpacity style={[dynamicStyles.saveBtn, {backgroundColor: colors.primary}]} onPress={handleSaveGoal}><Text style={dynamicStyles.saveBtnText}>Save</Text></TouchableOpacity>
           </View>
         </View>
       ) : (
-        <TouchableOpacity style={styles.createCollapsed} onPress={()=>setIsCreatingGoal(true)}>
-          <View style={[styles.createIconWrap, {backgroundColor: '#EFF6FF'}]}>
+        <TouchableOpacity style={dynamicStyles.createCollapsed} onPress={()=>setIsCreatingGoal(true)}>
+          <View style={[dynamicStyles.createIconWrap, {backgroundColor: '#EFF6FF'}]}>
              <Ionicons name="flag-outline" size={20} color="#3B82F6" />
           </View>
-          <Text style={styles.createCollapsedText}>Create a financial goal...</Text>
+          <Text style={dynamicStyles.createCollapsedText}>Create a financial goal...</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -536,13 +590,13 @@ export default function FinanceScreen() {
     if (timeFilter !== 'Custom') return null;
     return (
       <View style={{flexDirection: 'row', gap: 10, marginBottom: 16, marginTop: -6}}>
-        <TouchableOpacity style={{flex: 1, backgroundColor: '#FFF', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center'}} onPress={() => setShowDatePicker('customStart')}>
-          <Text style={{fontSize: 12, color: '#64748B', fontWeight: '700'}}>Start Date</Text>
-          <Text style={{fontSize: 14, color: '#0F172A', fontWeight: '700', marginTop: 4}}>{customStart}</Text>
+        <TouchableOpacity style={{flex: 1, backgroundColor: colors.card, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center'}} onPress={() => setShowDatePicker('customStart')}>
+          <Text style={{fontSize: 12, color: colors.textSecondary, fontWeight: '700'}}>Start Date</Text>
+          <Text style={{fontSize: 14, color: colors.text, fontWeight: '700', marginTop: 4}}>{customStart}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={{flex: 1, backgroundColor: '#FFF', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center'}} onPress={() => setShowDatePicker('customEnd')}>
-          <Text style={{fontSize: 12, color: '#64748B', fontWeight: '700'}}>End Date</Text>
-          <Text style={{fontSize: 14, color: '#0F172A', fontWeight: '700', marginTop: 4}}>{customEnd}</Text>
+        <TouchableOpacity style={{flex: 1, backgroundColor: colors.card, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center'}} onPress={() => setShowDatePicker('customEnd')}>
+          <Text style={{fontSize: 12, color: colors.textSecondary, fontWeight: '700'}}>End Date</Text>
+          <Text style={{fontSize: 14, color: colors.text, fontWeight: '700', marginTop: 4}}>{customEnd}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -550,47 +604,47 @@ export default function FinanceScreen() {
 
   const renderOverview = () => (
     <ScrollView contentContainerStyle={{padding:16, paddingBottom: 100}} showsVerticalScrollIndicator={false}>
-      <View style={styles.segmentBlock}>
+      <View style={dynamicStyles.segmentBlock}>
         {(['All','Today','Month','Year','Custom'] as TimeFilter[]).map(t => (
-          <TouchableOpacity key={t} style={[styles.segmentBtn, timeFilter===t && styles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
-            <Text style={[styles.segmentText, timeFilter===t && styles.segmentTextActive]}>{t}</Text>
+          <TouchableOpacity key={t} style={[dynamicStyles.segmentBtn, timeFilter===t && dynamicStyles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
+            <Text style={[dynamicStyles.segmentText, timeFilter===t && dynamicStyles.segmentTextActive]}>{t}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
       {renderCustomDateFilters()}
 
-      <View style={styles.summaryGrid}>
-        <View style={[styles.summaryBox, { borderColor: '#E5E7EB', backgroundColor: '#FFF' }]}>
-          <Text style={styles.summaryLabel}>Total Income</Text>
-          <Text style={[styles.summaryVal, { color: '#10B981' }]}>${totalIncome.toFixed(2)}</Text>
+      <View style={dynamicStyles.summaryGrid}>
+        <View style={[dynamicStyles.summaryBox, { borderColor: '#E5E7EB', backgroundColor: colors.card }]}>
+          <Text style={dynamicStyles.summaryLabel}>Total Income</Text>
+          <Text style={[dynamicStyles.summaryVal, { color: colors.success }]}>${totalIncome.toFixed(2)}</Text>
         </View>
-        <View style={[styles.summaryBox, { borderColor: '#E5E7EB', backgroundColor: '#FFF' }]}>
-          <Text style={styles.summaryLabel}>Total Expense</Text>
-          <Text style={[styles.summaryVal, { color: '#EF4444' }]}>${totalExpense.toFixed(2)}</Text>
+        <View style={[dynamicStyles.summaryBox, { borderColor: '#E5E7EB', backgroundColor: colors.card }]}>
+          <Text style={dynamicStyles.summaryLabel}>Total Expense</Text>
+          <Text style={[dynamicStyles.summaryVal, { color: colors.danger }]}>${totalExpense.toFixed(2)}</Text>
         </View>
-        <View style={[styles.summaryBox, { borderColor: '#E5E7EB', backgroundColor: '#FFF', width: '100%', marginTop: 10 }]}>
-          <Text style={styles.summaryLabel}>Net Balance</Text>
-          <Text style={[styles.summaryVal, { color: netBalance >= 0 ? '#10B981' : '#EF4444', fontSize: 24 }]}>
+        <View style={[dynamicStyles.summaryBox, { borderColor: '#E5E7EB', backgroundColor: colors.card, width: '100%', marginTop: 10 }]}>
+          <Text style={dynamicStyles.summaryLabel}>Net Balance</Text>
+          <Text style={[dynamicStyles.summaryVal, { color: netBalance >= 0 ? '#10B981' : '#EF4444', fontSize: 24 }]}>
             ${netBalance.toFixed(2)}
           </Text>
         </View>
       </View>
 
-      <View style={styles.segmentBlock}>
+      <View style={dynamicStyles.segmentBlock}>
         {(['Pie','Line','Bar'] as ChartType[]).map(c => (
-          <TouchableOpacity key={c} style={[styles.segmentBtn, chartType===c && styles.segmentBtnActive]} onPress={()=>setChartType(c)}>
-            <Text style={[styles.segmentText, chartType===c && styles.segmentTextActive]}>{c}</Text>
+          <TouchableOpacity key={c} style={[dynamicStyles.segmentBtn, chartType===c && dynamicStyles.segmentBtnActive]} onPress={()=>setChartType(c)}>
+            <Text style={[dynamicStyles.segmentText, chartType===c && dynamicStyles.segmentTextActive]}>{c}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
       {filteredTxs.length === 0 ? (
-        <View style={styles.emptyBox}>
+        <View style={dynamicStyles.emptyBox}>
           <Text style={{color:'#94A3B8'}}>No data for this period.</Text>
         </View>
       ) : (
-        <View style={styles.chartArea}>
+        <View style={dynamicStyles.chartArea}>
           {chartType === 'Pie' && (
             <PieChart
               data={pieData}
@@ -608,7 +662,7 @@ export default function FinanceScreen() {
               width={screenWidth - 32}
               height={220}
               chartConfig={{
-                backgroundColor: '#FFF',
+                backgroundColor: colors.card,
                 backgroundGradientFrom: '#FFF',
                 backgroundGradientTo: '#FFF',
                 decimalPlaces: 0,
@@ -626,7 +680,7 @@ export default function FinanceScreen() {
               yAxisLabel="$"
               yAxisSuffix=""
               chartConfig={{
-                backgroundColor: '#FFF',
+                backgroundColor: colors.card,
                 backgroundGradientFrom: '#FFF',
                 backgroundGradientTo: '#FFF',
                 decimalPlaces: 0,
@@ -642,14 +696,14 @@ export default function FinanceScreen() {
       {/* ── Category Breakdown Charts ── */}
       {filteredTxs.length > 0 && (
         <View style={{marginTop: 24}}>
-          <Text style={{fontSize: 16, fontWeight: '600', color: '#0F172A', marginBottom: 16, paddingHorizontal: 16}}>
+          <Text style={{fontSize: 16, fontWeight: '600', color: colors.text, marginBottom: 16, paddingHorizontal: 16}}>
             Category Breakdown
           </Text>
 
           {/* Income by Category */}
           {categoryData.topIncome.length > 0 && (
             <View style={{paddingHorizontal: 16, marginBottom: 20}}>
-              <Text style={{fontSize: 14, fontWeight: '600', color: '#10B981', marginBottom: 12}}>
+              <Text style={{fontSize: 14, fontWeight: '600', color: colors.success, marginBottom: 12}}>
                 Top Income Categories
               </Text>
               {categoryData.topIncome.map((cat, idx) => {
@@ -657,15 +711,15 @@ export default function FinanceScreen() {
                 return (
                   <View key={idx} style={{marginBottom: 12}}>
                     <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6}}>
-                      <Text style={{fontSize: 13, color: '#334155'}}>{cat.name}</Text>
-                      <Text style={{fontSize: 13, fontWeight: '600', color: '#10B981'}}>${cat.amount.toFixed(2)}</Text>
+                      <Text style={{fontSize: 13, color: colors.text}}>{cat.name}</Text>
+                      <Text style={{fontSize: 13, fontWeight: '600', color: colors.success}}>${cat.amount.toFixed(2)}</Text>
                     </View>
                     <View style={{height: 6, backgroundColor: '#E0E7FF', borderRadius: 3, overflow: 'hidden'}}>
                       <View
                         style={{
                           height: '100%',
                           width: `${percentage}%`,
-                          backgroundColor: '#10B981',
+                          backgroundColor: colors.success,
                           borderRadius: 3
                         }}
                       />
@@ -679,7 +733,7 @@ export default function FinanceScreen() {
           {/* Expense by Category */}
           {categoryData.topExpense.length > 0 && (
             <View style={{paddingHorizontal: 16}}>
-              <Text style={{fontSize: 14, fontWeight: '600', color: '#EF4444', marginBottom: 12}}>
+              <Text style={{fontSize: 14, fontWeight: '600', color: colors.danger, marginBottom: 12}}>
                 Top Expense Categories
               </Text>
               {categoryData.topExpense.map((cat, idx) => {
@@ -687,15 +741,15 @@ export default function FinanceScreen() {
                 return (
                   <View key={idx} style={{marginBottom: 12}}>
                     <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6}}>
-                      <Text style={{fontSize: 13, color: '#334155'}}>{cat.name}</Text>
-                      <Text style={{fontSize: 13, fontWeight: '600', color: '#EF4444'}}>${cat.amount.toFixed(2)}</Text>
+                      <Text style={{fontSize: 13, color: colors.text}}>{cat.name}</Text>
+                      <Text style={{fontSize: 13, fontWeight: '600', color: colors.danger}}>${cat.amount.toFixed(2)}</Text>
                     </View>
                     <View style={{height: 6, backgroundColor: '#FEE2E2', borderRadius: 3, overflow: 'hidden'}}>
                       <View
                         style={{
                           height: '100%',
                           width: `${percentage}%`,
-                          backgroundColor: '#EF4444',
+                          backgroundColor: colors.danger,
                           borderRadius: 3
                         }}
                       />
@@ -716,10 +770,10 @@ export default function FinanceScreen() {
       keyExtractor={t=>t.id}
       ListHeaderComponent={
         <>
-          <View style={styles.segmentBlock}>
+          <View style={dynamicStyles.segmentBlock}>
             {(['All','Today','Month','Year','Custom'] as TimeFilter[]).map(t => (
-              <TouchableOpacity key={t} style={[styles.segmentBtn, timeFilter===t && styles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
-                <Text style={[styles.segmentText, timeFilter===t && styles.segmentTextActive]}>{t}</Text>
+              <TouchableOpacity key={t} style={[dynamicStyles.segmentBtn, timeFilter===t && dynamicStyles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
+                <Text style={[dynamicStyles.segmentText, timeFilter===t && dynamicStyles.segmentTextActive]}>{t}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -732,7 +786,7 @@ export default function FinanceScreen() {
       renderItem={({item}) => {
         const isSynthetic = item.id.startsWith('debt_');
         return (
-          <View style={[styles.card, isSynthetic && {borderLeftWidth: 4, borderLeftColor: item.type==='income'?'#10B981':'#EF4444'}]}>
+          <View style={[dynamicStyles.card, isSynthetic && {borderLeftWidth: 4, borderLeftColor: item.type==='income'?'#10B981':'#EF4444'}]}>
             <View style={{flex:1}}>
               <Text style={{fontSize:16, fontWeight:'700', color: '#1E293B'}}>
                 {item.category} {isSynthetic && ' (Auto)'}
@@ -771,10 +825,10 @@ export default function FinanceScreen() {
       keyExtractor={d=>d.id}
       ListHeaderComponent={
         <>
-          <View style={styles.segmentBlock}>
+          <View style={dynamicStyles.segmentBlock}>
             {(['All','Today','Month','Year','Custom'] as TimeFilter[]).map(t => (
-              <TouchableOpacity key={t} style={[styles.segmentBtn, timeFilter===t && styles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
-                <Text style={[styles.segmentText, timeFilter===t && styles.segmentTextActive]}>{t}</Text>
+              <TouchableOpacity key={t} style={[dynamicStyles.segmentBtn, timeFilter===t && dynamicStyles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
+                <Text style={[dynamicStyles.segmentText, timeFilter===t && dynamicStyles.segmentTextActive]}>{t}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -787,7 +841,7 @@ export default function FinanceScreen() {
       renderItem={({item}) => {
         const calculatedAmount = calcDebtAmount(item);
         return (
-          <View style={[styles.card, item.given_back && {opacity: 0.7}]}>
+          <View style={[dynamicStyles.card, item.given_back && {opacity: 0.7}]}>
             <View style={{flex:1}}>
               <Text style={{fontSize:17, fontWeight:'800', color: '#1E293B'}}>{item.to_whom}</Text>
               {item.description ? <Text style={{fontSize:13, color:'#64748B', marginTop:2}}>{item.description}</Text> : null}
@@ -835,10 +889,10 @@ export default function FinanceScreen() {
       keyExtractor={g=>g.id}
       ListHeaderComponent={
         <>
-          <View style={styles.segmentBlock}>
+          <View style={dynamicStyles.segmentBlock}>
             {(['All','Today','Month','Year','Custom'] as TimeFilter[]).map(t => (
-              <TouchableOpacity key={t} style={[styles.segmentBtn, timeFilter===t && styles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
-                <Text style={[styles.segmentText, timeFilter===t && styles.segmentTextActive]}>{t}</Text>
+              <TouchableOpacity key={t} style={[dynamicStyles.segmentBtn, timeFilter===t && dynamicStyles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
+                <Text style={[dynamicStyles.segmentText, timeFilter===t && dynamicStyles.segmentTextActive]}>{t}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -853,10 +907,10 @@ export default function FinanceScreen() {
         const pct = Math.min(Math.max(pctRaw, 0), 100).toFixed(1);
         console.log("Goal item being rendered:", JSON.stringify(item));
         return (
-          <View style={styles.card}>
+          <View style={dynamicStyles.card}>
             {/* Top Row: Title + Icons */}
             <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom: 12}}>
-              <Text style={{fontSize:20, fontWeight:'900', color: '#0F172A', flex: 1}}>{item.title || 'Untitled Goal'}</Text>
+              <Text style={{fontSize:20, fontWeight:'900', color: colors.text, flex: 1}}>{item.title || 'Untitled Goal'}</Text>
               <View style={{flexDirection: 'row', gap: 16}}>
                 <TouchableOpacity onPress={()=> openEditGoal(item)}>
                   <Ionicons name="pencil-outline" size={20} color="#64748B"/>
@@ -873,7 +927,7 @@ export default function FinanceScreen() {
 
             {/* Percentage Above Bar aligned Right */}
             <View style={{flexDirection:'row', justifyContent:'flex-end', marginBottom: 6}}>
-              <Text style={{fontSize:16, fontWeight:'900', color: '#3B82F6'}}>{pct}%</Text>
+              <Text style={{fontSize:16, fontWeight:'900', color: colors.primary}}>{pct}%</Text>
             </View>
 
             {/* Progress Bar */}
@@ -884,7 +938,7 @@ export default function FinanceScreen() {
             {/* Description & Saved Amount strictly below the % bar */}
             <View style={{flexDirection:'column', marginBottom: 16}}>
               <Text style={{fontSize:15, fontWeight:'800', color:'#475569'}}>
-                Saved: <Text style={{color: '#10B981'}}>${item.current_amount}</Text> <Text style={{fontWeight:'500', color:'#94A3B8'}}>of ${item.target_amount}</Text>
+                Saved: <Text style={{color: colors.success}}>${item.current_amount}</Text> <Text style={{fontWeight:'500', color:'#94A3B8'}}>of ${item.target_amount}</Text>
               </Text>
               {item.description ? <Text style={{fontSize:14, color:'#64748B', marginTop:6}}>{item.description}</Text> : null}
               <Text style={{fontSize:12, color:'#94A3B8', marginTop: 4}}>Started: {item.created_at ? item.created_at.split('T')[0] : 'Today'}</Text>
@@ -902,20 +956,20 @@ export default function FinanceScreen() {
   );
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={styles.headerArea}>
-        <Text style={styles.pageTitle}>Finance</Text>
+    <KeyboardAvoidingView style={dynamicStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={dynamicStyles.headerArea}>
+        <Text style={dynamicStyles.pageTitle}>Finance</Text>
       </View>
 
-      <View style={styles.mainTabRow}>
+      <View style={dynamicStyles.mainTabRow}>
         {(['Overview', 'Transactions', 'Debts', 'Goals'] as TabType[]).map(t => (
-          <TouchableOpacity key={t} style={[styles.mainTab, activeTab===t && styles.mainTabActive]} onPress={()=>setActiveTab(t)}>
-            <Text style={[styles.mainTabText, activeTab===t && styles.mainTabTextActive]}>{t}</Text>
+          <TouchableOpacity key={t} style={[dynamicStyles.mainTab, activeTab===t && dynamicStyles.mainTabActive]} onPress={()=>setActiveTab(t)}>
+            <Text style={[dynamicStyles.mainTabText, activeTab===t && dynamicStyles.mainTabTextActive]}>{t}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {loading ? <View style={{flex:1, justifyContent:'center'}}><ActivityIndicator size="large" color="#3B82F6" /></View> : 
+      {loading ? <View style={{flex:1, justifyContent:'center'}}><ActivityIndicator size="large" color={colors.primary} /></View> : 
         activeTab === 'Overview' ? renderOverview() :
         activeTab === 'Transactions' ? renderTransactions() :
         activeTab === 'Debts' ? renderDebts() :
@@ -932,16 +986,16 @@ export default function FinanceScreen() {
           <View style={{backgroundColor:'#FFF', borderRadius:16, padding:20}}>
             <Text style={{fontSize:18, fontWeight:'700', marginBottom:16, textAlign:'center'}}>Update {selectedGoal?.title}</Text>
             
-            <View style={styles.segmentBlock}>
-              <TouchableOpacity style={[styles.segmentBtn, goalUpdateType==='add' && {backgroundColor:'#10B981'}]} onPress={()=>setGoalUpdateType('add')}>
-                <Text style={[styles.segmentText, goalUpdateType==='add' && {color:'#FFF'}]}>Add</Text>
+            <View style={dynamicStyles.segmentBlock}>
+              <TouchableOpacity style={[dynamicStyles.segmentBtn, goalUpdateType==='add' && {backgroundColor:'#10B981'}]} onPress={()=>setGoalUpdateType('add')}>
+                <Text style={[dynamicStyles.segmentText, goalUpdateType==='add' && {color:'#FFF'}]}>Add</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.segmentBtn, goalUpdateType==='take' && {backgroundColor:'#EF4444'}]} onPress={()=>setGoalUpdateType('take')}>
-                <Text style={[styles.segmentText, goalUpdateType==='take' && {color:'#FFF'}]}>Take</Text>
+              <TouchableOpacity style={[dynamicStyles.segmentBtn, goalUpdateType==='take' && {backgroundColor:'#EF4444'}]} onPress={()=>setGoalUpdateType('take')}>
+                <Text style={[dynamicStyles.segmentText, goalUpdateType==='take' && {color:'#FFF'}]}>Take</Text>
               </TouchableOpacity>
             </View>
 
-            <TextInput style={styles.input} placeholder="Amount" keyboardType="numeric" value={goalUpdateAmount} onChangeText={setGoalUpdateAmount} autoFocus />
+            <TextInput style={dynamicStyles.input} placeholder="Amount" keyboardType="numeric" value={goalUpdateAmount} onChangeText={setGoalUpdateAmount} autoFocus />
             
             <View style={{flexDirection:'row', gap:10, marginTop:10}}>
               <TouchableOpacity style={{flex:1, padding:12, backgroundColor:'#F1F5F9', borderRadius:10, alignItems:'center'}} onPress={()=>setShowGoalUpdateModal(false)}>
@@ -958,25 +1012,25 @@ export default function FinanceScreen() {
       {/* ── Edit Tx Modal ── */}
       <Modal visible={editingTx !== null} animationType="slide" presentationStyle="pageSheet">
         <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={{flex:1}}>
-          <View style={styles.modalHeader}>
+          <View style={dynamicStyles.modalHeader}>
             <TouchableOpacity onPress={()=>setEditingTx(null)}><Text style={{fontSize:16, color:'#64748B'}}>Cancel</Text></TouchableOpacity>
             <Text style={{fontSize:18, fontWeight:'700'}}>Edit Transaction</Text>
             <TouchableOpacity onPress={handleUpdateTx}><Text style={{fontSize:16, fontWeight:'700', color:'#3B82F6'}}>Save</Text></TouchableOpacity>
           </View>
           <ScrollView style={{padding:20}}>
-            <View style={styles.segmentBlock}>
-              <TouchableOpacity style={[styles.segmentBtn, txEType==='income' && {backgroundColor:'#10B981'}]} onPress={()=>setTxEType('income')}>
-                <Text style={[styles.segmentText, txEType==='income' && {color:'#FFF'}]}>Income</Text>
+            <View style={dynamicStyles.segmentBlock}>
+              <TouchableOpacity style={[dynamicStyles.segmentBtn, txEType==='income' && {backgroundColor:'#10B981'}]} onPress={()=>setTxEType('income')}>
+                <Text style={[dynamicStyles.segmentText, txEType==='income' && {color:'#FFF'}]}>Income</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.segmentBtn, txEType==='expense' && {backgroundColor:'#EF4444'}]} onPress={()=>setTxEType('expense')}>
-                <Text style={[styles.segmentText, txEType==='expense' && {color:'#FFF'}]}>Expense</Text>
+              <TouchableOpacity style={[dynamicStyles.segmentBtn, txEType==='expense' && {backgroundColor:'#EF4444'}]} onPress={()=>setTxEType('expense')}>
+                <Text style={[dynamicStyles.segmentText, txEType==='expense' && {color:'#FFF'}]}>Expense</Text>
               </TouchableOpacity>
             </View>
-            <TextInput style={styles.input} placeholder="Amount" keyboardType="numeric" value={txEAmount} onChangeText={setTxEAmount} />
-            <TextInput style={styles.input} placeholder="Category" value={txECategory} onChangeText={setTxECategory} />
-            <TextInput style={styles.input} placeholder="Note (Optional)" value={txENote} onChangeText={setTxENote} />
-            <TouchableOpacity style={styles.input} onPress={()=>setShowDatePicker('txEDate')}>
-              <Text style={{color: '#334155'}}>{txEDate}</Text>
+            <TextInput style={dynamicStyles.input} placeholder="Amount" keyboardType="numeric" value={txEAmount} onChangeText={setTxEAmount} />
+            <TextInput style={dynamicStyles.input} placeholder="Category" value={txECategory} onChangeText={setTxECategory} />
+            <TextInput style={dynamicStyles.input} placeholder="Note (Optional)" value={txENote} onChangeText={setTxENote} />
+            <TouchableOpacity style={dynamicStyles.input} onPress={()=>setShowDatePicker('txEDate')}>
+              <Text style={{color: colors.text}}>{txEDate}</Text>
             </TouchableOpacity>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -985,35 +1039,35 @@ export default function FinanceScreen() {
       {/* ── Edit Debt Modal ── */}
       <Modal visible={editingDebt !== null} animationType="slide" presentationStyle="pageSheet">
         <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={{flex:1}}>
-          <View style={styles.modalHeader}>
+          <View style={dynamicStyles.modalHeader}>
             <TouchableOpacity onPress={()=>setEditingDebt(null)}><Text style={{fontSize:16, color:'#64748B'}}>Cancel</Text></TouchableOpacity>
             <Text style={{fontSize:18, fontWeight:'700'}}>Edit Debt</Text>
             <TouchableOpacity onPress={handleUpdateDebtProps}><Text style={{fontSize:16, fontWeight:'700', color:'#3B82F6'}}>Save</Text></TouchableOpacity>
           </View>
           <ScrollView style={{padding:20}}>
-            <TextInput style={styles.titleInput} placeholder="To Whom" value={debtETo} onChangeText={setDebtETo} />
-            <TextInput style={styles.input} placeholder="Amount" keyboardType="numeric" value={debtEAmount} onChangeText={setDebtEAmount} />
-            <TextInput style={styles.input} placeholder="Description" value={debtEDesc} onChangeText={setDebtEDesc} />
+            <TextInput style={dynamicStyles.titleInput} placeholder="To Whom" value={debtETo} onChangeText={setDebtETo} />
+            <TextInput style={dynamicStyles.input} placeholder="Amount" keyboardType="numeric" value={debtEAmount} onChangeText={setDebtEAmount} />
+            <TextInput style={dynamicStyles.input} placeholder="Description" value={debtEDesc} onChangeText={setDebtEDesc} />
             
-            <Text style={styles.selectorLabel}>Interest Type:</Text>
-            <View style={[styles.segmentBlock, {marginBottom: 12}]}>
+            <Text style={dynamicStyles.selectorLabel}>Interest Type:</Text>
+            <View style={[dynamicStyles.segmentBlock, {marginBottom: 12}]}>
               {(['none','simple','compound'] as DebtInterestType[]).map(i => (
-                <TouchableOpacity key={i} style={[styles.segmentBtn, debtEInterest===i && styles.segmentBtnActive]} onPress={()=>setDebtEInterest(i)}>
-                  <Text style={[styles.segmentText, debtEInterest===i && styles.segmentTextActive]}>{i}</Text>
+                <TouchableOpacity key={i} style={[dynamicStyles.segmentBtn, debtEInterest===i && dynamicStyles.segmentBtnActive]} onPress={()=>setDebtEInterest(i)}>
+                  <Text style={[dynamicStyles.segmentText, debtEInterest===i && dynamicStyles.segmentTextActive]}>{i}</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             {debtEInterest !== 'none' && (
-              <TextInput style={styles.input} placeholder="Interest Rate % (per yr)" keyboardType="numeric" value={debtEInterestRate} onChangeText={setDebtEInterestRate} />
+              <TextInput style={dynamicStyles.input} placeholder="Interest Rate % (per yr)" keyboardType="numeric" value={debtEInterestRate} onChangeText={setDebtEInterestRate} />
             )}
 
-            <Text style={styles.selectorLabel}>Given Date:</Text>
-            <TouchableOpacity style={styles.input} onPress={()=>setShowDatePicker('debtEGiven')}>
-              <Text style={{color: '#334155'}}>{debtEGivenDate}</Text>
+            <Text style={dynamicStyles.selectorLabel}>Given Date:</Text>
+            <TouchableOpacity style={dynamicStyles.input} onPress={()=>setShowDatePicker('debtEGiven')}>
+              <Text style={{color: colors.text}}>{debtEGivenDate}</Text>
             </TouchableOpacity>
-            <Text style={styles.selectorLabel}>Due Date (Optional):</Text>
-            <TouchableOpacity style={styles.input} onPress={()=>setShowDatePicker('debtEDue')}>
+            <Text style={dynamicStyles.selectorLabel}>Due Date (Optional):</Text>
+            <TouchableOpacity style={dynamicStyles.input} onPress={()=>setShowDatePicker('debtEDue')}>
               <Text style={{color: debtEDueDate ? '#334155' : '#94A3B8'}}>{debtEDueDate || 'Select Due Date'}</Text>
             </TouchableOpacity>
           </ScrollView>
@@ -1023,15 +1077,15 @@ export default function FinanceScreen() {
       {/* ── Edit Goal Modal ── */}
       <Modal visible={editingGoal !== null} animationType="slide" presentationStyle="pageSheet">
         <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={{flex:1}}>
-          <View style={styles.modalHeader}>
+          <View style={dynamicStyles.modalHeader}>
             <TouchableOpacity onPress={()=>setEditingGoal(null)}><Text style={{fontSize:16, color:'#64748B'}}>Cancel</Text></TouchableOpacity>
             <Text style={{fontSize:18, fontWeight:'700'}}>Edit Goal</Text>
             <TouchableOpacity onPress={handleUpdateGoalProps}><Text style={{fontSize:16, fontWeight:'700', color:'#3B82F6'}}>Save</Text></TouchableOpacity>
           </View>
           <ScrollView style={{padding:20}}>
-            <TextInput style={styles.titleInput} placeholder="Goal Title" value={goalETitle} onChangeText={setGoalETitle} />
-            <TextInput style={styles.input} placeholder="Target Amount" keyboardType="numeric" value={goalETarget} onChangeText={setGoalETarget} />
-            <TextInput style={styles.input} placeholder="Description" value={goalEDesc} onChangeText={setGoalEDesc} />
+            <TextInput style={dynamicStyles.titleInput} placeholder="Goal Title" value={goalETitle} onChangeText={setGoalETitle} />
+            <TextInput style={dynamicStyles.input} placeholder="Target Amount" keyboardType="numeric" value={goalETarget} onChangeText={setGoalETarget} />
+            <TextInput style={dynamicStyles.input} placeholder="Description" value={goalEDesc} onChangeText={setGoalEDesc} />
           </ScrollView>
         </KeyboardAvoidingView>
       </Modal>
@@ -1041,48 +1095,5 @@ export default function FinanceScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
-  headerArea: { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 10 },
-  pageTitle: { fontSize: 28, fontWeight: '800', color: '#0F172A' },
-  
-  mainTabRow: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 10, flexWrap:'wrap', gap:6 },
-  mainTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' },
-  mainTabActive: { backgroundColor: '#1E293B', borderColor: '#1E293B' },
-  mainTabText: { fontSize: 13, fontWeight: '700', color: '#64748B' },
-  mainTabTextActive: { color: '#FFF' },
 
-  segmentBlock: { flexDirection: 'row', backgroundColor: '#F1F5F9', borderRadius: 12, padding: 4, marginBottom: 16 },
-  segmentBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8 },
-  segmentBtnActive: { backgroundColor: '#FFFFFF', shadowColor: '#000', shadowOffset:{width:0, height:1}, shadowOpacity:0.05, shadowRadius:2, elevation:1 },
-  segmentText: { fontSize: 13, fontWeight: '600', color: '#64748B', textTransform: 'capitalize' },
-  segmentTextActive: { color: '#0F172A' },
 
-  summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 20 },
-  summaryBox: { width: '48%', padding: 16, borderRadius: 16, borderWidth: 1 },
-  summaryLabel: { fontSize: 13, color: '#64748B', fontWeight: '600', marginBottom: 4 },
-  summaryVal: { fontSize: 20, fontWeight: '800' },
-
-  emptyBox: { backgroundColor: '#FFF', padding: 30, borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0', marginTop: 20 },
-  chartArea: { backgroundColor: '#FFF', borderRadius: 16, padding: 10, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center', marginTop: 10 },
-
-  card: { backgroundColor: '#FFF', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset:{width:0, height:2}, shadowOpacity:0.04, shadowRadius:8, elevation:2, flexDirection: 'row', justifyContent: 'space-between' },
-
-  input: { backgroundColor: '#F8FAFC', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: '#334155', borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 12 },
-  titleInput: { backgroundColor: '#FFF', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, fontSize: 18, fontWeight: '700', color: '#0F172A', borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 12 },
-  selectorLabel: { fontSize: 13, fontWeight: '600', color: '#64748B', marginBottom: 8 },
-
-  createCard: { backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#3B82F6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3, overflow: 'hidden' },
-  createCollapsed: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
-  createIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  createCollapsedText: { flex: 1, fontSize: 15, color: '#64748B', fontWeight: '500' },
-  createExpanded: { padding: 16 },
-
-  rowBtns: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 4 },
-  cancelBtn: { paddingVertical: 8, paddingHorizontal: 16, justifyContent: 'center' },
-  cancelBtnText: { color: '#64748B', fontWeight: '600', fontSize: 14 },
-  saveBtn: { paddingVertical: 8, paddingHorizontal: 20, borderRadius: 20, justifyContent: 'center' },
-  saveBtnText: { color: '#FFF', fontWeight: '700', fontSize: 14 },
-
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderColor: '#F1F5F9' },
-});

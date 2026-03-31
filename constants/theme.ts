@@ -1,29 +1,51 @@
 /**
  * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Premium Gold Theme with performance-optimized styling
  */
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+// Premium Gold Theme Colors
+const primaryGold = '#D4AF37';
+const secondaryGold = '#F4D03F';
+const brightGold = '#FFD700';
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    text: '#000000',
+    background: '#FFFFFF',
+    tint: primaryGold,
+    icon: '#6B7280',
+    tabIconDefault: '#9CA3AF',
+    tabIconSelected: primaryGold,
+    primary: primaryGold,
+    secondary: secondaryGold,
+    card: '#F8F9FA',
+    border: '#E5E7EB',
+    success: '#10B981',
+    warning: '#F59E0B',
+    danger: '#EF4444',
+    info: '#3B82F6',
+    textSecondary: '#6B7280',
+    overlay: 'rgba(0, 0, 0, 0.1)',
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    text: '#FFFFFF',
+    background: '#000000',
+    tint: primaryGold,
+    icon: '#D1D5DB',
+    tabIconDefault: '#9CA3AF',
+    tabIconSelected: primaryGold,
+    primary: primaryGold,
+    secondary: brightGold,
+    card: '#121212',
+    border: '#2D2D2D',
+    success: '#10B981',
+    warning: '#F59E0B',
+    danger: '#EF4444',
+    info: '#3B82F6',
+    textSecondary: '#9CA3AF',
+    overlay: 'rgba(255, 255, 255, 0.1)',
   },
 };
 
