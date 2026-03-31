@@ -16,6 +16,7 @@ import Animated, {
   withSequence,
   withTiming
 } from 'react-native-reanimated'
+import LottieView from 'lottie-react-native'
 
 const { width } = Dimensions.get('window');
 
@@ -318,9 +319,11 @@ export default function AuthPage() {
             <ActivityIndicator size="small" color={colors.text} />
           ) : (
             <View style={dynamicStyles.googleButtonInner}>
-              <Image
-                source={{ uri: 'https://img.icons8.com/color/48/000000/google-logo.png' }}
-                style={{ width: 22, height: 22, marginRight: 12 }}
+              <LottieView
+                source={require('../../assets/animations/Google.json')}
+                autoPlay
+                loop
+                style={{ width: 48, height: 48, marginRight: 16 }}
               />
               <ThemedText style={dynamicStyles.googleButtonText}>Continue with Google</ThemedText>
             </View>
