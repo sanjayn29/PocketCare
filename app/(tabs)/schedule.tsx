@@ -1,4 +1,6 @@
 import FloatingActionButton from '@/components/FloatingActionButton';
+import { getColors } from '@/constants/styles';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import {
   addScheduleEvent,
   deleteScheduleEvent,
@@ -44,6 +46,10 @@ type StatusFilter = 'All' | 'Upcoming' | 'Completed' | 'Cancelled';
 export default function ScheduleScreen() {
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress;
+
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const colors = getColors(isDark);
 
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -410,37 +416,37 @@ export default function ScheduleScreen() {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={styles.headerArea}>
-        <Text style={styles.pageTitle}>Schedule</Text>
-        <Text style={styles.pageSubtitle}>Plan your meetings</Text>
+    <KeyboardAvoidingView style={[styles.container, { backgroundColor: colors.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={[styles.headerArea, { borderBottomColor: colors.border }]}>
+        <Text style={[styles.pageTitle, { color: colors.text }]}>Schedule</Text>
+        <Text style={[styles.pageSubtitle, { color: colors.textSecondary }]}>Plan your meetings</Text>
       </View>
 
       {loading ? (
         <View style={styles.centerWrap}>
-          <ActivityIndicator size="large" color="#1D4ED8" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
         <>
           {/* Tab Navigation */}
-          <View style={styles.tabRow}>
+          <View style={[styles.tabRow, { borderBottomColor: colors.border }]}>
             <TouchableOpacity
-              style={[styles.tabBtn, activeTab === 'Current' && styles.tabBtnActive]}
+              style={[styles.tabBtn, activeTab === 'Current' && { borderBottomColor: colors.primary }]}
               onPress={() => setActiveTab('Current')}
             >
-              <Ionicons name="calendar" size={18} color={activeTab === 'Current' ? '#1D4ED8' : '#94A3B8'} />
-              <Text style={[styles.tabText, activeTab === 'Current' && styles.tabTextActive]}>Current</Text>
+              <Ionicons name="calendar" size={18} color={activeTab === 'Current' ? colors.primary : colors.textSecondary} />
+              <Text style={[styles.tabText, activeTab === 'Current' && { color: colors.primary }]}>Current</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.tabBtn, activeTab === 'Schedules' && styles.tabBtnActive]}
+              style={[styles.tabBtn, activeTab === 'Schedules' && { borderBottomColor: colors.primary }]}
               onPress={() => setActiveTab('Schedules')}
             >
-              <Ionicons name="list" size={18} color={activeTab === 'Schedules' ? '#1D4ED8' : '#94A3B8'} />
-              <Text style={[styles.tabText, activeTab === 'Schedules' && styles.tabTextActive]}>Schedules</Text>
+              <Ionicons name="list" size={18} color={activeTab === 'Schedules' ? colors.primary : colors.textSecondary} />
+              <Text style={[styles.tabText, activeTab === 'Schedules' && { color: colors.primary }]}>Schedules</Text>
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          <ScrollView style={[styles.content, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
             {/* Current Tab */}
             {activeTab === 'Current' && (
               <>

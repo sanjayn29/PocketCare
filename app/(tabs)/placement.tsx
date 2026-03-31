@@ -1,4 +1,6 @@
 import FloatingActionButton from '@/components/FloatingActionButton';
+import { getColors } from '@/constants/styles';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -316,6 +318,10 @@ export default function PlacementScreen() {
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress;
 
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const colors = getColors(isDark);
+
   const [placements, setPlacements] = useState<Placement[]>([]);
   const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -353,6 +359,185 @@ export default function PlacementScreen() {
   const [eRoundResult, setERoundResult]         = useState<PlacementRound['result']>('pending');
 
   // ─────────────────────────────────────────────────────────────────────────
+
+  // Dynamic styles based on theme
+  const dynamicStyles = useMemo(() => StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    headerArea: {
+      paddingHorizontal: 20,
+      paddingTop: 56,
+      paddingBottom: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    pageTitle: {
+      fontSize: 28,
+      fontWeight: '800',
+      color: colors.text,
+    },
+    pageSubtitle: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      fontWeight: '500',
+      marginTop: 2,
+    },
+    tabRow: {
+      flexDirection: 'row',
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    tabBtn: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 14,
+      borderBottomWidth: 2,
+      borderBottomColor: 'transparent',
+    },
+    tabBtnActive: {
+      borderBottomColor: colors.primary,
+    },
+    tabBtnText: {
+      marginLeft: 8,
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    tabBtnTextActive: {
+      color: colors.primary,
+    },
+    contentArea: {
+      flex: 1,
+    },
+    floatingArea: {
+      padding: 16,
+    },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 14,
+      marginHorizontal: 16,
+      marginVertical: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    cardMain: {
+      marginBottom: 12,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      marginBottom: 10,
+    },
+    companyName: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.text,
+      flex: 1,
+    },
+    cardDate: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    statusBadge: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    statusBadgeText: {
+      fontSize: 12,
+      fontWeight: '600',
+      marginLeft: 4,
+    },
+    metaRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+      marginBottom: 10,
+    },
+    metaChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 6,
+      backgroundColor: colors.card,
+    },
+    metaChipText: {
+      fontSize: 11,
+      fontWeight: '500',
+    },
+    roundPreview: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 8,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    roundPreviewDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      marginRight: 8,
+    },
+    roundPreviewTopic: {
+      flex: 1,
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    roundPreviewResult: {
+      fontSize: 11,
+      fontWeight: '600',
+    },
+    deleteArea: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+    },
+    modalContainer: {
+      flex: 1,
+      backgroundColor: colors.background,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      overflow: 'hidden',
+    },
+    modalHeader: {
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    emptyWrap: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    emptyText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      marginTop: 12,
+    },
+  }), [colors]);
 
   useEffect(() => {
     if (email) loadPlacements();
@@ -534,12 +719,12 @@ export default function PlacementScreen() {
     const companyCfg = item.company_status ? COMPANY_STATUS_CONFIG[item.company_status] : null;
     const roundsDone = item.rounds.filter(r => r.result === 'success').length;
     return (
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <TouchableOpacity style={styles.cardMain} onPress={() => openEdit(item)} activeOpacity={0.75}>
           <View style={styles.cardHeader}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.companyName} numberOfLines={1}>{item.company_name}</Text>
-              <Text style={styles.cardDate}>{item.date || '—'}</Text>
+              <Text style={[styles.companyName, { color: colors.text }]} numberOfLines={1}>{item.company_name}</Text>
+              <Text style={[styles.cardDate, { color: colors.textSecondary }]}>{item.date || '—'}</Text>
             </View>
             <View style={[styles.statusBadge, { backgroundColor: cfg.bg }]}>
               <Ionicons name={cfg.icon} size={12} color={cfg.color} style={{ marginRight: 4 }} />
@@ -556,16 +741,16 @@ export default function PlacementScreen() {
                 </Text>
               </View>
             )}
-            <View style={[styles.metaChip, { backgroundColor: item.studied ? '#ECFDF5' : '#F1F5F9' }]}>
-              <Ionicons name={item.studied ? 'checkmark-circle' : 'close-circle-outline'} size={13} color={item.studied ? '#10B981' : '#94A3B8'} />
-              <Text style={[styles.metaChipText, { color: item.studied ? '#10B981' : '#64748B' }]}>
+            <View style={[styles.metaChip, { backgroundColor: isDark ? '#1e563f' : '#ECFDF5', borderColor: isDark ? colors.border : undefined, borderWidth: isDark ? 1 : 0 }]}>
+              <Ionicons name={item.studied ? 'checkmark-circle' : 'close-circle-outline'} size={13} color={item.studied ? '#10B981' : colors.textSecondary} />
+              <Text style={[styles.metaChipText, { color: item.studied ? '#10B981' : colors.textSecondary }]}>
                 {item.studied ? 'Studied' : 'Not Studied'}
               </Text>
             </View>
             {item.rounds.length > 0 && (
-              <View style={styles.metaChip}>
-                <Ionicons name="layers-outline" size={13} color="#3B82F6" />
-                <Text style={[styles.metaChipText, { color: '#3B82F6' }]}>
+              <View style={[styles.metaChip, { borderColor: colors.border, borderWidth: 1 }]}>
+                <Ionicons name="layers-outline" size={13} color={colors.primary} />
+                <Text style={[styles.metaChipText, { color: colors.primary }]}>
                   {item.rounds.length} Round{item.rounds.length > 1 ? 's' : ''} · {roundsDone} Cleared
                 </Text>
               </View>
@@ -575,9 +760,9 @@ export default function PlacementScreen() {
           {item.rounds.map(r => {
             const rcfg = ROUND_RESULT_CONFIG[r.result];
             return (
-              <View style={styles.roundPreview} key={r.id}>
+              <View style={[styles.roundPreview, { borderTopColor: colors.border }]} key={r.id}>
                 <View style={[styles.roundPreviewDot, { backgroundColor: rcfg.color }]} />
-                <Text style={styles.roundPreviewTopic} numberOfLines={1}>{r.topic}</Text>
+                <Text style={[styles.roundPreviewTopic, { color: colors.text }]} numberOfLines={1}>{r.topic}</Text>
                 <Text style={[styles.roundPreviewResult, { color: rcfg.color }]}>{rcfg.label}</Text>
               </View>
             );
@@ -594,29 +779,29 @@ export default function PlacementScreen() {
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={[styles.container, { backgroundColor: colors.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 
       {/* ── Page Header ── */}
-      <View style={styles.headerArea}>
-        <Text style={styles.pageTitle}>Placement Tracker</Text>
-        <Text style={styles.pageSubtitle}>Track companies, rounds & status</Text>
+      <View style={[styles.headerArea, { borderBottomColor: colors.border }]}>
+        <Text style={[styles.pageTitle, { color: colors.text }]}>Placement Tracker</Text>
+        <Text style={[styles.pageSubtitle, { color: colors.textSecondary }]}>Track companies, rounds & status</Text>
       </View>
 
       {/* ── Tab Navigation ── */}
-      <View style={styles.tabRow}>
+      <View style={[styles.tabRow, { borderBottomColor: colors.border }]}>
         <TouchableOpacity
-          style={[styles.tabBtn, activeTab === 'placements' && styles.tabBtnActive]}
+          style={[styles.tabBtn, activeTab === 'placements' && { borderBottomColor: colors.primary }]}
           onPress={() => setActiveTab('placements')}
         >
-          <Ionicons name="list" size={18} color={activeTab === 'placements' ? '#3B82F6' : '#94A3B8'} />
-          <Text style={[styles.tabBtnText, activeTab === 'placements' && styles.tabBtnTextActive]}>Placements</Text>
+          <Ionicons name="list" size={18} color={activeTab === 'placements' ? colors.primary : colors.textSecondary} />
+          <Text style={[styles.tabBtnText, activeTab === 'placements' && { color: colors.primary }]}>Placements</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tabBtn, activeTab === 'companies' && styles.tabBtnActive]}
+          style={[styles.tabBtn, activeTab === 'companies' && { borderBottomColor: colors.primary }]}
           onPress={() => setActiveTab('companies')}
         >
-          <Ionicons name="layers" size={18} color={activeTab === 'companies' ? '#3B82F6' : '#94A3B8'} />
-          <Text style={[styles.tabBtnText, activeTab === 'companies' && styles.tabBtnTextActive]}>Companies</Text>
+          <Ionicons name="layers" size={18} color={activeTab === 'companies' ? colors.primary : colors.textSecondary} />
+          <Text style={[styles.tabBtnText, activeTab === 'companies' && { color: colors.primary }]}>Companies</Text>
         </TouchableOpacity>
       </View>
 
