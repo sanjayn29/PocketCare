@@ -1,12 +1,15 @@
-
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import React, { useEffect, useMemo, useState } from 'react';
+import { BlurView } from 'expo-blur';
+import { useFonts } from 'expo-font';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator, Alert,
+  Animated,
   Dimensions,
   FlatList,
   Keyboard,
@@ -17,6 +20,7 @@ import {
   TextInput, TouchableOpacity, View
 } from 'react-native';
 import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   addDebt,
   addFinanceGoal,
@@ -46,40 +50,166 @@ type ChartType = 'Pie' | 'Line' | 'Bar';
 
 export default function FinanceScreen() {
   const { user } = useUser();
+  const router = useRouter();
   const email = user?.primaryEmailAddress?.emailAddress;
 
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const colors = getColors(isDark)
 
+  // Multi-color palette for premium feel
+  const uiColors = {
+    overview: '#3B82F6',     // Blue
+    transactions: '#EF4444', // Red
+    debts: '#10B981',        // Green
+    goals: '#F59E0B',        // Amber
+  }
+
+  const backButtonScale = useRef(new Animated.Value(1)).current
+  const [fontsLoaded] = useFonts({
+    'Roboto Slab': require('../../assets/Font/RobotoSlab-VariableFont_wght.ttf'),
+  })
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(backButtonScale, {
+          toValue: 1.06,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(backButtonScale, {
+          toValue: 1,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start()
+  }, [backButtonScale])
+
+  const [activeTab, setActiveTab] = useState<TabType>('Overview');
+
   const dynamicStyles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    headerArea: { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 10 },
-    pageTitle: { fontSize: 28, fontWeight: '800', color: colors.text },
+    backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+      borderWidth: 1.5,
+      borderColor: activeTab === 'Overview' ? uiColors.overview : 
+                   activeTab === 'Transactions' ? uiColors.transactions :
+                   activeTab === 'Debts' ? uiColors.debts : uiColors.goals,
+    },
+    backButtonText: {
+      fontSize: 22,
+      color: isDark ? '#FFFFFF' : '#000000',
+      marginTop: -2,
+    },
+    headerArea: {
+      paddingHorizontal: 20,
+      paddingTop: Platform.OS === 'ios' ? 12 : 20,
+      paddingBottom: 20,
+      overflow: 'hidden',
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+      marginBottom: 0,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 16,
+    },
+    pageTitle: {
+      fontSize: 24,
+      fontFamily: 'Roboto Slab',
+      color: isDark ? '#FFFFFF' : '#000000',
+      letterSpacing: -0.5,
+    },
     
-    mainTabRow: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 10, flexWrap:'wrap', gap:6 },
-    mainTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: colors.border, borderWidth: 1, borderColor: colors.border },
-    mainTabActive: { backgroundColor: colors.text, borderColor: colors.text },
-    mainTabText: { fontSize: 13, fontWeight: '700', color: colors.textSecondary },
-    mainTabTextActive: { color: colors.card },
+    tabContainer: {
+      flexDirection: 'row',
+      paddingHorizontal: 8,
+      paddingVertical: 8,
+      backgroundColor: colors.background,
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+    },
+    tab: {
+      flex: 1,
+      flexDirection: 'column',
+      paddingVertical: 10,
+      paddingHorizontal: 4,
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+    },
+    tabText: {
+      fontSize: 10,
+      fontWeight: '700',
+      color: colors.textSecondary,
+      marginBottom: 6,
+    },
+    tabTextActiveOverview: { color: uiColors.overview, fontWeight: '900' },
+    tabTextActiveTransactions: { color: uiColors.transactions, fontWeight: '900' },
+    tabTextActiveDebts: { color: uiColors.debts, fontWeight: '900' },
+    tabTextActiveGoals: { color: uiColors.goals, fontWeight: '900' },
 
-    segmentBlock: { flexDirection: 'row', backgroundColor: colors.border, borderRadius: 12, padding: 4, marginBottom: 16 },
-    segmentBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 8 },
-    segmentBtnActive: { backgroundColor: colors.card, shadowColor: '#000', shadowOffset:{width:0, height:1}, shadowOpacity:0.05, shadowRadius:2, elevation:1 },
-    segmentText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, textTransform: 'capitalize' },
-    segmentTextActive: { color: colors.text },
+    activeIndicatorOverview: {
+      position: 'absolute', bottom: -8, width: '60%', height: 3, backgroundColor: uiColors.overview, borderRadius: 2,
+      shadowColor: uiColors.overview, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4,
+    },
+    activeIndicatorTransactions: {
+      position: 'absolute', bottom: -8, width: '60%', height: 3, backgroundColor: uiColors.transactions, borderRadius: 2,
+      shadowColor: uiColors.transactions, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4,
+    },
+    activeIndicatorDebts: {
+      position: 'absolute', bottom: -8, width: '60%', height: 3, backgroundColor: uiColors.debts, borderRadius: 2,
+      shadowColor: uiColors.debts, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4,
+    },
+    activeIndicatorGoals: {
+      position: 'absolute', bottom: -8, width: '60%', height: 3, backgroundColor: uiColors.goals, borderRadius: 2,
+      shadowColor: uiColors.goals, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4,
+    },
+
+    segmentBlock: { flexDirection: 'row', backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderRadius: 14, padding: 4, marginBottom: 16, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
+    segmentBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
+    segmentBtnActive: { 
+      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)', 
+      borderColor: uiColors.overview, borderWidth: 1 
+    },
+    segmentText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
+    segmentTextActive: { color: isDark ? uiColors.overview : '#2563EB', fontWeight: '700' },
 
     summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 20 },
-    summaryBox: { width: '48%', padding: 16, borderRadius: 16, borderWidth: 1 },
+    summaryBox: { 
+      width: '48%', padding: 16, borderRadius: 20, borderWidth: 1, 
+      backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : '#FFFFFF',
+      borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'
+    },
     summaryLabel: { fontSize: 13, color: colors.textSecondary, fontWeight: '600', marginBottom: 4 },
-    summaryVal: { fontSize: 20, fontWeight: '800' },
+    summaryVal: { fontSize: 20, fontWeight: '800', fontFamily: 'Roboto Slab', color: colors.text },
 
     emptyBox: { backgroundColor: colors.card, padding: 30, borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: colors.border, marginTop: 20 },
+    emptyText: { marginTop: 10, fontSize: 15, color: colors.textSecondary, fontWeight: '600' },
     chartArea: { backgroundColor: colors.card, borderRadius: 16, padding: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center', marginTop: 10 },
 
-    card: { backgroundColor: colors.card, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: colors.border, shadowColor: '#000', shadowOffset:{width:0, height:2}, shadowOpacity:0.04, shadowRadius:8, elevation:2, flexDirection: 'row', justifyContent: 'space-between' },
+    card: { 
+      backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF', 
+      borderRadius: 20, padding: 16, marginBottom: 12, borderWidth: 1, 
+      borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+      flexDirection: 'row', justifyContent: 'space-between' 
+    },
 
-    input: { backgroundColor: colors.background, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: colors.text, borderWidth: 1, borderColor: colors.border, marginBottom: 12 },
+    input: { 
+      backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : '#FFFFFF', 
+      borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12, 
+      fontSize: 16, color: colors.text, borderWidth: 1.5, 
+      borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', 
+      marginBottom: 12 
+    },
     titleInput: { backgroundColor: colors.card, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, fontSize: 18, fontWeight: '700', color: colors.text, borderWidth: 1, borderColor: colors.border, marginBottom: 12 },
     selectorLabel: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, marginBottom: 8 },
 
@@ -92,8 +222,13 @@ export default function FinanceScreen() {
     rowBtns: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 4 },
     cancelBtn: { paddingVertical: 8, paddingHorizontal: 16, justifyContent: 'center' },
     cancelBtnText: { color: colors.textSecondary, fontWeight: '600', fontSize: 14 },
-    saveBtn: { paddingVertical: 8, paddingHorizontal: 20, borderRadius: 20, justifyContent: 'center' },
-    saveBtnText: { color: colors.card, fontWeight: '700', fontSize: 14 },
+    saveBtn: { 
+      backgroundColor: activeTab === 'Transactions' ? uiColors.transactions : 
+                       activeTab === 'Debts' ? uiColors.debts : uiColors.goals,
+      paddingVertical: 14, paddingHorizontal: 24, borderRadius: 18, alignItems: 'center',
+      shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4
+    },
+    saveBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 16 },
 
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderColor: colors.border },
   });
@@ -104,8 +239,6 @@ export default function FinanceScreen() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
   const [goals, setGoals] = useState<FinanceGoal[]>([]);
-
-  const [activeTab, setActiveTab] = useState<TabType>('Overview');
 
   // Overview Filters
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('Month');
@@ -603,7 +736,7 @@ export default function FinanceScreen() {
   };
 
   const renderOverview = () => (
-    <ScrollView contentContainerStyle={{padding:16, paddingBottom: 100}} showsVerticalScrollIndicator={false}>
+    <ScrollView style={{ flex: 1, padding: 16 }}>
       <View style={dynamicStyles.segmentBlock}>
         {(['All','Today','Month','Year','Custom'] as TimeFilter[]).map(t => (
           <TouchableOpacity key={t} style={[dynamicStyles.segmentBtn, timeFilter===t && dynamicStyles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
@@ -615,20 +748,21 @@ export default function FinanceScreen() {
       {renderCustomDateFilters()}
 
       <View style={dynamicStyles.summaryGrid}>
-        <View style={[dynamicStyles.summaryBox, { borderColor: '#E5E7EB', backgroundColor: colors.card }]}>
+        <View style={dynamicStyles.summaryBox}>
           <Text style={dynamicStyles.summaryLabel}>Total Income</Text>
-          <Text style={[dynamicStyles.summaryVal, { color: colors.success }]}>${totalIncome.toFixed(2)}</Text>
+          <Text style={[dynamicStyles.summaryVal, { color: '#10B981' }]}>${totalIncome.toFixed(2)}</Text>
         </View>
-        <View style={[dynamicStyles.summaryBox, { borderColor: '#E5E7EB', backgroundColor: colors.card }]}>
+        <View style={dynamicStyles.summaryBox}>
           <Text style={dynamicStyles.summaryLabel}>Total Expense</Text>
-          <Text style={[dynamicStyles.summaryVal, { color: colors.danger }]}>${totalExpense.toFixed(2)}</Text>
+          <Text style={[dynamicStyles.summaryVal, { color: '#EF4444' }]}>${totalExpense.toFixed(2)}</Text>
         </View>
-        <View style={[dynamicStyles.summaryBox, { borderColor: '#E5E7EB', backgroundColor: colors.card, width: '100%', marginTop: 10 }]}>
-          <Text style={dynamicStyles.summaryLabel}>Net Balance</Text>
-          <Text style={[dynamicStyles.summaryVal, { color: netBalance >= 0 ? '#10B981' : '#EF4444', fontSize: 24 }]}>
-            ${netBalance.toFixed(2)}
-          </Text>
-        </View>
+      </View>
+      
+      <View style={[dynamicStyles.summaryBox, { width: '100%', marginBottom: 20 }]}>
+        <Text style={dynamicStyles.summaryLabel}>Net Balance</Text>
+        <Text style={[dynamicStyles.summaryVal, { color: netBalance >= 0 ? '#10B981' : '#EF4444', fontSize: 28 }]}>
+          ${netBalance.toFixed(2)}
+        </Text>
       </View>
 
       <View style={dynamicStyles.segmentBlock}>
@@ -641,14 +775,15 @@ export default function FinanceScreen() {
 
       {filteredTxs.length === 0 ? (
         <View style={dynamicStyles.emptyBox}>
-          <Text style={{color:'#94A3B8'}}>No data for this period.</Text>
+          <Ionicons name="stats-chart-outline" size={40} color="#94A3B8" />
+          <Text style={dynamicStyles.emptyText}>No data for this period.</Text>
         </View>
       ) : (
         <View style={dynamicStyles.chartArea}>
           {chartType === 'Pie' && (
             <PieChart
               data={pieData}
-              width={screenWidth - 32}
+              width={screenWidth - 72}
               height={220}
               chartConfig={{ color: (o=1) => `rgba(0,0,0,${o})` }}
               accessor={"amount"}
@@ -659,15 +794,15 @@ export default function FinanceScreen() {
           {chartType === 'Line' && lineData && (
             <LineChart
               data={lineData}
-              width={screenWidth - 32}
+              width={screenWidth - 80}
               height={220}
               chartConfig={{
-                backgroundColor: colors.card,
-                backgroundGradientFrom: '#FFF',
-                backgroundGradientTo: '#FFF',
+                backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+                backgroundGradientFrom: isDark ? '#1F2937' : '#FFFFFF',
+                backgroundGradientTo: isDark ? '#1F2937' : '#FFFFFF',
                 decimalPlaces: 0,
-                color: (o=1)=>`rgba(0,0,0,${o})`,
-                labelColor: (o=1)=>`rgba(0,0,0,${o})`
+                color: (o=1)=>isDark ? `rgba(59, 130, 246, ${o})` : `rgba(37, 99, 235, ${o})`,
+                labelColor: (o=1)=>isDark ? `rgba(255,255,255,${o})` : `rgba(0,0,0,${o})`
               }}
               style={{ borderRadius: 16 }}
             />
@@ -675,17 +810,17 @@ export default function FinanceScreen() {
           {chartType === 'Bar' && (
             <BarChart
               data={barData}
-              width={screenWidth - 32}
+              width={screenWidth - 80}
               height={220}
               yAxisLabel="$"
               yAxisSuffix=""
               chartConfig={{
-                backgroundColor: colors.card,
-                backgroundGradientFrom: '#FFF',
-                backgroundGradientTo: '#FFF',
+                backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
+                backgroundGradientFrom: isDark ? '#1F2937' : '#FFFFFF',
+                backgroundGradientTo: isDark ? '#1F2937' : '#FFFFFF',
                 decimalPlaces: 0,
                 color: (o=1)=>`rgba(59, 130, 246, ${o})`,
-                labelColor: (o=1)=>`rgba(0,0,0,${o})`
+                labelColor: (o=1)=>isDark ? `rgba(255,255,255,${o})` : `rgba(0,0,0,${o})`
               }}
               style={{ borderRadius: 16 }}
             />
@@ -732,7 +867,7 @@ export default function FinanceScreen() {
 
           {/* Expense by Category */}
           {categoryData.topExpense.length > 0 && (
-            <View style={{paddingHorizontal: 16}}>
+            <View style={{paddingHorizontal: 16, marginBottom: 20}}>
               <Text style={{fontSize: 14, fontWeight: '600', color: colors.danger, marginBottom: 12}}>
                 Top Expense Categories
               </Text>
@@ -956,28 +1091,79 @@ export default function FinanceScreen() {
   );
 
   return (
-    <KeyboardAvoidingView style={dynamicStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={dynamicStyles.headerArea}>
-        <Text style={dynamicStyles.pageTitle}>Finance</Text>
-      </View>
+    <SafeAreaView style={dynamicStyles.container} edges={['top', 'left', 'right']}>
+      <View style={{ flex: 1 }}>
+        <View style={dynamicStyles.headerArea}>
+          <BlurView intensity={isDark ? 40 : 60} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+          <View style={dynamicStyles.headerRow}>
+            <Animated.View style={{ transform: [{ scale: backButtonScale }] }}>
+              <TouchableOpacity style={dynamicStyles.backButton} onPress={() => router.replace('/(tabs)')}>
+                <Text style={dynamicStyles.backButtonText}>←</Text>
+              </TouchableOpacity>
+            </Animated.View>
+            <View>
+              <Text style={dynamicStyles.pageTitle}>Finance</Text>
+            </View>
+          </View>
+        </View>
 
-      <View style={dynamicStyles.mainTabRow}>
-        {(['Overview', 'Transactions', 'Debts', 'Goals'] as TabType[]).map(t => (
-          <TouchableOpacity key={t} style={[dynamicStyles.mainTab, activeTab===t && dynamicStyles.mainTabActive]} onPress={()=>setActiveTab(t)}>
-            <Text style={[dynamicStyles.mainTabText, activeTab===t && dynamicStyles.mainTabTextActive]}>{t}</Text>
+        {/* Tab Navigation */}
+        <View style={dynamicStyles.tabContainer}>
+          <TouchableOpacity style={dynamicStyles.tab} onPress={() => setActiveTab('Overview')}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="pie-chart-outline" size={16} color={activeTab === 'Overview' ? uiColors.overview : '#64748B'} style={{ marginRight: 6 }} />
+              <Text style={[dynamicStyles.tabText, activeTab === 'Overview' && dynamicStyles.tabTextActiveOverview, { marginBottom: 0 }]}>Overview</Text>
+            </View>
+            {activeTab === 'Overview' && <View style={dynamicStyles.activeIndicatorOverview} />}
           </TouchableOpacity>
-        ))}
-      </View>
 
-      {loading ? <View style={{flex:1, justifyContent:'center'}}><ActivityIndicator size="large" color={colors.primary} /></View> : 
-        activeTab === 'Overview' ? renderOverview() :
-        activeTab === 'Transactions' ? renderTransactions() :
-        activeTab === 'Debts' ? renderDebts() :
-        renderGoals()
-      }
+          <TouchableOpacity style={dynamicStyles.tab} onPress={() => setActiveTab('Transactions')}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="swap-horizontal-outline" size={16} color={activeTab === 'Transactions' ? uiColors.transactions : '#64748B'} style={{ marginRight: 6 }} />
+              <Text style={[dynamicStyles.tabText, activeTab === 'Transactions' && dynamicStyles.tabTextActiveTransactions, { marginBottom: 0 }]}>History</Text>
+            </View>
+            {activeTab === 'Transactions' && <View style={dynamicStyles.activeIndicatorTransactions} />}
+          </TouchableOpacity>
+
+          <TouchableOpacity style={dynamicStyles.tab} onPress={() => setActiveTab('Debts')}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="cash-outline" size={16} color={activeTab === 'Debts' ? uiColors.debts : '#64748B'} style={{ marginRight: 6 }} />
+              <Text style={[dynamicStyles.tabText, activeTab === 'Debts' && dynamicStyles.tabTextActiveDebts, { marginBottom: 0 }]}>Debts</Text>
+            </View>
+            {activeTab === 'Debts' && <View style={dynamicStyles.activeIndicatorDebts} />}
+          </TouchableOpacity>
+
+          <TouchableOpacity style={dynamicStyles.tab} onPress={() => setActiveTab('Goals')}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Ionicons name="trophy-outline" size={16} color={activeTab === 'Goals' ? uiColors.goals : '#64748B'} style={{ marginRight: 6 }} />
+              <Text style={[dynamicStyles.tabText, activeTab === 'Goals' && dynamicStyles.tabTextActiveGoals, { marginBottom: 0 }]}>Goals</Text>
+            </View>
+            {activeTab === 'Goals' && <View style={dynamicStyles.activeIndicatorGoals} />}
+          </TouchableOpacity>
+        </View>
+
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
+          {loading ? (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              <ActivityIndicator size="large" color={uiColors.overview} />
+            </View>
+          ) : (
+            <>
+              {activeTab === 'Overview' && renderOverview()}
+              {activeTab === 'Transactions' && renderTransactions()}
+              {activeTab === 'Debts' && renderDebts()}
+              {activeTab === 'Goals' && renderGoals()}
+            </>
+          )}
+        </KeyboardAvoidingView>
+      </View>
 
       {showDatePicker && (
-        <DateTimePicker value={new Date()} mode="date" display="default" onChange={onDateChange}/>
+        <DateTimePicker value={new Date()} mode="date" display="default" onChange={onDateChange} />
       )}
 
       {/* ── Goal Add/Take Money Modal ── */}
@@ -1089,9 +1275,7 @@ export default function FinanceScreen() {
           </ScrollView>
         </KeyboardAvoidingView>
       </Modal>
-
-
-    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
