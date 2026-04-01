@@ -205,9 +205,14 @@ export default function NotesScreen() {
       >
         <View style={dynamicStyles.noteHeader}>
           <Text style={dynamicStyles.noteTitle} numberOfLines={1}>{item.title}</Text>
-          <TouchableOpacity onPress={() => handleDelete(item.id)} hitSlop={10}>
-            <Ionicons name="trash-outline" size={20} color={colors.danger} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <TouchableOpacity onPress={() => openEditModal(item)} hitSlop={10}>
+              <Ionicons name="pencil-outline" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleDelete(item.id)} hitSlop={10}>
+              <Ionicons name="trash-outline" size={20} color={colors.danger} />
+            </TouchableOpacity>
+          </View>
         </View>
         <Text style={dynamicStyles.noteContent} numberOfLines={3}>{item.content}</Text>
         <Text style={dynamicStyles.noteDate}>{dateStr}</Text>
