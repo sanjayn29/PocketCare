@@ -203,11 +203,23 @@ export default function FinanceScreen() {
     input: { 
       backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : '#FFFFFF', 
       borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12, 
-      fontSize: 16, color: colors.text, borderWidth: 1.5, 
-      borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', 
-      marginBottom: 12 
+      fontSize: 16, color: colors.text, 
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
     },
-    titleInput: { backgroundColor: colors.card, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 14, fontSize: 18, fontWeight: '700', color: colors.text, borderWidth: 1, borderColor: colors.border, marginBottom: 12 },
+    titleInput: { 
+      backgroundColor: colors.card, 
+      borderRadius: 10, 
+      paddingHorizontal: 16, 
+      paddingVertical: 14, 
+      fontSize: 18, 
+      fontWeight: '700', 
+      color: colors.text, 
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
     selectorLabel: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, marginBottom: 8 },
 
     createCard: { backgroundColor: colors.card, borderRadius: 16, marginBottom: 16, borderWidth: 1, borderColor: colors.border, shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3, overflow: 'hidden' },
@@ -653,8 +665,8 @@ export default function FinanceScreen() {
         </View>
       ) : (
         <TouchableOpacity style={dynamicStyles.createCollapsed} onPress={()=>setIsCreatingTx(true)}>
-          <View style={[dynamicStyles.createIconWrap, {backgroundColor: '#EFF6FF'}]}>
-             <Ionicons name="swap-horizontal" size={20} color="#3B82F6" />
+          <View style={[dynamicStyles.createIconWrap, {backgroundColor: 'rgba(239, 68, 68, 0.1)'}]}>
+             <Ionicons name="swap-horizontal" size={20} color={uiColors.transactions} />
           </View>
           <Text style={dynamicStyles.createCollapsedText}>Add new transaction...</Text>
         </TouchableOpacity>
@@ -666,21 +678,21 @@ export default function FinanceScreen() {
     <View style={dynamicStyles.createCard}>
       {isCreatingDebt ? (
         <View style={dynamicStyles.createExpanded}>
-          <TextInput style={dynamicStyles.titleInput} placeholder="To Whom" value={debtTo} onChangeText={setDebtTo} autoFocus />
-          <TextInput style={dynamicStyles.input} placeholder="Amount" keyboardType="numeric" value={debtAmount} onChangeText={setDebtAmount} />
-          <TextInput style={dynamicStyles.input} placeholder="Description" value={debtDesc} onChangeText={setDebtDesc} />
+          <TextInput style={[dynamicStyles.titleInput, {borderColor: uiColors.debts}]} placeholder="To Whom" placeholderTextColor={colors.textSecondary} value={debtTo} onChangeText={setDebtTo} autoFocus />
+          <TextInput style={dynamicStyles.input} placeholder="Amount" placeholderTextColor={colors.textSecondary} keyboardType="numeric" value={debtAmount} onChangeText={setDebtAmount} />
+          <TextInput style={dynamicStyles.input} placeholder="Description" placeholderTextColor={colors.textSecondary} value={debtDesc} onChangeText={setDebtDesc} />
           
           <Text style={dynamicStyles.selectorLabel}>Interest Type:</Text>
           <View style={[dynamicStyles.segmentBlock, {marginBottom: 12}]}>
             {(['none','simple','compound'] as DebtInterestType[]).map(i => (
-              <TouchableOpacity key={i} style={[dynamicStyles.segmentBtn, debtInterest===i && dynamicStyles.segmentBtnActive]} onPress={()=>setDebtInterest(i)}>
-                <Text style={[dynamicStyles.segmentText, debtInterest===i && dynamicStyles.segmentTextActive]}>{i}</Text>
+              <TouchableOpacity key={i} style={[dynamicStyles.segmentBtn, debtInterest===i && {backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)', borderColor: uiColors.debts, borderWidth: 1}]} onPress={()=>setDebtInterest(i)}>
+                <Text style={[dynamicStyles.segmentText, debtInterest===i && {color: uiColors.debts, fontWeight: '700'}]}>{i}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
           {debtInterest !== 'none' && (
-            <TextInput style={dynamicStyles.input} placeholder="Interest Rate % (per yr)" keyboardType="numeric" value={debtInterestRate} onChangeText={setDebtInterestRate} />
+            <TextInput style={dynamicStyles.input} placeholder="Interest Rate % (per yr)" keyboardType="numeric" value={debtInterestRate} onChangeText={setDebtInterestRate} placeholderTextColor={colors.textSecondary} />
           )}
 
           <Text style={dynamicStyles.selectorLabel}>Given Date:</Text>
@@ -693,13 +705,13 @@ export default function FinanceScreen() {
           </TouchableOpacity>
           <View style={dynamicStyles.rowBtns}>
             <TouchableOpacity style={dynamicStyles.cancelBtn} onPress={()=>setIsCreatingDebt(false)}><Text style={dynamicStyles.cancelBtnText}>Cancel</Text></TouchableOpacity>
-            <TouchableOpacity style={[dynamicStyles.saveBtn, {backgroundColor: '#F59E0B'}]} onPress={handleSaveDebt}><Text style={dynamicStyles.saveBtnText}>Save</Text></TouchableOpacity>
+            <TouchableOpacity style={[dynamicStyles.saveBtn, {backgroundColor: uiColors.debts}]} onPress={handleSaveDebt}><Text style={dynamicStyles.saveBtnText}>Save</Text></TouchableOpacity>
           </View>
         </View>
       ) : (
         <TouchableOpacity style={dynamicStyles.createCollapsed} onPress={()=>setIsCreatingDebt(true)}>
-          <View style={[dynamicStyles.createIconWrap, {backgroundColor: '#FFFBEB'}]}>
-             <Ionicons name="cash-outline" size={20} color="#F59E0B" />
+          <View style={[dynamicStyles.createIconWrap, {backgroundColor: 'rgba(16, 185, 129, 0.1)'}]}>
+             <Ionicons name="cash-outline" size={20} color={uiColors.debts} />
           </View>
           <Text style={dynamicStyles.createCollapsedText}>Track a new debt...</Text>
         </TouchableOpacity>
@@ -995,24 +1007,24 @@ export default function FinanceScreen() {
           <View style={[dynamicStyles.card, item.given_back && {opacity: 0.7}]}>
             <View style={{flex:1}}>
               <Text style={{fontSize:17, fontWeight:'800', color: colors.text}}>{item.to_whom}</Text>
-              {item.description ? <Text style={{fontSize:13, color: colors.textSecondary, marginTop:2}}>{item.description}</Text> : null}
-              <Text style={{fontSize:12, color: colors.textSecondary, marginTop:4, opacity: 0.7}}>Given: {item.amount_given_date} {item.due_date ? `| Due: ${item.due_date}` : ''}</Text>
-              <Text style={{fontSize:12, color:'#3B82F6', marginTop:2, fontWeight:'600'}}>
+              {item.description ? <Text style={{fontSize:13, color: colors.text, marginTop:2}}>{item.description}</Text> : null}
+              <Text style={{fontSize:12, color: colors.text, marginTop:4, opacity: 0.7}}>Given: {item.amount_given_date} {item.due_date ? `| Due: ${item.due_date}` : ''}</Text>
+              <Text style={{fontSize:12, color: colors.text, marginTop:2, fontWeight:'600', opacity: 0.8}}>
                 Interest: {item.interest_type} {item.interest_rate ? `(${item.interest_rate}% / yr)` : ''}
               </Text>
               {item.given_back && <Text style={{fontSize:12, color:'#10B981', marginTop:4, fontWeight:'700'}}>✓ Returned on {item.date_given_back}</Text>}
             </View>
             <View style={{alignItems:'flex-end'}}>
-              <Text style={{fontSize:18, fontWeight:'800', color: '#F59E0B'}}>${calculatedAmount.toFixed(2)}</Text>
+              <Text style={{fontSize:18, fontWeight:'800', color: uiColors.debts}}>${calculatedAmount.toFixed(2)}</Text>
               {item.interest_type !== 'none' && (
-                <Text style={{fontSize:10, color: colors.textSecondary, marginTop:2, opacity: 0.7}}>Base: ${item.amount}</Text>
+                <Text style={{fontSize:10, color: colors.text, marginTop:2, opacity: 0.7}}>Base: ${item.amount}</Text>
               )}
               <View style={{flexDirection:'row', alignItems:'center', marginTop: 8}}>
-                <Text style={{fontSize:11, color: colors.textSecondary, marginRight:4}}>Paid?</Text>
+                <Text style={{fontSize:11, color: colors.text, marginRight:4}}>Paid?</Text>
                 <Switch 
                   value={item.given_back} 
                   onValueChange={()=>toggleDebtGivenBack(item)}
-                  trackColor={{false:'#E2E8F0', true:'#10B981'}}
+                  trackColor={{false:'#E2E8F0', true: uiColors.goals}}
                 />
               </View>
               <View style={{flexDirection: 'row', gap: 12, marginTop: 8}}>
@@ -1254,14 +1266,14 @@ export default function FinanceScreen() {
             <Text style={dynamicStyles.selectorLabel}>Interest Type:</Text>
             <View style={[dynamicStyles.segmentBlock, {marginBottom: 12}]}>
               {(['none','simple','compound'] as DebtInterestType[]).map(i => (
-                <TouchableOpacity key={i} style={[dynamicStyles.segmentBtn, debtEInterest===i && dynamicStyles.segmentBtnActive]} onPress={()=>setDebtEInterest(i)}>
-                  <Text style={[dynamicStyles.segmentText, debtEInterest===i && dynamicStyles.segmentTextActive]}>{i}</Text>
+                <TouchableOpacity key={i} style={[dynamicStyles.segmentBtn, debtEInterest===i && {backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)', borderColor: uiColors.debts, borderWidth: 1}]} onPress={()=>setDebtEInterest(i)}>
+                  <Text style={[dynamicStyles.segmentText, debtEInterest===i && {color: uiColors.debts, fontWeight: '700'}]}>{i}</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             {debtEInterest !== 'none' && (
-              <TextInput style={dynamicStyles.input} placeholder="Interest Rate % (per yr)" keyboardType="numeric" value={debtEInterestRate} onChangeText={setDebtEInterestRate} />
+              <TextInput style={dynamicStyles.input} placeholder="Interest Rate % (per yr)" keyboardType="numeric" value={debtEInterestRate} onChangeText={setDebtEInterestRate} placeholderTextColor={colors.textSecondary} />
             )}
 
             <Text style={dynamicStyles.selectorLabel}>Given Date:</Text>
