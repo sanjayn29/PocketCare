@@ -723,18 +723,18 @@ export default function FinanceScreen() {
     <View style={dynamicStyles.createCard}>
       {isCreatingGoal ? (
         <View style={dynamicStyles.createExpanded}>
-          <TextInput style={dynamicStyles.titleInput} placeholder="Goal Title" value={goalTitle} onChangeText={setGoalTitle} autoFocus />
-          <TextInput style={dynamicStyles.input} placeholder="Target Amount" keyboardType="numeric" value={goalTarget} onChangeText={setGoalTarget} />
-          <TextInput style={dynamicStyles.input} placeholder="Description" value={goalDesc} onChangeText={setGoalDesc} />
+          <TextInput style={dynamicStyles.titleInput} placeholder="Goal Title" value={goalTitle} onChangeText={setGoalTitle} autoFocus placeholderTextColor={colors.textSecondary} />
+          <TextInput style={dynamicStyles.input} placeholder="Target Amount" keyboardType="numeric" value={goalTarget} onChangeText={setGoalTarget} placeholderTextColor={colors.textSecondary} />
+          <TextInput style={dynamicStyles.input} placeholder="Description" value={goalDesc} onChangeText={setGoalDesc} placeholderTextColor={colors.textSecondary} />
           <View style={dynamicStyles.rowBtns}>
             <TouchableOpacity style={dynamicStyles.cancelBtn} onPress={()=>setIsCreatingGoal(false)}><Text style={dynamicStyles.cancelBtnText}>Cancel</Text></TouchableOpacity>
-            <TouchableOpacity style={[dynamicStyles.saveBtn, {backgroundColor: colors.primary}]} onPress={handleSaveGoal}><Text style={dynamicStyles.saveBtnText}>Save</Text></TouchableOpacity>
+            <TouchableOpacity style={[dynamicStyles.saveBtn, {backgroundColor: uiColors.goals}]} onPress={handleSaveGoal}><Text style={dynamicStyles.saveBtnText}>Save</Text></TouchableOpacity>
           </View>
         </View>
       ) : (
         <TouchableOpacity style={dynamicStyles.createCollapsed} onPress={()=>setIsCreatingGoal(true)}>
-          <View style={[dynamicStyles.createIconWrap, {backgroundColor: '#EFF6FF'}]}>
-             <Ionicons name="flag-outline" size={20} color="#3B82F6" />
+          <View style={[dynamicStyles.createIconWrap, {backgroundColor: 'rgba(245, 158, 11, 0.1)'}]}>
+             <Ionicons name="flag-outline" size={20} color={uiColors.goals} />
           </View>
           <Text style={dynamicStyles.createCollapsedText}>Create a financial goal...</Text>
         </TouchableOpacity>
@@ -1066,50 +1066,56 @@ export default function FinanceScreen() {
       contentContainerStyle={{padding: 16, paddingBottom: 100}}
       ListEmptyComponent={<Text style={{textAlign:'center', color: colors.textSecondary, marginTop: 40}}>No financial goals yet.</Text>}
       renderItem={({item}) => {
-        const pctRaw = item.target_amount ? (item.current_amount / item.target_amount) * 100 : 0;
-        const pct = Math.min(Math.max(pctRaw, 0), 100).toFixed(1);
-        console.log("Goal item being rendered:", JSON.stringify(item));
+        const pctRaw = item.target_amount > 0 ? (item.current_amount / item.target_amount) * 100 : 0;
+        const pct = Math.min(Math.max(pctRaw, 0), 100);
+        const isCompleted = pct >= 100;
+
         return (
-          <View style={dynamicStyles.card}>
-            {/* Top Row: Title + Icons */}
-            <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center', marginBottom: 12}}>
-              <Text style={{fontSize:20, fontWeight:'900', color: colors.text, flex: 1}}>{item.title || 'Untitled Goal'}</Text>
-              <View style={{flexDirection: 'row', gap: 16}}>
-                <TouchableOpacity onPress={()=> openEditGoal(item)}>
-                  <Ionicons name="pencil-outline" size={20} color={colors.textSecondary}/>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={()=> {
-                  Alert.alert('Delete', 'Delete goal?', [
-                    {text:'Cancel'}, {text:'Delete', style:'destructive', onPress:() => { deleteFinanceGoal(email!, item.id); loadData(); }}
-                  ]);
-                }}>
-                  <Ionicons name="trash-outline" size={20} color="#EF4444"/>
-                </TouchableOpacity>
+          <View style={[dynamicStyles.card, isCompleted && { }]}>
+            {/* Left Side Content */}
+            <View style={{ flex: 1, paddingRight: 16 }}>
+              <Text style={{ fontSize: 17, fontWeight: '800', color: colors.text, marginBottom: 4 }}>{item.title}</Text>
+              {item.description ? <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 12, lineHeight: 18 }}>{item.description}</Text> : null}
+
+              {/* Progress Bar */}
+              <View style={{ height: 8, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)', borderRadius: 4, overflow: 'hidden', marginBottom: 6 }}>
+                <View style={{ height: '100%', width: `${pct}%`, backgroundColor: uiColors.goals, borderRadius: 4 }} />
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
+                  ${item.current_amount.toFixed(2)} / ${item.target_amount.toFixed(2)}
+                </Text>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: uiColors.goals }}>{pct.toFixed(1)}%</Text>
               </View>
             </View>
 
-            {/* Percentage Above Bar aligned Right */}
-            <View style={{flexDirection:'row', justifyContent:'flex-end', marginBottom: 6}}>
-              <Text style={{fontSize:16, fontWeight:'900', color: colors.text}}>{pct}%</Text>
-            </View>
+            {/* Right Side Actions */}
+            <View style={{ alignItems: 'flex-end', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <TouchableOpacity onPress={() => openEditGoal(item)}>
+                  <Ionicons name="pencil-outline" size={18} color={colors.textSecondary} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => {
+                  Alert.alert('Delete Goal', `Are you sure you want to delete "${item.title}"?`, [
+                    { text: 'Cancel' },
+                    { text: 'Delete', style: 'destructive', onPress: () => { deleteFinanceGoal(email!, item.id); loadData(); }}
+                  ]);
+                }}>
+                  <Ionicons name="trash-outline" size={18} color={uiColors.transactions} />
+                </TouchableOpacity>
+              </View>
 
-            {/* Progress Bar */}
-            <View style={{height:12, backgroundColor: isDark ? '#334155' : '#E2E8F0', borderRadius:6, overflow:'hidden', marginBottom: 10}}>
-              <View style={{height:'100%', backgroundColor:'#3B82F6', width:`${pct}%` as any}} />
-            </View>
-
-            {/* Description & Saved Amount strictly below the % bar */}
-            <View style={{flexDirection:'column', marginBottom: 16}}>
-              <Text style={{fontSize:15, fontWeight:'800', color: colors.text}}>
-                Saved: <Text style={{color: colors.success}}>${item.current_amount}</Text> <Text style={{fontWeight:'500', color: colors.textSecondary}}>of ${item.target_amount}</Text>
-              </Text>
-              {item.description ? <Text style={{fontSize:14, color: colors.textSecondary, marginTop:6}}>{item.description}</Text> : null}
-              <Text style={{fontSize:12, color: colors.textSecondary, marginTop: 4, opacity: 0.7}}>Started: {item.created_at ? item.created_at.split('T')[0] : 'Today'}</Text>
-
-              <TouchableOpacity style={{backgroundColor:'#EFF6FF', paddingVertical:12, borderRadius:10, alignItems:'center', marginTop: 10}}
+              <TouchableOpacity 
+                style={{ 
+                  backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)', 
+                  paddingVertical: 8, 
+                  paddingHorizontal: 12, 
+                  borderRadius: 10, 
+                  marginTop: 16 
+                }}
                 onPress={() => { setSelectedGoal(item); setShowGoalUpdateModal(true); }}
               >
-                <Text style={{color:'#3B82F6', fontWeight:'800', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5}}>Update Balance</Text>
+                <Text style={{ color: uiColors.goals, fontWeight: '700', fontSize: 12 }}>Update</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1294,12 +1300,12 @@ export default function FinanceScreen() {
           <View style={dynamicStyles.modalHeader}>
             <TouchableOpacity onPress={()=>setEditingGoal(null)}><Text style={{fontSize:16, color:'#64748B'}}>Cancel</Text></TouchableOpacity>
             <Text style={{fontSize:18, fontWeight:'700'}}>Edit Goal</Text>
-            <TouchableOpacity onPress={handleUpdateGoalProps}><Text style={{fontSize:16, fontWeight:'700', color:'#3B82F6'}}>Save</Text></TouchableOpacity>
+            <TouchableOpacity onPress={handleUpdateGoalProps}><Text style={{fontSize:16, fontWeight:'700', color:uiColors.goals}}>Save</Text></TouchableOpacity>
           </View>
           <ScrollView style={{padding:20}}>
-            <TextInput style={dynamicStyles.titleInput} placeholder="Goal Title" value={goalETitle} onChangeText={setGoalETitle} />
-            <TextInput style={dynamicStyles.input} placeholder="Target Amount" keyboardType="numeric" value={goalETarget} onChangeText={setGoalETarget} />
-            <TextInput style={dynamicStyles.input} placeholder="Description" value={goalEDesc} onChangeText={setGoalEDesc} />
+            <TextInput style={dynamicStyles.titleInput} placeholder="Goal Title" value={goalETitle} onChangeText={setGoalETitle} placeholderTextColor={colors.textSecondary} />
+            <TextInput style={dynamicStyles.input} placeholder="Target Amount" keyboardType="numeric" value={goalETarget} onChangeText={setGoalETarget} placeholderTextColor={colors.textSecondary} />
+            <TextInput style={dynamicStyles.input} placeholder="Description" value={goalEDesc} onChangeText={setGoalEDesc} placeholderTextColor={colors.textSecondary} />
           </ScrollView>
         </KeyboardAvoidingView>
       </Modal>
