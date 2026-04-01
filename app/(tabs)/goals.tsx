@@ -361,9 +361,9 @@ export default function GoalsScreen() {
       color: isDark ? '#FFFFFF' : '#000000',
       letterSpacing: -0.5,
     },
-    segmentBlock: { flexDirection: 'row', paddingHorizontal: 20, marginTop: 24, marginBottom: 16, gap: 8 },
-    segmentBtn: { flex: 1, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, alignItems: 'center' },
-    segmentText: { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
+    segmentBlock: { flexDirection: 'row', backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderRadius: 14, padding: 4, marginBottom: 16, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
+    segmentBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
+    segmentText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     emptyWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 60 },
     emptyText: { color: colors.textSecondary, fontSize: 16, marginTop: 12, fontWeight: '500', letterSpacing: 0.3 },
@@ -955,4 +955,3 @@ export default function GoalsScreen() {
     </SafeAreaView>
   );
 }
-
