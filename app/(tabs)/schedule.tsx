@@ -11,10 +11,14 @@ import {
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import React, { useEffect, useMemo, useState } from 'react';
+import { BlurView } from 'expo-blur';
+import { useFonts } from 'expo-font';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   FlatList,
   Keyboard,
   KeyboardAvoidingView,
@@ -27,6 +31,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const PRIORITY_CONFIG = (colors: any): Record<'High' | 'Medium' | 'Low', { emoji: string; bg: string; text: string }> => ({
   High: { emoji: '🔴', bg: colors.danger, text: colors.danger },
@@ -46,10 +51,16 @@ type StatusFilter = 'All' | 'Upcoming' | 'Completed' | 'Cancelled';
 export default function ScheduleScreen() {
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress;
+  const router = useRouter();
 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const colors = getColors(isDark);
+
+  const backButtonScale = useRef(new Animated.Value(1)).current
+  const [fontsLoaded] = useFonts({
+    'Roboto Slab': require('../../assets/Font/RobotoSlab-VariableFont_wght.ttf'),
+  })
 
   // Dynamic styles based on theme
   const styles = useMemo(() => getStyles(colors), [colors]);
@@ -87,6 +98,23 @@ export default function ScheduleScreen() {
   const [showEditStartTimePicker, setShowEditStartTimePicker] = useState(false);
   const [showEditEndTimePicker, setShowEditEndTimePicker] = useState(false);
   const [isEditSaving, setIsEditSaving] = useState(false);
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(backButtonScale, {
+          toValue: 1.06,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(backButtonScale, {
+          toValue: 1,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start()
+  }, [backButtonScale])
 
   useEffect(() => {
     loadEvents();
@@ -419,37 +447,53 @@ export default function ScheduleScreen() {
   };
 
   return (
-    <KeyboardAvoidingView style={[styles.container, { backgroundColor: colors.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={[styles.headerArea, { borderBottomColor: colors.border }]}>
-        <Text style={[styles.pageTitle, { color: colors.text }]}>Schedule</Text>
-        <Text style={[styles.pageSubtitle, { color: colors.textSecondary }]}>Plan your meetings</Text>
-      </View>
-
-      {loading ? (
-        <View style={styles.centerWrap}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      ) : (
-        <>
-          {/* Tab Navigation */}
-          <View style={[styles.tabRow, { borderBottomColor: colors.border }]}>
-            <TouchableOpacity
-              style={[styles.tabBtn, activeTab === 'Current' && { borderBottomColor: colors.primary }]}
-              onPress={() => setActiveTab('Current')}
-            >
-              <Ionicons name="calendar" size={18} color={activeTab === 'Current' ? colors.primary : colors.textSecondary} />
-              <Text style={[styles.tabText, activeTab === 'Current' && { color: colors.primary }]}>Current</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.tabBtn, activeTab === 'Schedules' && { borderBottomColor: colors.primary }]}
-              onPress={() => setActiveTab('Schedules')}
-            >
-              <Ionicons name="list" size={18} color={activeTab === 'Schedules' ? colors.primary : colors.textSecondary} />
-              <Text style={[styles.tabText, activeTab === 'Schedules' && { color: colors.primary }]}>Schedules</Text>
-            </TouchableOpacity>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <View style={{ flex: 1 }}>
+        <View style={styles.headerArea}>
+          <BlurView intensity={isDark ? 40 : 60} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+          <View style={styles.headerRow}>
+            <Animated.View style={{ transform: [{ scale: backButtonScale }] }}>
+              <TouchableOpacity
+                style={[
+                  styles.backButton,
+                  { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)' },
+                ]}
+                onPress={() => router.replace('/(tabs)')}
+              >
+                <Text style={[styles.backButtonText, { color: isDark ? '#FFFFFF' : '#000000' }]}>←</Text>
+              </TouchableOpacity>
+            </Animated.View>
+            <View>
+              <Text style={[styles.pageTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}>Schedule</Text>
+              <Text style={styles.pageSubtitle}>Plan your meetings</Text>
+            </View>
           </View>
+        </View>
 
-          <ScrollView style={[styles.content, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
+        {loading ? (
+          <View style={styles.centerWrap}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : (
+          <>
+            <View style={styles.tabContainer}>
+              <TouchableOpacity style={styles.tab} onPress={() => setActiveTab('Current')}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="calendar" size={18} color={activeTab === 'Current' ? colors.primary : '#64748B'} style={{ marginRight: 8 }} />
+                  <Text style={[styles.tabText, activeTab === 'Current' && styles.tabTextActive]}>Current</Text>
+                </View>
+                {activeTab === 'Current' && <View style={styles.activeIndicator} />}
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.tab} onPress={() => setActiveTab('Schedules')}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Ionicons name="list" size={18} color={activeTab === 'Schedules' ? colors.primary : '#64748B'} style={{ marginRight: 8 }} />
+                  <Text style={[styles.tabText, activeTab === 'Schedules' && styles.tabTextActive]}>Schedules</Text>
+                </View>
+                {activeTab === 'Schedules' && <View style={styles.activeIndicator} />}
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={[styles.content, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
             {/* Current Tab */}
             {activeTab === 'Current' && (
               <>
@@ -485,14 +529,27 @@ export default function ScheduleScreen() {
             {activeTab === 'Schedules' && (
               <View style={styles.schedulesSection}>
                 {/* Status Filters */}
-                <View style={styles.filterRow}>
+                <View style={[
+                  styles.segmentBlock,
+                  {
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                    borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                  },
+                ]}>
                   {(['All', 'Upcoming', 'Completed', 'Cancelled'] as StatusFilter[]).map(status => (
                     <TouchableOpacity
                       key={status}
-                      style={[styles.filterChip, statusFilter === status && styles.filterChipActive]}
+                      style={[
+                        styles.segmentBtn,
+                        statusFilter === status && {
+                          backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)',
+                          borderColor: colors.primary,
+                          borderWidth: 1,
+                        },
+                      ]}
                       onPress={() => setStatusFilter(status)}
                     >
-                      <Text style={[styles.filterText, statusFilter === status && styles.filterTextActive]}>
+                      <Text style={[styles.segmentText, statusFilter === status && { color: colors.primary, fontWeight: '700' }]} numberOfLines={1} ellipsizeMode="clip">
                         {status}
                       </Text>
                     </TouchableOpacity>
@@ -516,9 +573,9 @@ export default function ScheduleScreen() {
                 )}
               </View>
             )}
-          </ScrollView>
-        </>
-      )}
+            </ScrollView>
+          </>
+        )}
 
       {showStartTimePicker && (
         <DateTimePicker
@@ -797,25 +854,45 @@ export default function ScheduleScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
-
-    </KeyboardAvoidingView>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const getStyles = (colors: any) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  headerArea: { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 12 },
-  pageTitle: { fontSize: 28, fontWeight: '800', color: colors.text },
-  pageSubtitle: { fontSize: 13, color: colors.textSecondary, fontWeight: '500', marginTop: 2 },
+  headerArea: {
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 12 : 20,
+    paddingBottom: 20,
+    overflow: 'hidden',
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    marginBottom: 0,
+  },
+  headerRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+  },
+  backButtonText: { fontSize: 22, color: '#000000', marginTop: -2 },
+  pageTitle: { fontSize: 24, fontFamily: 'Roboto Slab', color: '#000000', letterSpacing: -0.5 },
+  pageSubtitle: { fontSize: 12, color: colors.textSecondary, fontWeight: '500', marginTop: 2 },
   content: { flex: 1, paddingHorizontal: 16 },
   centerWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   calendar: {
     backgroundColor: colors.card,
-    borderRadius: 14,
+    borderRadius: 20,
     marginVertical: 12,
     padding: 16,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
   },
   calendarHeader: {
@@ -835,7 +912,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     borderRadius: 10,
     marginBottom: 8,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
   },
   dayCellSelected: { backgroundColor: colors.info, borderColor: colors.info },
@@ -852,9 +929,9 @@ const getStyles = (colors: any) => StyleSheet.create({
 
   eventCard: {
     backgroundColor: colors.card,
-    borderRadius: 12,
+    borderRadius: 20,
     padding: 14,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
     marginBottom: 10,
   },
@@ -949,65 +1026,41 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   reminderText: { fontSize: 15, fontWeight: '600', color: colors.text },
 
-  tabRow: {
+  tabContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 16,
-    gap: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    backgroundColor: colors.background,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    paddingBottom: 12,
   },
-  tabBtn: {
-    flexDirection: 'row',
+  tab: {
+    flex: 1,
+    flexDirection: 'column',
+    paddingVertical: 10,
+    paddingHorizontal: 4,
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: colors.card,
+    justifyContent: 'center',
+    position: 'relative',
   },
-  tabBtnActive: {
-    backgroundColor: colors.overlay,
-    borderBottomWidth: 2,
-    borderBottomColor: colors.info,
-  },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  tabTextActive: {
-    color: colors.info,
+  tabText: { fontSize: 11, fontWeight: '700', color: colors.textSecondary, marginBottom: 6 },
+  tabTextActive: { color: colors.primary, fontWeight: '900' },
+  activeIndicator: {
+    position: 'absolute',
+    bottom: -8,
+    width: '60%',
+    height: 3,
+    backgroundColor: colors.primary,
+    borderRadius: 2,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
   },
 
-  filterRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    gap: 10,
-    flexWrap: 'wrap',
-  },
-  filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  filterChipActive: {
-    backgroundColor: colors.info,
-    borderColor: colors.info,
-  },
-  filterText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  filterTextActive: {
-    color: '#FFFFFF',
-  },
+  segmentBlock: { flexDirection: 'row', borderRadius: 14, padding: 4, marginBottom: 16, borderWidth: 1 },
+  segmentBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
+  segmentText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
 
   schedulesSection: {
     paddingVertical: 16,
