@@ -1,9 +1,14 @@
-
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import React, { useEffect, useState } from 'react';
+import { useUser } from '@clerk/expo';
+import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { BlurView } from 'expo-blur';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator, Alert,
+  Animated,
   FlatList,
   Keyboard,
   KeyboardAvoidingView,
@@ -15,25 +20,54 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-
-import { useUser } from '@clerk/expo';
-import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { addGoal, deleteGoal, getGoals, Goal, GoalCategory, GoalPriority, GoalTask, updateGoal } from '../../lib/goals-service';
 
 export default function GoalsScreen() {
   const { user } = useUser();
+  const router = useRouter();
   const email = user?.primaryEmailAddress?.emailAddress;
   
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const colors = getColors(isDark)
   
+  // Color palette for goal categories
+  const categoryColors = {
+    health: colors.border,
+    finance: colors.border,
+    career: colors.border,
+    personal: colors.border,
+  }
+  
+  const backButtonScale = useRef(new Animated.Value(1)).current
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(backButtonScale, {
+          toValue: 1.06,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(backButtonScale, {
+          toValue: 1,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start()
+  }, [backButtonScale])
+  
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   
-  const [filterMode, setFilterMode] = useState<'all' | 'active' | 'achieved'>('all');
+  type TimeFilter = 'All' | 'Month' | 'Year' | 'Custom';
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('All');
+  const [customStart, setCustomStart] = useState(new Date(Date.now() - 7*24*60*60*1000).toISOString().split('T')[0]);
+  const [customEnd, setCustomEnd] = useState(new Date().toISOString().split('T')[0]);
+  const [showDatePicker, setShowDatePickerState] = useState<'customStart' | 'customEnd' | null>(null);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<GoalCategory | null>(null);
   const [selectedPriorityFilter, setSelectedPriorityFilter] = useState<GoalPriority | null>(null);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
@@ -48,7 +82,8 @@ export default function GoalsScreen() {
   const [newDeadline, setNewDeadline] = useState('');
   const [newTargetValue, setNewTargetValue] = useState('');
   const [newUnit, setNewUnit] = useState('');
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showCreationDatePicker, setShowCreationDatePicker] = useState(false);
+  const [showEditDatePicker, setShowEditDatePicker] = useState(false);
   const [isSavingNew, setIsSavingNew] = useState(false);
 
   // Pre-creation Subtasks State
@@ -57,7 +92,7 @@ export default function GoalsScreen() {
   const [editingNewTaskId, setEditingNewTaskId] = useState<string | null>(null);
   const [editingNewTaskTitle, setEditingNewTaskTitle] = useState('');
 
-  // Edit Goal / Add Tasks States
+  // Edit Goal / Add Tasks State
   const [modalVisible, setModalVisible] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [editTitle, setEditTitle] = useState('');
@@ -75,12 +110,11 @@ export default function GoalsScreen() {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTaskTitle, setEditingTaskTitle] = useState('');
 
-  const [showEditDatePicker, setShowEditDatePicker] = useState(false);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Date Handlers
   const handleDateChange = (event: any, selectedDate?: Date) => {
-    if (Platform.OS === 'android') setShowDatePicker(false);
+    if (Platform.OS === 'android') setShowCreationDatePicker(false);
     if (selectedDate) setNewDeadline(selectedDate.toISOString().split('T')[0]);
   };
   const handleEditDateChange = (event: any, selectedDate?: Date) => {
@@ -118,12 +152,25 @@ export default function GoalsScreen() {
     loadGoals();
   };
 
-  const filteredGoals = goals.filter(goal => {
-    if (filterMode === 'active') {
-      if (goal.status !== 'active') return false;
-    } else if (filterMode === 'achieved') {
-      if (goal.status !== 'achieved') return false;
+  const filterByDate = (dateStr: string) => {
+    if (timeFilter === 'All') return true;
+    if (timeFilter === 'Custom') {
+      const t = new Date(dateStr).getTime();
+      const sContext = new Date(customStart).getTime();
+      const eContext = new Date(customEnd).getTime() + 86399999;
+      return t >= sContext && t <= eContext;
     }
+    const dTime = new Date(dateStr).getTime();
+    const nowTime = new Date().getTime();
+    const diffDays = Math.ceil(Math.abs(nowTime - dTime) / (1000*60*60*24));
+    if (timeFilter === 'Month') return diffDays <= 30;
+    if (timeFilter === 'Year') return diffDays <= 365;
+    return true;
+  }
+
+  const filteredGoals = goals.filter(goal => {
+    const deadlineOrCreated = goal.deadline || goal.created_at;
+    if (!filterByDate(deadlineOrCreated)) return false;
     
     // Filter by category
     if (selectedCategoryFilter && goal.category !== selectedCategoryFilter) {
@@ -246,110 +293,163 @@ export default function GoalsScreen() {
   const CategoryBadge = ({ category }: { category: GoalCategory }) => {
     const safeCat = category || 'personal';
     const categoryColors = {
-      career: { bg: colors.background, text: colors.primary, icon: 'briefcase' },
-      health: { bg: colors.background, text: colors.success, icon: 'fitness' },
-      finance: { bg: colors.background, text: colors.secondary, icon: 'cash' },
-      personal: { bg: colors.background, text: colors.primary, icon: 'person' },
+      career: { bg: colors.primary, text: '#FFFFFF', icon: 'briefcase', borderColor: colors.primary },
+      health: { bg: colors.success, text: '#FFFFFF', icon: 'fitness', borderColor: colors.success },
+      finance: { bg: colors.secondary, text: '#FFFFFF', icon: 'cash', borderColor: colors.secondary },
+      personal: { bg: colors.primary, text: '#FFFFFF', icon: 'person', borderColor: colors.primary },
     };
     const style = categoryColors[safeCat] || categoryColors.personal;
     return (
-      <View style={[dynamicStyles.categoryBadge, { backgroundColor: style.bg }]}>
-        <Ionicons name={style.icon as any} size={10} color={style.text} style={{ marginRight: 4 }} />
-        <Text style={[dynamicStyles.categoryText, { color: style.text }]}>{safeCat.toUpperCase()}</Text>
+      <View style={[dynamicStyles.categoryBadge, { backgroundColor: style.bg, borderColor: style.borderColor, shadowColor: style.bg }]}>
+        <Ionicons name={style.icon as any} size={12} color={style.text} style={{ marginRight: 6 }} />
+        <Text style={[dynamicStyles.categoryText, { color: style.text }]}>{safeCat}</Text>
+      </View>
+    );
+  };
+
+  const PriorityBadge = ({ priority }: { priority: GoalPriority }) => {
+    const safePriority = priority || 'medium';
+    const priorityColors = {
+      low: { bg: '#10B981', text: '#FFFFFF', icon: 'arrow-down', borderColor: '#10B981' },
+      medium: { bg: '#F59E0B', text: '#FFFFFF', icon: 'ellipsis-horizontal', borderColor: '#F59E0B' },
+      high: { bg: '#EF4444', text: '#FFFFFF', icon: 'arrow-up', borderColor: '#EF4444' },
+    };
+    const style = priorityColors[safePriority] || priorityColors.medium;
+    return (
+      <View style={[dynamicStyles.priorityBadge, { backgroundColor: style.bg, borderColor: style.borderColor, shadowColor: style.bg }]}>
+        <Ionicons name={style.icon as any} size={12} color={style.text} style={{ marginRight: 4 }} />
+        <Text style={[dynamicStyles.priorityText, { color: style.text }]}>{safePriority}</Text>
       </View>
     );
   };
 
   const dynamicStyles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    headerArea: { paddingHorizontal: 20, marginTop: 20, marginBottom: 10 },
-    pageTitle: { fontSize: 28, fontWeight: '800', color: colors.text },
-    filterRow: { flexDirection: 'row', paddingHorizontal: 20, marginBottom: 16, gap: 10 },
-    filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
-    filterChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-    filterChipText: { fontSize: 14, fontWeight: '600', color: colors.textSecondary },
-    filterChipTextActive: { color: colors.text },
+    headerArea: {
+      paddingHorizontal: 20,
+      paddingTop: Platform.OS === 'ios' ? 12 : 20,
+      paddingBottom: 20,
+      overflow: 'hidden',
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 16,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+      borderWidth: 1.5,
+      borderColor: '#FFD700',
+      shadowColor: '#FFD700',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    backButtonText: { fontSize: 22, color: isDark ? '#FFFFFF' : '#000000', marginTop: -2 },
+    pageTitle: {
+      fontSize: 24,
+      fontFamily: 'Roboto Slab',
+      fontWeight: '400',
+      color: isDark ? '#FFFFFF' : '#000000',
+      letterSpacing: -0.5,
+    },
+    segmentBlock: { flexDirection: 'row', paddingHorizontal: 20, marginTop: 24, marginBottom: 16, gap: 8 },
+    segmentBtn: { flex: 1, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, alignItems: 'center' },
+    segmentText: { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     emptyWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 60 },
-    emptyText: { color: colors.textSecondary, fontSize: 16, marginTop: 12, fontWeight: '500' },
+    emptyText: { color: colors.textSecondary, fontSize: 16, marginTop: 12, fontWeight: '500', letterSpacing: 0.3 },
     listContent: { paddingHorizontal: 16, paddingBottom: 100 },
-    goalCard: { backgroundColor: colors.card, borderRadius: 16, marginBottom: 16, flexDirection: 'row', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2, borderWidth: 1, borderColor: colors.border },
+    goalCard: { backgroundColor: colors.card, borderRadius: 20, marginBottom: 18, flexDirection: 'row', shadowColor: colors.text, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 5, borderWidth: 1.5, borderColor: colors.border, overflow: 'hidden' },
     goalCardCompleted: { backgroundColor: colors.background, borderColor: colors.border, opacity: 0.85 },
-    goalContent: { flex: 1, padding: 16 },
+    goalContent: { flex: 1, padding: 18 },
     goalHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-    goalTitle: { fontSize: 17, fontWeight: '700', color: colors.text, flex: 1, marginRight: 8 },
+    badgeRow: { flexDirection: 'row', gap: 10, alignItems: 'center', marginBottom: 4 },
+    goalTitle: { fontSize: 19, fontWeight: '700', color: colors.text, flex: 1, marginRight: 8, fontFamily: 'Roboto Slab', letterSpacing: -0.3 },
     goalTitleCompleted: { color: colors.textSecondary },
-    goalDesc: { fontSize: 14, color: colors.text, lineHeight: 20, marginBottom: 10 },
+    goalDesc: { fontSize: 15, color: colors.textSecondary, lineHeight: 22, marginBottom: 12, fontWeight: '500' },
     goalDescCompleted: { color: colors.textSecondary },
-    targetDateRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
-    targetDateText: { fontSize: 12, color: colors.textSecondary, fontWeight: '600' },
+    targetDateRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14, backgroundColor: isDark ? 'rgba(255, 215, 0, 0.05)' : 'rgba(255, 215, 0, 0.08)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 },
+    targetDateText: { fontSize: 13, color: colors.textSecondary, fontWeight: '600', letterSpacing: 0.3 },
     targetDateTextCompleted: { color: colors.textSecondary },
     daysBadge: { marginLeft: 2 },
-    daysBadgeText: { fontSize: 11, color: colors.primary, fontWeight: '700' },
-    categoryBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-    categoryText: { fontSize: 10, fontWeight: '800' },
-    deleteArea: { padding: 16, justifyContent: 'flex-start', alignItems: 'center' },
-    progressArea: { marginTop: 6, backgroundColor: colors.background, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.border },
+    daysBadgeText: { fontSize: 12, color: colors.primary, fontWeight: '700', letterSpacing: 0.2 },
+    categoryBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10, backgroundColor: colors.background, borderWidth: 1.5, borderColor: colors.border, shadowColor: colors.text, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 2, elevation: 1 },
+    priorityBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1.5, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 3 },
+    priorityText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
+    categoryText: { fontSize: 12, fontWeight: '700', marginLeft: 5, letterSpacing: 0.4, textTransform: 'uppercase' },
+    deleteArea: { padding: 14, justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: 10, borderLeftWidth: 1.5, borderLeftColor: colors.border, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.01)' },
+    actionButton: { width: 42, height: 42, borderRadius: 14, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, shadowColor: colors.text, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3, elevation: 1 },
+    progressArea: { marginTop: 12, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', padding: 16, borderRadius: 14, borderTopWidth: 1.5, borderTopColor: colors.border, marginLeft: -16, marginRight: -16, marginBottom: -16, paddingLeft: 16, paddingRight: 16, borderBottomLeftRadius: 20, borderBottomRightRadius: 20 },
+    progressSection: { marginTop: 12, paddingVertical: 10, paddingHorizontal: 14, backgroundColor: `rgba(${isDark ? '255, 255, 255' : '0, 0, 0'}, ${isDark ? 0.05 : 0.02})`, borderRadius: 12, borderWidth: 1, borderColor: colors.border },
     progressHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-    progressLabel: { fontSize: 12, fontWeight: '600', color: colors.text },
-    progressValue: { fontSize: 12, fontWeight: '800', color: colors.text },
+    progressLabel: { fontSize: 13, fontWeight: '700', color: colors.text, letterSpacing: 0.3 },
+    progressValue: { fontSize: 14, fontWeight: '900', color: colors.primary, letterSpacing: 0.5 },
     progressBarWrapper: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    progressBarTrack: { flex: 1, height: 8, backgroundColor: colors.border, borderRadius: 4, overflow: 'hidden' },
-    progressBarFill: { height: '100%', borderRadius: 4 },
-    createCard: { backgroundColor: colors.card, borderRadius: 16, marginBottom: 20, shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
+    progressBarTrack: { flex: 1, height: 12, backgroundColor: colors.border, borderRadius: 8, overflow: 'hidden', shadowColor: colors.text, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 1 },
+    progressBarFill: { height: '100%', borderRadius: 6, shadowColor: colors.text, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 1 },
+    createCard: { backgroundColor: colors.card, borderRadius: 20, marginBottom: 20, shadowColor: colors.primary, shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.15, shadowRadius: 14, elevation: 5, borderWidth: 1.5, borderColor: colors.border, overflow: 'hidden' },
     createCollapsed: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
-    createCollapsedText: { fontSize: 16, color: colors.textSecondary, fontWeight: '500' },
+    createCollapsedText: { fontSize: 16, color: colors.textSecondary, fontWeight: '600' },
     createExpanded: { padding: 16 },
-    createTitleInput: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 12, paddingVertical: 4 },
-    createContentInput: { fontSize: 15, color: colors.text, minHeight: 50, textAlignVertical: 'top', marginBottom: 12 },
-    inlineRow: { flexDirection: 'row', marginBottom: 16 },
-    smallInput: { backgroundColor: colors.background, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, color: colors.text },
-    dateInputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, paddingHorizontal: 12, paddingVertical: 12, borderRadius: 10, marginBottom: 16 },
+    createTitleInput: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 12, paddingVertical: 4, fontFamily: 'Roboto Slab' },
+    createContentInput: { fontSize: 15, color: colors.text, minHeight: 60, textAlignVertical: 'top', marginBottom: 12, fontWeight: '500', lineHeight: 20 },
+    inlineRow: { flexDirection: 'row', marginBottom: 24, gap: 12 },
+    smallInput: { backgroundColor: colors.background, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: colors.text, borderWidth: 1, borderColor: colors.border, fontWeight: '500' },
+    dateInputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12, marginBottom: 16, borderWidth: 1, borderColor: colors.border, shadowColor: colors.text, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
     dateInputText: { fontSize: 14, color: colors.text, fontWeight: '500' },
     selectorLabelRow: { marginBottom: 8 },
-    selectorLabel: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, marginBottom: 6 },
-    categoryOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
-    catOption: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card },
-    catOptionActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    selectorLabel: { fontSize: 13, fontWeight: '700', color: colors.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+    categoryOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: colors.border },
+    catOption: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.background },
+    catOptionActive: { backgroundColor: colors.primary, borderColor: colors.primary, shadowColor: colors.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 4, elevation: 2 },
     catOptionText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, textTransform: 'capitalize' },
-    catOptionTextActive: { color: colors.text },
-    createActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, borderTopWidth: 1, borderTopColor: colors.background, paddingTop: 12 },
-    cancelBtn: { paddingVertical: 8, paddingHorizontal: 16, justifyContent: 'center' },
+    catOptionTextActive: { color: '#FFFFFF', fontWeight: '700' },
+    createActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, borderTopWidth: 1.5, borderTopColor: colors.border, paddingTop: 12, marginTop: 8 },
+    cancelBtn: { paddingVertical: 10, paddingHorizontal: 16, justifyContent: 'center' },
     cancelBtnText: { color: colors.textSecondary, fontWeight: '600', fontSize: 14 },
-    saveBtn: { backgroundColor: colors.primary, paddingVertical: 8, paddingHorizontal: 20, borderRadius: 20, justifyContent: 'center' },
-    saveBtnText: { color: colors.text, fontWeight: '700', fontSize: 14 },
+    saveBtn: { backgroundColor: colors.primary, paddingVertical: 10, paddingHorizontal: 24, borderRadius: 20, justifyContent: 'center', shadowColor: colors.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 2 },
+    saveBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
     modalContainer: { flex: 1, backgroundColor: colors.card },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderColor: colors.border },
     modalBody: { padding: 20, flex: 1 },
-    modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
-    cancelText: { fontSize: 16, color: colors.textSecondary },
-    saveHeaderBtnText: { fontSize: 16, fontWeight: '700', color: colors.primary },
-    titleInput: { fontSize: 24, fontWeight: '700', color: colors.text, marginBottom: 20 },
-    contentInput: { fontSize: 16, color: colors.text, backgroundColor: colors.background, borderRadius: 12, padding: 16, marginBottom: 20 },
-    subtaskSection: { marginBottom: 20 },
-    subtaskList: { marginBottom: 12 },
-    subtaskRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, padding: 12, borderRadius: 10, marginBottom: 8, borderWidth: 1, borderColor: colors.border },
+    modalTitle: { fontSize: 20, fontWeight: '700', color: colors.text, fontFamily: 'Roboto Slab' },
+    cancelText: { fontSize: 16, color: colors.textSecondary, fontWeight: '600' },
+    saveHeaderBtnText: { fontSize: 15, fontWeight: '700', color: colors.primary },
+    titleInput: { fontSize: 24, fontWeight: '700', color: colors.text, marginBottom: 20, fontFamily: 'Roboto Slab' },
+    contentInput: { fontSize: 16, color: colors.text, backgroundColor: colors.background, borderRadius: 14, padding: 16, marginBottom: 20, borderWidth: 1.5, borderColor: colors.border, minHeight: 110, textAlignVertical: 'top', fontWeight: '500', lineHeight: 22 },
+    subtaskSection: { marginBottom: 24, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: colors.border },
+    subtaskList: { marginBottom: 12, marginTop: 8 },
+    subtaskRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, padding: 14, borderRadius: 14, marginBottom: 12, borderWidth: 1.5, borderColor: colors.border, shadowColor: colors.text, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 3, elevation: 1 },
     subtaskCheckbox: { marginRight: 10 },
-    subtaskText: { flex: 1, fontSize: 15, color: colors.text, fontWeight: '500' },
+    subtaskText: { flex: 1, fontSize: 15, color: colors.text, fontWeight: '500', lineHeight: 20 },
     subtaskTextCompleted: { color: colors.textSecondary, textDecorationLine: 'line-through' },
-    subtaskEditInput: { flex: 1, fontSize: 15, color: colors.text, padding: 0, borderBottomWidth: 1, borderBottomColor: colors.primary, marginRight: 10 },
+    subtaskEditInput: { flex: 1, fontSize: 15, color: colors.text, padding: 8, borderBottomWidth: 2, borderBottomColor: colors.primary, marginRight: 10, fontWeight: '500' },
     subtaskActionBtn: { padding: 4 },
     addSubtaskRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    addSubtaskInput: { flex: 1, backgroundColor: colors.background, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 12, fontSize: 14, color: colors.text },
-    addSubtaskBtn: { width: 44, height: 44, borderRadius: 10, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-    lockedProgressRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, padding: 16, borderRadius: 10, marginBottom: 16, gap: 10 },
-    lockedProgressText: { flex: 1, fontSize: 13, color: colors.textSecondary, lineHeight: 18 },
-    filterRowSecondary: { flexDirection: 'row', paddingHorizontal: 20, marginBottom: 16, gap: 12 },
-    dropdownContainer: { flex: 1, position: 'relative' },
-    dropdownBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, gap: 6 },
-    dropdownBtnActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+    addSubtaskInput: { flex: 1, backgroundColor: colors.background, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, fontSize: 14, color: colors.text, borderWidth: 1, borderColor: colors.border, fontWeight: '500' },
+    addSubtaskBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', shadowColor: colors.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 2 },
+    lockedProgressRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, padding: 14, borderRadius: 12, marginBottom: 16, gap: 12, borderWidth: 1.5, borderColor: colors.border, shadowColor: colors.text, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 1 },
+    lockedProgressText: { flex: 1, fontSize: 13, color: colors.textSecondary, lineHeight: 20, fontWeight: '500' },
+    filterRowSecondary: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 20, gap: 12, marginTop: 4 },
+    dropdownContainer: { flex: 1, position: 'relative', minHeight: 44 },
+    dropdownBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 20, backgroundColor: colors.background, borderWidth: 1.5, borderColor: colors.border, gap: 6, shadowColor: colors.text, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 1 },
+    dropdownBtnActive: { backgroundColor: colors.primary, borderColor: colors.primary, shadowColor: colors.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 2 },
     dropdownBtnText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, flex: 1 },
-    dropdownBtnTextActive: { color: colors.text },
-    dropdownMenu: { position: 'absolute', top: 48, left: 0, right: 0, backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.border, zIndex: 1000, shadowColor: colors.text, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 5 },
-    dropdownItem: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.background },
-    dropdownItemActive: { backgroundColor: colors.background },
+    dropdownBtnTextActive: { color: '#FFFFFF', fontWeight: '700' },
+    dropdownMenu: { position: 'absolute', top: 48, left: 0, right: 0, backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.border, zIndex: 1000, shadowColor: colors.text, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 10, elevation: 6, overflow: 'hidden' },
+    dropdownItem: { paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.background },
+    dropdownItemActive: { backgroundColor: colors.background, borderLeftWidth: 4, borderLeftColor: colors.primary, paddingHorizontal: 12 },
     dropdownItemText: { fontSize: 14, color: colors.text, fontWeight: '500' },
-    dropdownItemTextActive: { color: colors.primary, fontWeight: '600' },
+    dropdownItemTextActive: { color: colors.primary, fontWeight: '700' },
   });
 
   const getDaysRemainingText = (deadline: string, isCompleted: boolean) => {
@@ -384,7 +484,10 @@ export default function GoalsScreen() {
               <Text style={[dynamicStyles.goalTitle, isCompleted && dynamicStyles.goalTitleCompleted]} numberOfLines={1}>
                 {item.title}
               </Text>
-              <CategoryBadge category={safeCat} />
+              <View style={dynamicStyles.badgeRow}>
+                <PriorityBadge priority={item.priority} />
+                <CategoryBadge category={safeCat} />
+              </View>
             </View>
             
             {item.description ? (
@@ -395,7 +498,7 @@ export default function GoalsScreen() {
             
             {userDeadline ? (
               <View style={dynamicStyles.targetDateRow}>
-                <Ionicons name="calendar-outline" size={12} color={isCompleted ? "#94A3B8" : "#8B5CF6"} />
+                <Ionicons name="calendar-outline" size={12} color={isCompleted ? "#94A3B8" : colors.border} />
                 <Text style={[dynamicStyles.targetDateText, isCompleted && dynamicStyles.targetDateTextCompleted]}>
                   Deadline: {userDeadline}
                 </Text>
@@ -414,7 +517,7 @@ export default function GoalsScreen() {
             ) : null}
           </TouchableOpacity>
 
-          <View style={dynamicStyles.progressArea}>
+          <View style={dynamicStyles.progressSection}>
              <View style={dynamicStyles.progressHeader}>
                 <Text style={dynamicStyles.progressLabel}>
                    {currentVal} / {targetVal} {hasTasks ? 'tasks completed' : safeUnit}
@@ -425,16 +528,21 @@ export default function GoalsScreen() {
                <View style={dynamicStyles.progressBarTrack}>
                  <View style={[
                    dynamicStyles.progressBarFill, 
-                   { width: `${progressPercent}%`, backgroundColor: progressPercent >= 100 ? '#22C55E' : '#3B82F6' }
+                   { width: `${progressPercent}%`, backgroundColor: progressPercent >= 100 ? '#22C55E' : '#FFD700' }
                  ]} />
                </View>
              </View>
           </View>
         </View>
 
-        <TouchableOpacity style={dynamicStyles.deleteArea} onPress={() => handleDelete(item.id)} hitSlop={10}>
-          <Ionicons name="trash-outline" size={20} color={colors.danger} />
-        </TouchableOpacity>
+        <View style={dynamicStyles.deleteArea}>
+          <TouchableOpacity onPress={() => openEditModal(item)} hitSlop={10} style={dynamicStyles.actionButton}>
+            <Ionicons name="pencil-outline" size={20} color={colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => handleDelete(item.id)} hitSlop={10} style={dynamicStyles.actionButton}>
+            <Ionicons name="trash-outline" size={20} color={colors.danger} />
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
@@ -516,13 +624,13 @@ export default function GoalsScreen() {
              </View>
           )}
 
-          <TouchableOpacity style={dynamicStyles.dateInputWrapper} onPress={() => setShowDatePicker(true)}>
+          <TouchableOpacity style={dynamicStyles.dateInputWrapper} onPress={() => setShowCreationDatePicker(true)}>
             <Ionicons name="calendar-outline" size={18} color="#64748B" style={{ marginRight: 8 }} />
             <Text style={[dynamicStyles.dateInputText, !newDeadline && { color: '#94A3B8' }]}>
               {newDeadline ? `Deadline: ${newDeadline}` : 'Select Deadline'}
             </Text>
           </TouchableOpacity>
-          {showDatePicker && <DateTimePicker value={newDeadline ? new Date(newDeadline) : new Date()} mode="date" display="default" onChange={handleDateChange} />}
+          {showCreationDatePicker && <DateTimePicker value={newDeadline ? new Date(newDeadline) : new Date()} mode="date" display="default" onChange={handleDateChange} />}
           
           <View style={dynamicStyles.createActions}>
             <TouchableOpacity style={dynamicStyles.cancelBtn} onPress={() => setIsCreating(false)}><Text style={dynamicStyles.cancelBtnText}>Cancel</Text></TouchableOpacity>
@@ -541,24 +649,92 @@ export default function GoalsScreen() {
   );
 
   return (
-    <KeyboardAvoidingView style={dynamicStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <SafeAreaView style={dynamicStyles.container} edges={['top', 'left', 'right']}>
+      <KeyboardAvoidingView style={{flex: 1}} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={dynamicStyles.headerArea}>
+          <BlurView intensity={isDark ? 40 : 60} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+          <View style={dynamicStyles.headerRow}>
+            <Animated.View style={{ transform: [{ scale: backButtonScale }] }}>
+              <TouchableOpacity style={dynamicStyles.backButton} onPress={() => router.replace('/(tabs)')}>
+                <Text style={dynamicStyles.backButtonText}>←</Text>
+              </TouchableOpacity>
+            </Animated.View>
+            <View>
+              <Text style={dynamicStyles.pageTitle}>Goals</Text>
+            </View>
+          </View>
+        </View>
 
-      <View style={dynamicStyles.headerArea}><Text style={dynamicStyles.pageTitle}>My Goals</Text></View>
+        {/* Time Filter Block */}
+        <View style={dynamicStyles.segmentBlock}>
+          {(['All', 'Month', 'Year', 'Custom'] as TimeFilter[]).map(t => {
+            const getRgbaColor = (hex: string, opacity: number) => {
+              const r = parseInt(hex.slice(1, 3), 16);
+              const g = parseInt(hex.slice(3, 5), 16);
+              const b = parseInt(hex.slice(5, 7), 16);
+              return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+            };
+            const themeColor = '#FFD700'; // Gold color for filters
+            return (
+              <TouchableOpacity 
+                key={t} 
+                style={[
+                  dynamicStyles.segmentBtn, 
+                  timeFilter === t && {
+                    backgroundColor: isDark ? getRgbaColor(themeColor, 0.15) : getRgbaColor(themeColor, 0.1), 
+                    borderColor: themeColor, 
+                    borderWidth: 1
+                  }
+                ]} 
+                onPress={() => setTimeFilter(t)}
+              >
+                <Text style={[
+                  dynamicStyles.segmentText, 
+                  timeFilter === t && {
+                    color: '#FFD700', 
+                    fontWeight: '700'
+                  }
+                ]}>
+                  {t}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-      <View style={dynamicStyles.filterRow}>
-        <TouchableOpacity style={[dynamicStyles.filterChip, filterMode === 'all' && dynamicStyles.filterChipActive]} onPress={() => setFilterMode('all')}>
-          <Text style={[dynamicStyles.filterChipText, filterMode === 'all' && dynamicStyles.filterChipTextActive]}>All</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[dynamicStyles.filterChip, filterMode === 'active' && dynamicStyles.filterChipActive]} onPress={() => setFilterMode('active')}>
-          <Text style={[dynamicStyles.filterChipText, filterMode === 'active' && dynamicStyles.filterChipTextActive]}>Active</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[dynamicStyles.filterChip, filterMode === 'achieved' && dynamicStyles.filterChipActive]} onPress={() => setFilterMode('achieved')}>
-          <Text style={[dynamicStyles.filterChipText, filterMode === 'achieved' && dynamicStyles.filterChipTextActive]}>Achieved</Text>
-        </TouchableOpacity>
-      </View>
+        {/* Custom Date Filters */}
+        {timeFilter === 'Custom' && (
+          <View style={{flexDirection: 'row', gap: 10, marginHorizontal: 20, marginBottom: 16, marginTop: -6}}>
+            <TouchableOpacity style={{flex: 1, backgroundColor: colors.card, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center'}} onPress={() => setShowDatePickerState('customStart')}>
+              <Text style={{fontSize: 12, color: colors.textSecondary, fontWeight: '700'}}>Start Date</Text>
+              <Text style={{fontSize: 14, color: colors.text, fontWeight: '700', marginTop: 4}}>{customStart}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={{flex: 1, backgroundColor: colors.card, padding: 12, borderRadius: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center'}} onPress={() => setShowDatePickerState('customEnd')}>
+              <Text style={{fontSize: 12, color: colors.textSecondary, fontWeight: '700'}}>End Date</Text>
+              <Text style={{fontSize: 14, color: colors.text, fontWeight: '700', marginTop: 4}}>{customEnd}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
-      {/* Category and Priority Filters */}
-      <View style={dynamicStyles.filterRowSecondary}>
+        {/* Date Picker Modal */}
+        {showDatePicker && (
+          <DateTimePicker
+            value={new Date(showDatePicker === 'customStart' ? customStart : customEnd)}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={(event, selectedDate) => {
+              if (Platform.OS === 'android') setShowDatePickerState(null);
+              if (selectedDate) {
+                const dateStr = selectedDate.toISOString().split('T')[0];
+                if (showDatePicker === 'customStart') setCustomStart(dateStr);
+                else if (showDatePicker === 'customEnd') setCustomEnd(dateStr);
+              }
+            }}
+          />
+        )}
+
+        {/* Category and Priority Filters */}
+        <View style={dynamicStyles.filterRowSecondary}>
         {/* Category Filter */}
         <View style={dynamicStyles.dropdownContainer}>
           <TouchableOpacity 
@@ -648,9 +824,9 @@ export default function GoalsScreen() {
             </View>
           )}
         </View>
-      </View>
+        </View>
 
-      {loading ? (
+        {loading ? (
         <View style={dynamicStyles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
         <FlatList
@@ -670,7 +846,8 @@ export default function GoalsScreen() {
              </View>
           }
         />
-      )}
+        )}
+      </KeyboardAvoidingView>
 
       {/* Edit Goal / Task Modal */}
       <Modal visible={modalVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setModalVisible(false)}>
@@ -775,6 +952,7 @@ export default function GoalsScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
-    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
+
