@@ -512,8 +512,8 @@ export default function HealthScreen() {
     tab: {
       flex: 1,
       flexDirection: 'column',
-      paddingVertical: 12,
-      paddingHorizontal: 8,
+      paddingVertical: 10,
+      paddingHorizontal: 4,
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
@@ -625,12 +625,15 @@ export default function HealthScreen() {
               style={dynamicStyles.tab} 
               onPress={()=>setActiveTab(t)}
             >
-              <Ionicons 
-                name={t==='Medical'?"medkit-outline":t==='Diet'?"restaurant-outline":"barbell-outline"} 
-                size={22} 
-                color={activeTab===t ? (t==='Medical'?uiColors.medical:t==='Diet'?uiColors.diet:uiColors.fitness) : colors.textSecondary}
-              />
-              <Text style={[dynamicStyles.tabText, activeTab===t && (t==='Medical'?dynamicStyles.tabTextActiveMedical:t==='Diet'?dynamicStyles.tabTextActiveDiet:dynamicStyles.tabTextActiveFitness)]}>{t}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons 
+                  name={t==='Medical'?"medkit-outline":t==='Diet'?"restaurant-outline":"barbell-outline"} 
+                  size={18} 
+                  color={activeTab===t ? (t==='Medical'?uiColors.medical:t==='Diet'?uiColors.diet:uiColors.fitness) : '#64748B'}
+                  style={{ marginRight: 8 }}
+                />
+                <Text style={[dynamicStyles.tabText, activeTab===t && (t==='Medical'?dynamicStyles.tabTextActiveMedical:t==='Diet'?dynamicStyles.tabTextActiveDiet:dynamicStyles.tabTextActiveFitness), { marginBottom: 0 }]}>{t}</Text>
+              </View>
               {activeTab === t && (
                 <View style={t==='Medical'?dynamicStyles.activeIndicatorMedical:t==='Diet'?dynamicStyles.activeIndicatorDiet:dynamicStyles.activeIndicatorFitness} />
               )}

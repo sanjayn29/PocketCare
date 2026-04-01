@@ -147,7 +147,7 @@ export default function FinanceScreen() {
       position: 'relative',
     },
     tabText: {
-      fontSize: 10,
+      fontSize: 11,
       fontWeight: '700',
       color: colors.textSecondary,
       marginBottom: 6,
@@ -1145,7 +1145,7 @@ export default function FinanceScreen() {
         <View style={dynamicStyles.tabContainer}>
           <TouchableOpacity style={dynamicStyles.tab} onPress={() => setActiveTab('Overview')}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="pie-chart-outline" size={16} color={activeTab === 'Overview' ? uiColors.overview : '#64748B'} style={{ marginRight: 6 }} />
+              <Ionicons name="pie-chart-outline" size={18} color={activeTab === 'Overview' ? uiColors.overview : '#64748B'} style={{ marginRight: 8 }} />
               <Text style={[dynamicStyles.tabText, activeTab === 'Overview' && dynamicStyles.tabTextActiveOverview, { marginBottom: 0 }]}>Overview</Text>
             </View>
             {activeTab === 'Overview' && <View style={dynamicStyles.activeIndicatorOverview} />}
@@ -1153,7 +1153,7 @@ export default function FinanceScreen() {
 
           <TouchableOpacity style={dynamicStyles.tab} onPress={() => setActiveTab('Transactions')}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="swap-horizontal-outline" size={16} color={activeTab === 'Transactions' ? uiColors.transactions : '#64748B'} style={{ marginRight: 6 }} />
+              <Ionicons name="swap-horizontal-outline" size={18} color={activeTab === 'Transactions' ? uiColors.transactions : '#64748B'} style={{ marginRight: 8 }} />
               <Text style={[dynamicStyles.tabText, activeTab === 'Transactions' && dynamicStyles.tabTextActiveTransactions, { marginBottom: 0 }]}>Transactions</Text>
             </View>
             {activeTab === 'Transactions' && <View style={dynamicStyles.activeIndicatorTransactions} />}
@@ -1161,7 +1161,7 @@ export default function FinanceScreen() {
 
           <TouchableOpacity style={dynamicStyles.tab} onPress={() => setActiveTab('Debts')}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="cash-outline" size={16} color={activeTab === 'Debts' ? uiColors.debts : '#64748B'} style={{ marginRight: 6 }} />
+              <Ionicons name="cash-outline" size={18} color={activeTab === 'Debts' ? uiColors.debts : '#64748B'} style={{ marginRight: 8 }} />
               <Text style={[dynamicStyles.tabText, activeTab === 'Debts' && dynamicStyles.tabTextActiveDebts, { marginBottom: 0 }]}>Debts</Text>
             </View>
             {activeTab === 'Debts' && <View style={dynamicStyles.activeIndicatorDebts} />}
@@ -1169,7 +1169,7 @@ export default function FinanceScreen() {
 
           <TouchableOpacity style={dynamicStyles.tab} onPress={() => setActiveTab('Goals')}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="trophy-outline" size={16} color={activeTab === 'Goals' ? uiColors.goals : '#64748B'} style={{ marginRight: 6 }} />
+              <Ionicons name="trophy-outline" size={18} color={activeTab === 'Goals' ? uiColors.goals : '#64748B'} style={{ marginRight: 8 }} />
               <Text style={[dynamicStyles.tabText, activeTab === 'Goals' && dynamicStyles.tabTextActiveGoals, { marginBottom: 0 }]}>Goals</Text>
             </View>
             {activeTab === 'Goals' && <View style={dynamicStyles.activeIndicatorGoals} />}
