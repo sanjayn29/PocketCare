@@ -251,15 +251,29 @@ export default function HealthScreen() {
 
   // ── UI Snippets
 
-  const renderTimeFilterBlock = () => (
+  const renderTimeFilterBlock = () => {
+    const themeColor = activeTab === 'Medical' ? uiColors.medical : activeTab === 'Diet' ? uiColors.diet : uiColors.fitness;
+    const themeName = activeTab === 'Medical' ? 'medical' : activeTab === 'Diet' ? 'diet' : 'fitness';
+    const getRgbaColor = (hex: string, opacity: number) => {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    };
+    const getActiveHexColor = () => {
+      return themeName === 'medical' ? '#1D4ED8' : themeName === 'diet' ? '#059669' : '#B45309';
+    };
+    
+    return (
     <View style={dynamicStyles.segmentBlock}>
-      {(['Week','Month','Year','All','Custom'] as TimeFilter[]).map(t => (
-        <TouchableOpacity key={t} style={[dynamicStyles.segmentBtn, timeFilter===t && dynamicStyles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
-          <Text style={[dynamicStyles.segmentText, timeFilter===t && dynamicStyles.segmentTextActive]}>{t}</Text>
+      {(['All','Week','Month','Year','Custom'] as TimeFilter[]).map(t => (
+        <TouchableOpacity key={t} style={[dynamicStyles.segmentBtn, timeFilter===t && {backgroundColor: isDark ? getRgbaColor(themeColor, 0.15) : getRgbaColor(themeColor, 0.1), borderColor: themeColor, borderWidth: 1}]} onPress={()=>setTimeFilter(t)}>
+          <Text style={[dynamicStyles.segmentText, timeFilter===t && {color: isDark ? themeColor : getActiveHexColor(), fontWeight: '700'}]}>{t}</Text>
         </TouchableOpacity>
       ))}
     </View>
   );
+  };
 
   const renderCustomDateFilters = () => {
     if (timeFilter !== 'Custom') return null;
