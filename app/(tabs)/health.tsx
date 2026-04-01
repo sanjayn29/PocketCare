@@ -83,7 +83,7 @@ export default function HealthScreen() {
   const [dietList, setDietList] = useState<DietPlan[]>([]);
   const [fitnessList, setFitnessList] = useState<FitnessPlan[]>([]);
 
-  const [activeTab, setActiveTab] = useState<TabType>('Medical');
+  const [activeTab, setActiveTab] = useState<TabType>('Diet');
 
   const backButtonScale = useRef(new Animated.Value(1)).current
 
@@ -308,8 +308,8 @@ export default function HealthScreen() {
 
     return (
       <View style={dynamicStyles.createExpanded}>
-        <TextInput style={dynamicStyles.titleInput} placeholder={`${type} Topic / Name`} value={formTopic} onChangeText={setFormTopic} autoFocus />
-        <TextInput style={dynamicStyles.input} placeholder="Description (Optional)" value={formDesc} onChangeText={setFormDesc} />
+        <TextInput style={dynamicStyles.titleInput} placeholder={`${type} Topic / Name`} placeholderTextColor={isDark ? '#FFFFFF' : '#A0AEC0'} value={formTopic} onChangeText={setFormTopic} autoFocus />
+        <TextInput style={dynamicStyles.input} placeholder="Description (Optional)" placeholderTextColor={isDark ? '#FFFFFF' : '#A0AEC0'} value={formDesc} onChangeText={setFormDesc} />
         
         <View style={{flexDirection:'row', gap:10, marginBottom: 16}}>
            <View style={{flex:1}}>
@@ -363,7 +363,7 @@ export default function HealthScreen() {
                     {text:'Cancel'}, {text:'Delete', style:'destructive', onPress:() => { deleteMedical(email!, item.id); loadData(); }}
                   ]);
               }}>
-                <Ionicons name="trash-outline" size={22} color={uiColors.medical}/>
+                <Ionicons name="trash-outline" size={22} color="#EF4444"/>
               </TouchableOpacity>
             </View>
           </View>
@@ -398,7 +398,7 @@ export default function HealthScreen() {
                     }}
                   ]);
               }}>
-                <Ionicons name="trash-outline" size={22} color={uiColors.medical}/>
+                <Ionicons name="trash-outline" size={22} color="#EF4444"/>
               </TouchableOpacity>
             </View>
           </View>
@@ -453,8 +453,8 @@ export default function HealthScreen() {
             <TouchableOpacity onPress={onSave}><Text style={{fontSize:16, fontWeight:'700', color: themeColor}}>Save</Text></TouchableOpacity>
           </View>
           <ScrollView style={{padding:20}}>
-            <TextInput style={dynamicStyles.titleInput} placeholder="Topic / Name" value={editTopic} onChangeText={setEditTopic} autoFocus />
-            <TextInput style={dynamicStyles.input} placeholder="Description (Optional)" value={editDesc} onChangeText={setEditDesc} />
+            <TextInput style={dynamicStyles.titleInput} placeholder="Topic / Name" placeholderTextColor={isDark ? '#FFFFFF' : '#A0AEC0'} value={editTopic} onChangeText={setEditTopic} autoFocus />
+            <TextInput style={dynamicStyles.input} placeholder="Description (Optional)" placeholderTextColor={isDark ? '#FFFFFF' : '#A0AEC0'} value={editDesc} onChangeText={setEditDesc} />
             
             <View style={{flexDirection:'row', gap:10, marginBottom: 16}}>
               <View style={{flex:1}}>
@@ -633,7 +633,7 @@ export default function HealthScreen() {
         </View>
 
         <View style={dynamicStyles.tabContainer}>
-          {(['Medical', 'Diet', 'Fitness'] as TabType[]).map(t => (
+          {(['Diet', 'Fitness', 'Medical'] as TabType[]).map(t => (
             <TouchableOpacity 
               key={t} 
               style={dynamicStyles.tab} 
@@ -656,7 +656,7 @@ export default function HealthScreen() {
         </View>
 
         <KeyboardAvoidingView style={{flex: 1}} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          {loading ? <View style={{flex:1, justifyContent:'center'}}><ActivityIndicator size="large" color={uiColors.medical} /></View> : 
+          {loading ? <View style={{flex:1, justifyContent:'center'}}><ActivityIndicator size="large" color={activeTab==='Medical'?uiColors.medical:activeTab==='Diet'?uiColors.diet:uiColors.fitness} /></View> : 
             activeTab === 'Medical' ? renderMedical() :
             activeTab === 'Diet' ? (
               <FlatList data={filteredDiet} keyExtractor={d=>d.id} ListHeaderComponent={<>{renderTimeFilterBlock()}{renderCustomDateFilters()}<View style={dynamicStyles.createCard}>{renderCreationCard('Diet', handleSaveDiet, isCreatingDiet, setIsCreatingDiet)}</View></>} contentContainerStyle={{padding: 16, paddingBottom: 100}} ListEmptyComponent={<Text style={{textAlign:'center', color: colors.textSecondary, marginTop: 40, fontSize: 16}}>No diet plans found.</Text>} renderItem={({item}) => renderPlanCard(item, true)} />
