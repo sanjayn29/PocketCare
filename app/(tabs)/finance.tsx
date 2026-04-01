@@ -640,9 +640,9 @@ export default function FinanceScreen() {
               <Text style={[dynamicStyles.segmentText, txType==='expense' && {color:'#FFF'}]}>Expense</Text>
             </TouchableOpacity>
           </View>
-          <TextInput style={dynamicStyles.input} placeholder="Amount (e.g. 50)" keyboardType="numeric" value={txAmount} onChangeText={setTxAmount} />
-          <TextInput style={dynamicStyles.input} placeholder="Category (e.g. Food, Salary)" value={txCategory} onChangeText={setTxCategory} />
-          <TextInput style={dynamicStyles.input} placeholder="Note (Optional)" value={txNote} onChangeText={setTxNote} />
+          <TextInput style={dynamicStyles.input} placeholder="Amount (e.g. 50)" placeholderTextColor={colors.textSecondary} keyboardType="numeric" value={txAmount} onChangeText={setTxAmount} />
+          <TextInput style={dynamicStyles.input} placeholder="Category (e.g. Food, Salary)" placeholderTextColor={colors.textSecondary} value={txCategory} onChangeText={setTxCategory} />
+          <TextInput style={dynamicStyles.input} placeholder="Note (Optional)" placeholderTextColor={colors.textSecondary} value={txNote} onChangeText={setTxNote} />
           <TouchableOpacity style={dynamicStyles.input} onPress={()=>setShowDatePicker('txDate')}>
             <Text style={{color: colors.text}}>{txDate ? txDate : 'Select Date'}</Text>
           </TouchableOpacity>
@@ -1228,9 +1228,9 @@ export default function FinanceScreen() {
                 <Text style={[dynamicStyles.segmentText, txEType==='expense' && {color:'#FFF'}]}>Expense</Text>
               </TouchableOpacity>
             </View>
-            <TextInput style={dynamicStyles.input} placeholder="Amount" keyboardType="numeric" value={txEAmount} onChangeText={setTxEAmount} />
-            <TextInput style={dynamicStyles.input} placeholder="Category" value={txECategory} onChangeText={setTxECategory} />
-            <TextInput style={dynamicStyles.input} placeholder="Note (Optional)" value={txENote} onChangeText={setTxENote} />
+            <TextInput style={dynamicStyles.input} placeholder="Amount" keyboardType="numeric" value={txEAmount} onChangeText={setTxEAmount} placeholderTextColor={colors.textSecondary} />
+            <TextInput style={dynamicStyles.input} placeholder="Category" value={txECategory} onChangeText={setTxECategory} placeholderTextColor={colors.textSecondary} />
+            <TextInput style={dynamicStyles.input} placeholder="Note (Optional)" value={txENote} onChangeText={setTxENote} placeholderTextColor={colors.textSecondary} />
             <TouchableOpacity style={dynamicStyles.input} onPress={()=>setShowDatePicker('txEDate')}>
               <Text style={{color: colors.text}}>{txEDate}</Text>
             </TouchableOpacity>
