@@ -176,10 +176,7 @@ export default function FinanceScreen() {
 
     segmentBlock: { flexDirection: 'row', backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderRadius: 14, padding: 4, marginBottom: 16, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
     segmentBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
-    segmentBtnActive: { 
-      backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)', 
-      borderColor: uiColors.overview, borderWidth: 1 
-    },
+    segmentBtnActive: { borderWidth: 1 },
     segmentText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
     segmentTextActive: { color: isDark ? uiColors.overview : '#2563EB', fontWeight: '700' },
 
@@ -614,6 +611,22 @@ export default function FinanceScreen() {
      setEditingGoal(g);
   }
 
+  // ── Helper: Get color based on active tab
+  const getActiveTabColor = () => {
+    switch(activeTab) {
+      case 'Transactions': return uiColors.transactions;
+      case 'Debts': return uiColors.debts;
+      case 'Goals': return uiColors.goals;
+      default: return uiColors.overview;
+    }
+  };
+
+  const getActiveTabColorBg = () => {
+    const color = getActiveTabColor();
+    const hex = color.replace('#', '');
+    return `rgba(${parseInt(hex.slice(0,2),16)}, ${parseInt(hex.slice(2,4),16)}, ${parseInt(hex.slice(4,6),16)}, 0.15)`;
+  };
+
   // ── Inline Creation Cards
   const renderTxCard = () => (
     <View style={dynamicStyles.createCard}>
@@ -739,8 +752,8 @@ export default function FinanceScreen() {
     <ScrollView style={{ flex: 1, padding: 16 }}>
       <View style={dynamicStyles.segmentBlock}>
         {(['All','Today','Month','Year','Custom'] as TimeFilter[]).map(t => (
-          <TouchableOpacity key={t} style={[dynamicStyles.segmentBtn, timeFilter===t && dynamicStyles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
-            <Text style={[dynamicStyles.segmentText, timeFilter===t && dynamicStyles.segmentTextActive]}>{t}</Text>
+          <TouchableOpacity key={t} style={[dynamicStyles.segmentBtn, timeFilter===t && {backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)', borderColor: uiColors.overview, borderWidth: 1}]} onPress={()=>setTimeFilter(t)}>
+            <Text style={[dynamicStyles.segmentText, timeFilter===t && {color: isDark ? uiColors.overview : '#2563EB', fontWeight: '700'}]}>{t}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -767,8 +780,8 @@ export default function FinanceScreen() {
 
       <View style={dynamicStyles.segmentBlock}>
         {(['Pie','Line','Bar'] as ChartType[]).map(c => (
-          <TouchableOpacity key={c} style={[dynamicStyles.segmentBtn, chartType===c && dynamicStyles.segmentBtnActive]} onPress={()=>setChartType(c)}>
-            <Text style={[dynamicStyles.segmentText, chartType===c && dynamicStyles.segmentTextActive]}>{c}</Text>
+          <TouchableOpacity key={c} style={[dynamicStyles.segmentBtn, chartType===c && {backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)', borderColor: uiColors.overview, borderWidth: 1}]} onPress={()=>setChartType(c)}>
+            <Text style={[dynamicStyles.segmentText, chartType===c && {color: isDark ? uiColors.overview : '#2563EB', fontWeight: '700'}]}>{c}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -907,8 +920,8 @@ export default function FinanceScreen() {
         <>
           <View style={dynamicStyles.segmentBlock}>
             {(['All','Today','Month','Year','Custom'] as TimeFilter[]).map(t => (
-              <TouchableOpacity key={t} style={[dynamicStyles.segmentBtn, timeFilter===t && dynamicStyles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
-                <Text style={[dynamicStyles.segmentText, timeFilter===t && dynamicStyles.segmentTextActive]}>{t}</Text>
+              <TouchableOpacity key={t} style={[dynamicStyles.segmentBtn, timeFilter===t && {backgroundColor: getActiveTabColorBg(), borderColor: uiColors.transactions, borderWidth: 1}]} onPress={()=>setTimeFilter(t)}>
+                <Text style={[dynamicStyles.segmentText, timeFilter===t && {color: uiColors.transactions, fontWeight: '700'}]}>{t}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -962,8 +975,8 @@ export default function FinanceScreen() {
         <>
           <View style={dynamicStyles.segmentBlock}>
             {(['All','Today','Month','Year','Custom'] as TimeFilter[]).map(t => (
-              <TouchableOpacity key={t} style={[dynamicStyles.segmentBtn, timeFilter===t && dynamicStyles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
-                <Text style={[dynamicStyles.segmentText, timeFilter===t && dynamicStyles.segmentTextActive]}>{t}</Text>
+              <TouchableOpacity key={t} style={[dynamicStyles.segmentBtn, timeFilter===t && {backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)', borderColor: uiColors.debts, borderWidth: 1}]} onPress={()=>setTimeFilter(t)}>
+                <Text style={[dynamicStyles.segmentText, timeFilter===t && {color: uiColors.debts, fontWeight: '700'}]}>{t}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -1026,8 +1039,8 @@ export default function FinanceScreen() {
         <>
           <View style={dynamicStyles.segmentBlock}>
             {(['All','Today','Month','Year','Custom'] as TimeFilter[]).map(t => (
-              <TouchableOpacity key={t} style={[dynamicStyles.segmentBtn, timeFilter===t && dynamicStyles.segmentBtnActive]} onPress={()=>setTimeFilter(t)}>
-                <Text style={[dynamicStyles.segmentText, timeFilter===t && dynamicStyles.segmentTextActive]}>{t}</Text>
+              <TouchableOpacity key={t} style={[dynamicStyles.segmentBtn, timeFilter===t && {backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)', borderColor: uiColors.goals, borderWidth: 1}]} onPress={()=>setTimeFilter(t)}>
+                <Text style={[dynamicStyles.segmentText, timeFilter===t && {color: uiColors.goals, fontWeight: '700'}]}>{t}</Text>
               </TouchableOpacity>
             ))}
           </View>
