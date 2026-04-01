@@ -430,57 +430,31 @@ export default function NotesScreen() {
       paddingTop: 10,
       lineHeight: 24,
     },
-    // Filter Styles
-    filterContainer: {
-      flexDirection: 'row',
-      gap: 8,
-      marginBottom: 20,
-      marginTop: 24,
-      paddingHorizontal: 0,
-      justifyContent: 'flex-start',
-      flexWrap: 'wrap',
-    },
-    filterBtn: {
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      borderRadius: 8,
-      backgroundColor: colors.background,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    filterBtnActive: {
-      backgroundColor: `rgba(255, 215, 0, ${isDark ? 0.15 : 0.1})`,
-      borderColor: '#FFD700',
-    },
-    filterBtnText: {
-      fontSize: 12,
-      fontWeight: '500',
-      color: colors.text,
-    },
-    filterBtnTextActive: {
-      color: '#FFD700',
-      fontWeight: '600',
-    },
+    // Filter Styles (Goals-inspired)
+    segmentBlock: { flexDirection: 'row', paddingHorizontal: 20, marginTop: 24, marginBottom: 16, gap: 8 },
+    segmentBtn: { flex: 1, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, alignItems: 'center' },
+    segmentText: { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
     customDateContainer: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
-      marginTop: 12,
-      paddingHorizontal: 0,
+      marginHorizontal: 20,
+      marginBottom: 16,
+      marginTop: -6,
     },
     customDateBtn: {
       flex: 1,
       paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 8,
+      paddingVertical: 12,
+      borderRadius: 10,
       borderWidth: 1,
-      borderColor: '#FFD700',
-      backgroundColor: `rgba(255, 215, 0, ${isDark ? 0.08 : 0.05})`,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
     },
     customDateText: {
-      fontSize: 12,
-      fontWeight: '600',
-      color: '#FFD700',
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.text,
       textAlign: 'center',
     },
     dateRangeSeparator: {
@@ -551,34 +525,43 @@ export default function NotesScreen() {
 
   const renderListHeader = () => (
     <>
-      <View style={dynamicStyles.filterContainer}>
-        <TouchableOpacity 
-          style={[dynamicStyles.filterBtn, timeFilter === 'all' && dynamicStyles.filterBtnActive]}
-          onPress={() => setTimeFilter('all')}
-        >
-          <Text style={[dynamicStyles.filterBtnText, timeFilter === 'all' && dynamicStyles.filterBtnTextActive]}>All</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[dynamicStyles.filterBtn, timeFilter === 'today' && dynamicStyles.filterBtnActive]}
-          onPress={() => setTimeFilter('today')}
-        >
-          <Text style={[dynamicStyles.filterBtnText, timeFilter === 'today' && dynamicStyles.filterBtnTextActive]}>Today</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[dynamicStyles.filterBtn, timeFilter === 'month' && dynamicStyles.filterBtnActive]}
-          onPress={() => setTimeFilter('month')}
-        >
-          <Text style={[dynamicStyles.filterBtnText, timeFilter === 'month' && dynamicStyles.filterBtnTextActive]}>Month</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[dynamicStyles.filterBtn, timeFilter === 'custom' && dynamicStyles.filterBtnActive]}
-          onPress={() => setShowDatePicker(showDatePicker ? null : 'start')}
-        >
-          <Text style={[dynamicStyles.filterBtnText, timeFilter === 'custom' && dynamicStyles.filterBtnTextActive]}>Custom</Text>
-        </TouchableOpacity>
+      <View style={dynamicStyles.segmentBlock}>
+        {(['all', 'today', 'month', 'custom'] as const).map((t) => {
+          const themeColor = '#FFD700';
+          const getRgbaColor = (hex: string, opacity: number) => {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+          };
+          const label = t.charAt(0).toUpperCase() + t.slice(1);
+          return (
+            <TouchableOpacity
+              key={t}
+              style={[
+                dynamicStyles.segmentBtn,
+                timeFilter === t && {
+                  backgroundColor: isDark ? getRgbaColor(themeColor, 0.15) : getRgbaColor(themeColor, 0.1),
+                  borderColor: themeColor,
+                  borderWidth: 1,
+                },
+              ]}
+              onPress={() => {
+                setTimeFilter(t);
+                if (t !== 'custom') setShowDatePicker(null);
+              }}
+            >
+              <Text
+                style={[
+                  dynamicStyles.segmentText,
+                  timeFilter === t && { color: '#FFD700', fontWeight: '700' },
+                ]}
+              >
+                {label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       {showDatePicker && (
