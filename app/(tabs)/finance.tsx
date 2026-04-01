@@ -194,9 +194,9 @@ export default function FinanceScreen() {
     chartArea: { backgroundColor: colors.card, borderRadius: 16, padding: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center', marginTop: 10 },
 
     card: { 
-      backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#FFFFFF', 
+      backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : '#FFFFFF', 
       borderRadius: 20, padding: 16, marginBottom: 12, borderWidth: 1, 
-      borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+      borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
       flexDirection: 'row', justifyContent: 'space-between' 
     },
 
@@ -454,8 +454,8 @@ export default function FinanceScreen() {
   const netBalance = totalIncome - totalExpense;
 
   const pieData = [
-    { name: 'Income', amount: totalIncome, color: colors.success, legendFontColor: '#333', legendFontSize: 13 },
-    { name: 'Expense', amount: totalExpense, color: colors.danger, legendFontColor: '#333', legendFontSize: 13 }
+    { name: 'Income', amount: totalIncome, color: colors.success, legendFontColor: colors.text, legendFontSize: 13 },
+    { name: 'Expense', amount: totalExpense, color: colors.danger, legendFontColor: colors.text, legendFontSize: 13 }
   ];
 
   const lineData = useMemo(() => {
@@ -749,7 +749,10 @@ export default function FinanceScreen() {
   };
 
   const renderOverview = () => (
-    <ScrollView style={{ flex: 1, padding: 16 }}>
+    <ScrollView 
+      style={{ flex: 1 }}
+      contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+    >
       <View style={dynamicStyles.segmentBlock}>
         {(['All','Today','Month','Year','Custom'] as TimeFilter[]).map(t => (
           <TouchableOpacity key={t} style={[dynamicStyles.segmentBtn, timeFilter===t && {backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)', borderColor: uiColors.overview, borderWidth: 1}]} onPress={()=>setTimeFilter(t)}>
@@ -936,11 +939,11 @@ export default function FinanceScreen() {
         return (
           <View style={[dynamicStyles.card, isSynthetic && {borderLeftWidth: 4, borderLeftColor: item.type==='income'?'#10B981':'#EF4444'}]}>
             <View style={{flex:1}}>
-              <Text style={{fontSize:16, fontWeight:'700', color: '#1E293B'}}>
+              <Text style={{fontSize:16, fontWeight:'700', color: colors.text}}>
                 {item.category} {isSynthetic && ' (Auto)'}
               </Text>
-              {item.note ? <Text style={{fontSize:13, color:'#64748B', marginTop:2}}>{item.note}</Text> : null}
-              <Text style={{fontSize:12, color:'#94A3B8', marginTop:4}}>{item.date}</Text>
+              {item.note ? <Text style={{fontSize:13, color: colors.text, marginTop:2}}>{item.note}</Text> : null}
+              <Text style={{fontSize:12, color: colors.text, marginTop:4, opacity: 0.6}}>{item.date}</Text>
             </View>
             <View style={{alignItems:'flex-end'}}>
               <Text style={{fontSize:16, fontWeight:'800', color: item.type==='income'?'#10B981':'#EF4444'}}>
@@ -949,7 +952,7 @@ export default function FinanceScreen() {
               {!isSynthetic && (
                 <View style={{flexDirection: 'row', gap: 12, marginTop: 8}}>
                   <TouchableOpacity onPress={()=> openEditTx(item)}>
-                    <Ionicons name="pencil-outline" size={18} color="#64748B"/>
+                    <Ionicons name="pencil-outline" size={18} color={colors.textSecondary}/>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={()=> {
                     Alert.alert('Delete', 'Delete transaction?', [
@@ -991,9 +994,9 @@ export default function FinanceScreen() {
         return (
           <View style={[dynamicStyles.card, item.given_back && {opacity: 0.7}]}>
             <View style={{flex:1}}>
-              <Text style={{fontSize:17, fontWeight:'800', color: '#1E293B'}}>{item.to_whom}</Text>
-              {item.description ? <Text style={{fontSize:13, color:'#64748B', marginTop:2}}>{item.description}</Text> : null}
-              <Text style={{fontSize:12, color:'#94A3B8', marginTop:4}}>Given: {item.amount_given_date} {item.due_date ? `| Due: ${item.due_date}` : ''}</Text>
+              <Text style={{fontSize:17, fontWeight:'800', color: colors.text}}>{item.to_whom}</Text>
+              {item.description ? <Text style={{fontSize:13, color: colors.textSecondary, marginTop:2}}>{item.description}</Text> : null}
+              <Text style={{fontSize:12, color: colors.textSecondary, marginTop:4, opacity: 0.7}}>Given: {item.amount_given_date} {item.due_date ? `| Due: ${item.due_date}` : ''}</Text>
               <Text style={{fontSize:12, color:'#3B82F6', marginTop:2, fontWeight:'600'}}>
                 Interest: {item.interest_type} {item.interest_rate ? `(${item.interest_rate}% / yr)` : ''}
               </Text>
@@ -1002,10 +1005,10 @@ export default function FinanceScreen() {
             <View style={{alignItems:'flex-end'}}>
               <Text style={{fontSize:18, fontWeight:'800', color: '#F59E0B'}}>${calculatedAmount.toFixed(2)}</Text>
               {item.interest_type !== 'none' && (
-                <Text style={{fontSize:10, color:'#94A3B8', marginTop:2}}>Base: ${item.amount}</Text>
+                <Text style={{fontSize:10, color: colors.textSecondary, marginTop:2, opacity: 0.7}}>Base: ${item.amount}</Text>
               )}
               <View style={{flexDirection:'row', alignItems:'center', marginTop: 8}}>
-                <Text style={{fontSize:11, color:'#64748B', marginRight:4}}>Paid?</Text>
+                <Text style={{fontSize:11, color: colors.textSecondary, marginRight:4}}>Paid?</Text>
                 <Switch 
                   value={item.given_back} 
                   onValueChange={()=>toggleDebtGivenBack(item)}
@@ -1014,7 +1017,7 @@ export default function FinanceScreen() {
               </View>
               <View style={{flexDirection: 'row', gap: 12, marginTop: 8}}>
                 <TouchableOpacity onPress={()=> openEditDebt(item)}>
-                  <Ionicons name="pencil-outline" size={18} color="#64748B"/>
+                  <Ionicons name="pencil-outline" size={18} color={colors.textSecondary}/>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={()=> {
                   Alert.alert('Delete', 'Delete debt record?', [
@@ -1049,7 +1052,7 @@ export default function FinanceScreen() {
         </>
       }
       contentContainerStyle={{padding: 16, paddingBottom: 100}}
-      ListEmptyComponent={<Text style={{textAlign:'center', color:'#94A3B8', marginTop: 40}}>No financial goals yet.</Text>}
+      ListEmptyComponent={<Text style={{textAlign:'center', color: colors.textSecondary, marginTop: 40}}>No financial goals yet.</Text>}
       renderItem={({item}) => {
         const pctRaw = item.target_amount ? (item.current_amount / item.target_amount) * 100 : 0;
         const pct = Math.min(Math.max(pctRaw, 0), 100).toFixed(1);
@@ -1061,7 +1064,7 @@ export default function FinanceScreen() {
               <Text style={{fontSize:20, fontWeight:'900', color: colors.text, flex: 1}}>{item.title || 'Untitled Goal'}</Text>
               <View style={{flexDirection: 'row', gap: 16}}>
                 <TouchableOpacity onPress={()=> openEditGoal(item)}>
-                  <Ionicons name="pencil-outline" size={20} color="#64748B"/>
+                  <Ionicons name="pencil-outline" size={20} color={colors.textSecondary}/>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={()=> {
                   Alert.alert('Delete', 'Delete goal?', [
@@ -1075,28 +1078,28 @@ export default function FinanceScreen() {
 
             {/* Percentage Above Bar aligned Right */}
             <View style={{flexDirection:'row', justifyContent:'flex-end', marginBottom: 6}}>
-              <Text style={{fontSize:16, fontWeight:'900', color: colors.primary}}>{pct}%</Text>
+              <Text style={{fontSize:16, fontWeight:'900', color: colors.text}}>{pct}%</Text>
             </View>
 
             {/* Progress Bar */}
-            <View style={{height:12, backgroundColor:'#E2E8F0', borderRadius:6, overflow:'hidden', marginBottom: 10}}>
+            <View style={{height:12, backgroundColor: isDark ? '#334155' : '#E2E8F0', borderRadius:6, overflow:'hidden', marginBottom: 10}}>
               <View style={{height:'100%', backgroundColor:'#3B82F6', width:`${pct}%` as any}} />
             </View>
 
             {/* Description & Saved Amount strictly below the % bar */}
             <View style={{flexDirection:'column', marginBottom: 16}}>
-              <Text style={{fontSize:15, fontWeight:'800', color:'#475569'}}>
-                Saved: <Text style={{color: colors.success}}>${item.current_amount}</Text> <Text style={{fontWeight:'500', color:'#94A3B8'}}>of ${item.target_amount}</Text>
+              <Text style={{fontSize:15, fontWeight:'800', color: colors.text}}>
+                Saved: <Text style={{color: colors.success}}>${item.current_amount}</Text> <Text style={{fontWeight:'500', color: colors.textSecondary}}>of ${item.target_amount}</Text>
               </Text>
-              {item.description ? <Text style={{fontSize:14, color:'#64748B', marginTop:6}}>{item.description}</Text> : null}
-              <Text style={{fontSize:12, color:'#94A3B8', marginTop: 4}}>Started: {item.created_at ? item.created_at.split('T')[0] : 'Today'}</Text>
-            </View>
+              {item.description ? <Text style={{fontSize:14, color: colors.textSecondary, marginTop:6}}>{item.description}</Text> : null}
+              <Text style={{fontSize:12, color: colors.textSecondary, marginTop: 4, opacity: 0.7}}>Started: {item.created_at ? item.created_at.split('T')[0] : 'Today'}</Text>
 
-            <TouchableOpacity style={{backgroundColor:'#EFF6FF', paddingVertical:12, borderRadius:10, alignItems:'center'}}
-              onPress={() => { setSelectedGoal(item); setShowGoalUpdateModal(true); }}
-            >
-              <Text style={{color:'#3B82F6', fontWeight:'800', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5}}>Update Balance</Text>
-            </TouchableOpacity>
+              <TouchableOpacity style={{backgroundColor:'#EFF6FF', paddingVertical:12, borderRadius:10, alignItems:'center', marginTop: 10}}
+                onPress={() => { setSelectedGoal(item); setShowGoalUpdateModal(true); }}
+              >
+                <Text style={{color:'#3B82F6', fontWeight:'800', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5}}>Update Balance</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         );
       }}
@@ -1133,7 +1136,7 @@ export default function FinanceScreen() {
           <TouchableOpacity style={dynamicStyles.tab} onPress={() => setActiveTab('Transactions')}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="swap-horizontal-outline" size={16} color={activeTab === 'Transactions' ? uiColors.transactions : '#64748B'} style={{ marginRight: 6 }} />
-              <Text style={[dynamicStyles.tabText, activeTab === 'Transactions' && dynamicStyles.tabTextActiveTransactions, { marginBottom: 0 }]}>History</Text>
+              <Text style={[dynamicStyles.tabText, activeTab === 'Transactions' && dynamicStyles.tabTextActiveTransactions, { marginBottom: 0 }]}>Transactions</Text>
             </View>
             {activeTab === 'Transactions' && <View style={dynamicStyles.activeIndicatorTransactions} />}
           </TouchableOpacity>
