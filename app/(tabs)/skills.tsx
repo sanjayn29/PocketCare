@@ -3,14 +3,18 @@ import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
+import { BlurView } from 'expo-blur';
+import { useFonts } from 'expo-font';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert, FlatList,
+  ActivityIndicator, Alert, Animated, FlatList,
   Keyboard, KeyboardAvoidingView, Modal, Platform,
   ScrollView, StyleSheet,
   Text, TextInput,
   TouchableOpacity, View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Skill, SkillLevel, SkillTask,
   addSkill, deleteSkill, getSkills, updateSkill,
@@ -23,10 +27,16 @@ import {
 export default function SkillsScreen() {
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress;
+  const router = useRouter();
 
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const colors = getColors(isDark)
+
+  const backButtonScale = useRef(new Animated.Value(1)).current
+  const [fontsLoaded] = useFonts({
+    'Roboto Slab': require('../../assets/Font/RobotoSlab-VariableFont_wght.ttf'),
+  })
 
   // Move LEVEL_CONFIG inside component to use dynamic colors
   const LEVEL_CONFIG: Record<SkillLevel, { label: string; color: string; bg: string }> = {
@@ -62,6 +72,23 @@ export default function SkillsScreen() {
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // ─────────────────────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(backButtonScale, {
+          toValue: 1.06,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(backButtonScale, {
+          toValue: 1,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start()
+  }, [backButtonScale])
 
   useEffect(() => {
     if (email) loadSkills();
@@ -178,40 +205,77 @@ export default function SkillsScreen() {
 
   const dynamicStyles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    headerArea: { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 12 },
-    pageTitle: { fontSize: 28, fontWeight: '800', color: colors.text },
-    pageSubtitle: { fontSize: 13, color: colors.textSecondary, fontWeight: '500', marginTop: 2 },
+    headerArea: {
+      paddingHorizontal: 20,
+      paddingTop: Platform.OS === 'ios' ? 12 : 20,
+      paddingBottom: 20,
+      overflow: 'hidden',
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+      marginBottom: 0,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 16,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+      borderWidth: 1.5,
+      borderColor: colors.primary,
+    },
+    backButtonText: {
+      fontSize: 22,
+      color: isDark ? '#FFFFFF' : '#000000',
+      marginTop: -2,
+    },
+    pageTitle: {
+      fontSize: 24,
+      fontFamily: 'Roboto Slab',
+      fontWeight: '400',
+      color: isDark ? '#FFFFFF' : '#000000',
+      letterSpacing: -0.5,
+    },
+    pageSubtitle: { fontSize: 12, color: colors.textSecondary, fontWeight: '500', marginTop: 2 },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     listContent: { paddingHorizontal: 16, paddingBottom: 120 },
     emptyWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 60 },
     emptyText: { color: colors.textSecondary, fontSize: 16, marginTop: 12, fontWeight: '500' },
-    createCard: { backgroundColor: colors.card, borderRadius: 16, marginBottom: 20, borderWidth: 1, borderColor: colors.border, shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3, overflow: 'hidden' },
+    segmentBlock: { flexDirection: 'row', backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderRadius: 14, padding: 4, marginBottom: 16, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
+    segmentBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
+    segmentText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
+    createCard: { backgroundColor: colors.card, borderRadius: 20, marginBottom: 20, borderWidth: 1.5, borderColor: colors.border, shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3, overflow: 'hidden' },
     createCollapsed: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
     createCollapsedText: { fontSize: 16, color: colors.textSecondary, fontWeight: '500' },
     createExpanded: { padding: 16 },
     createTitleInput: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 14, paddingVertical: 4 },
     selectorLabel: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, marginBottom: 8 },
     levelRow: { flexDirection: 'row', gap: 8, marginBottom: 16, flexWrap: 'wrap' },
-    levelChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
+    levelChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: colors.background, borderWidth: 1.5, borderColor: colors.border },
     levelChipText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, textTransform: 'capitalize' },
     createActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, borderTopWidth: 1, borderTopColor: colors.background, paddingTop: 12, marginTop: 4 },
     cancelBtn: { paddingVertical: 8, paddingHorizontal: 16, justifyContent: 'center' },
     cancelBtnText: { color: colors.textSecondary, fontWeight: '600', fontSize: 14 },
     saveBtn: { backgroundColor: colors.primary, paddingVertical: 8, paddingHorizontal: 20, borderRadius: 20, justifyContent: 'center' },
-    saveBtnText: { color: colors.text, fontWeight: '700', fontSize: 14 },
-    taskRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.background, padding: 10, borderRadius: 10, marginBottom: 8, borderWidth: 1, borderColor: colors.border },
+    saveBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
+    taskRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.background, padding: 10, borderRadius: 10, marginBottom: 8, borderWidth: 1.5, borderColor: colors.border },
     taskRowText: { flex: 1, fontSize: 14, color: colors.text, fontWeight: '500' },
     taskEditInput: { flex: 1, fontSize: 14, color: colors.text, borderBottomWidth: 1, borderBottomColor: colors.primary, padding: 0 },
     addTaskRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
-    addTaskInput: { flex: 1, backgroundColor: colors.background, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: colors.text },
+    addTaskInput: { flex: 1, backgroundColor: colors.background, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: colors.text, borderWidth: 1, borderColor: colors.border },
     addTaskBtn: { width: 42, height: 42, borderRadius: 10, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-    skillCard: { backgroundColor: colors.card, borderRadius: 16, marginBottom: 14, flexDirection: 'row', borderWidth: 1, borderColor: colors.border, shadowColor: colors.text, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+    skillCard: { backgroundColor: colors.card, borderRadius: 20, marginBottom: 14, flexDirection: 'row', borderWidth: 1.5, borderColor: colors.border, shadowColor: colors.text, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
     skillMain: { flex: 1, padding: 16 },
     skillHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     skillName: { fontSize: 17, fontWeight: '700', color: colors.text, flex: 1, marginRight: 8 },
     levelBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
     levelBadgeText: { fontSize: 11, fontWeight: '800' },
-    progressArea: { backgroundColor: colors.background, padding: 10, borderRadius: 10, marginBottom: 10, borderWidth: 1, borderColor: colors.border },
+    progressArea: { backgroundColor: colors.background, padding: 10, borderRadius: 10, marginBottom: 10, borderWidth: 1.5, borderColor: colors.border },
     progressHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
     progressLabel: { fontSize: 12, fontWeight: '600', color: colors.text },
     progressPct: { fontSize: 12, fontWeight: '800', color: colors.text },
@@ -221,7 +285,7 @@ export default function SkillsScreen() {
     previewText: { fontSize: 13, color: colors.text, fontWeight: '500' },
     previewDone: { color: colors.textSecondary, textDecorationLine: 'line-through' },
     moreText: { fontSize: 12, color: colors.textSecondary, marginTop: 4 },
-    deleteArea: { paddingHorizontal: 14, justifyContent: 'flex-start', alignItems: 'center', paddingTop: 18 },
+    deleteArea: { paddingHorizontal: 14, justifyContent: 'flex-start', alignItems: 'center', paddingTop: 18, borderLeftWidth: 1.5, borderLeftColor: colors.border },
     modalContainer: { flex: 1, backgroundColor: colors.card },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: colors.border },
     modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
@@ -229,45 +293,51 @@ export default function SkillsScreen() {
     saveHeaderText: { fontSize: 16, fontWeight: '700', color: colors.primary },
     modalBody: { padding: 20, flex: 1 },
     titleInput: { fontSize: 22, fontWeight: '700', color: colors.text, marginBottom: 18, borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 8 },
-    filterSection: { paddingHorizontal: 16, paddingVertical: 14, backgroundColor: colors.background, marginBottom: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
-    filterLabel: { fontSize: 12, fontWeight: '700', color: colors.textSecondary, marginBottom: 10, textTransform: 'uppercase' },
-    filterRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', alignItems: 'center' },
-    filterChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
-    filterChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-    filterChipText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, textTransform: 'capitalize' },
-    filterChipTextActive: { color: colors.text },
   });
 
   // ─── Render ──────────────────────────────────────────────────────────────
 
   const renderListHeader = () => (
     <View>
-      {/* Filter Section */}
-      <View style={dynamicStyles.filterSection}>
-        <Text style={dynamicStyles.filterLabel}>Filter by Level</Text>
-        <View style={dynamicStyles.filterRow}>
-          <TouchableOpacity
-            style={[dynamicStyles.filterChip, levelFilter === 'all' && dynamicStyles.filterChipActive]}
-            onPress={() => setLevelFilter('all')}
-          >
-            <Text style={[dynamicStyles.filterChipText, levelFilter === 'all' && dynamicStyles.filterChipTextActive]}>All</Text>
-          </TouchableOpacity>
-
-          {(['beginner', 'intermediate', 'advanced'] as SkillLevel[]).map(l => (
+      <View style={dynamicStyles.segmentBlock}>
+        {(['all', 'beginner', 'intermediate', 'advanced'] as const).map((l) => {
+          const themeColor = colors.primary;
+          const getRgbaColor = (hex: string, opacity: number) => {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+          };
+          const isActive = levelFilter === l || (l === 'all' && levelFilter === 'all');
+          const label = l === 'all' ? 'All' : LEVEL_CONFIG[l].label;
+          return (
             <TouchableOpacity
               key={l}
-              style={[dynamicStyles.filterChip, levelFilter === l && dynamicStyles.filterChipActive]}
-              onPress={() => setLevelFilter(l)}
+              style={[
+                dynamicStyles.segmentBtn,
+                isActive && {
+                  backgroundColor: isDark ? getRgbaColor(themeColor, 0.15) : getRgbaColor(themeColor, 0.1),
+                  borderColor: themeColor,
+                  borderWidth: 1,
+                },
+              ]}
+              onPress={() => setLevelFilter(l as SkillLevel | 'all')}
             >
-              <Text style={[dynamicStyles.filterChipText, levelFilter === l && dynamicStyles.filterChipTextActive]}>
-                {LEVEL_CONFIG[l].label}
+              <Text
+                style={[
+                  dynamicStyles.segmentText,
+                  isActive && { color: themeColor, fontWeight: '700' },
+                ]}
+                numberOfLines={1}
+                ellipsizeMode="clip"
+              >
+                {label}
               </Text>
             </TouchableOpacity>
-          ))}
-        </View>
+          );
+        })}
       </View>
 
-      {/* Create Skill Card */}
       <View style={dynamicStyles.createCard}>
       {isCreating ? (
         <View style={dynamicStyles.createExpanded}>
@@ -326,7 +396,7 @@ export default function SkillsScreen() {
               <Text style={dynamicStyles.cancelBtnText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity style={dynamicStyles.saveBtn} onPress={handleSaveSkill} disabled={isSavingNew}>
-              {isSavingNew ? <ActivityIndicator size="small" color={colors.text} /> : <Text style={dynamicStyles.saveBtnText}>Add Skill</Text>}
+              {isSavingNew ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={dynamicStyles.saveBtnText}>Add Skill</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -346,7 +416,7 @@ export default function SkillsScreen() {
     const pct = total === 0 ? 0 : Math.round((done / total) * 100);
     const cfg = LEVEL_CONFIG[item.level] || LEVEL_CONFIG.beginner;
 
-    return (
+  return (
       <View style={dynamicStyles.skillCard}>
         <TouchableOpacity style={dynamicStyles.skillMain} onPress={() => openEditModal(item)} activeOpacity={0.75}>
           {/* Header */}
@@ -380,41 +450,57 @@ export default function SkillsScreen() {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={dynamicStyles.deleteArea} onPress={() => handleDelete(item.id)} hitSlop={10}>
-          <Ionicons name="trash-outline" size={20} color={colors.danger} />
-        </TouchableOpacity>
+        <View style={dynamicStyles.deleteArea}>
+          <TouchableOpacity onPress={() => openEditModal(item)} hitSlop={10}>
+            <Ionicons name="pencil-outline" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => handleDelete(item.id)} hitSlop={10} style={{ marginTop: 10 }}>
+            <Ionicons name="trash-outline" size={20} color={colors.danger} />
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
 
   return (
-    <KeyboardAvoidingView style={dynamicStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={dynamicStyles.headerArea}>
-        <Text style={dynamicStyles.pageTitle}>My Skills</Text>
-        <Text style={dynamicStyles.pageSubtitle}>Track your learning progress</Text>
-      </View>
-
-      {loading ? (
-        <View style={dynamicStyles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
-      ) : (
-        <FlatList
-          data={getFilteredSkills()}
-          keyExtractor={item => item.id}
-          renderItem={renderSkill}
-          ListHeaderComponent={renderListHeader()}
-          contentContainerStyle={dynamicStyles.listContent}
-          onRefresh={handleRefresh}
-          refreshing={refreshing}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          ListEmptyComponent={
-            <View style={dynamicStyles.emptyWrap}>
-              <Ionicons name="school-outline" size={60} color={colors.textSecondary} />
-              <Text style={dynamicStyles.emptyText}>No skills tracked yet.</Text>
+    <SafeAreaView style={dynamicStyles.container} edges={['top', 'left', 'right']}>
+      <View style={{ flex: 1 }}>
+        <View style={dynamicStyles.headerArea}>
+          <BlurView intensity={isDark ? 40 : 60} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+          <View style={dynamicStyles.headerRow}>
+            <Animated.View style={{ transform: [{ scale: backButtonScale }] }}>
+              <TouchableOpacity style={dynamicStyles.backButton} onPress={() => router.replace('/(tabs)')}>
+                <Text style={dynamicStyles.backButtonText}>←</Text>
+              </TouchableOpacity>
+            </Animated.View>
+            <View>
+              <Text style={dynamicStyles.pageTitle}>Skills</Text>
+              <Text style={dynamicStyles.pageSubtitle}>Track your learning progress</Text>
             </View>
-          }
-        />
-      )}
+          </View>
+        </View>
+
+        {loading ? (
+          <View style={dynamicStyles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
+        ) : (
+          <FlatList
+            data={getFilteredSkills()}
+            keyExtractor={item => item.id}
+            renderItem={renderSkill}
+            ListHeaderComponent={renderListHeader()}
+            contentContainerStyle={dynamicStyles.listContent}
+            onRefresh={handleRefresh}
+            refreshing={refreshing}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            ListEmptyComponent={
+              <View style={dynamicStyles.emptyWrap}>
+                <Ionicons name="school-outline" size={60} color={colors.textSecondary} />
+                <Text style={dynamicStyles.emptyText}>No skills tracked yet.</Text>
+              </View>
+            }
+          />
+        )}
 
       {/* ── Edit Modal ── */}
       <Modal visible={modalVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setModalVisible(false)}>
@@ -500,7 +586,7 @@ export default function SkillsScreen() {
       </Modal>
 
 
-    </KeyboardAvoidingView>
+      </View>
+    </SafeAreaView>
   );
 }
-
