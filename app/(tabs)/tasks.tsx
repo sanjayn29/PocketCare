@@ -401,35 +401,17 @@ export default function TasksScreen() {
       padding: 16,
     },
     // Dropdown Filter Styles
-    filterRowSecondary: { flexDirection: 'row', paddingHorizontal: 20, marginBottom: 16, gap: 12, marginTop: 4 },
-    dropdownContainer: {
-      flex: 1,
-      position: 'relative',
-    },
-    dropdownBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 20,
-      backgroundColor: colors.card,
-      borderWidth: 1,
-      borderColor: colors.border,
-      gap: 6,
-    },
-    dropdownBtnActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
-    },
+    filterRowSecondary: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 20, gap: 12, marginTop: 4 },
+    dropdownContainer: { flex: 1, position: 'relative', minHeight: 44 },
+    dropdownBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 20, backgroundColor: colors.background, borderWidth: 1.5, borderColor: colors.border, gap: 6, shadowColor: colors.text, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 1 },
+    dropdownBtnActive: { backgroundColor: colors.primary, borderColor: colors.primary, shadowColor: colors.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 2 },
     dropdownBtnText: {
       fontSize: 13,
       fontWeight: '600',
       color: colors.textSecondary,
       flex: 1,
     },
-    dropdownBtnTextActive: {
-      color: '#FFFFFF',
-    },
+    dropdownBtnTextActive: { color: '#FFFFFF', fontWeight: '700' },
     dropdownMenu: {
       position: 'absolute',
       top: 48,
@@ -440,30 +422,26 @@ export default function TasksScreen() {
       borderWidth: 1,
       borderColor: colors.border,
       zIndex: 1000,
-      shadowColor: '#000',
+      shadowColor: colors.text,
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 5,
+      shadowOpacity: 0.15,
+      shadowRadius: 10,
+      elevation: 6,
+      overflow: 'hidden',
     },
     dropdownItem: {
       paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingVertical: 14,
       borderBottomWidth: 1,
-      borderBottomColor: '#F1F5F9',
+      borderBottomColor: colors.background,
     },
-    dropdownItemActive: {
-      backgroundColor: colors.background,
-    },
+    dropdownItemActive: { backgroundColor: colors.background, borderLeftWidth: 4, borderLeftColor: colors.primary, paddingHorizontal: 12 },
     dropdownItemText: {
       fontSize: 14,
       color: colors.text,
       fontWeight: '500',
     },
-    dropdownItemTextActive: {
-      color: colors.primary,
-      fontWeight: '600',
-    },
+    dropdownItemTextActive: { color: colors.primary, fontWeight: '700' },
   });
   
   const [tasks, setTasks] = useState<ExtendedTask[]>([]);
