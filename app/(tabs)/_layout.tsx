@@ -43,11 +43,6 @@ export default function TabLayout() {
             borderColor: colors.border,
             paddingBottom: 8,
             paddingTop: 8,
-            shadowColor: colors.primary, // Premium glow effect matching the theme
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.12,
-            shadowRadius: 16,
-            elevation: 12,
           },
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textSecondary,
