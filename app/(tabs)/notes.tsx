@@ -2,19 +2,24 @@
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import React, { useEffect, useState } from 'react';
+import { BlurView } from 'expo-blur';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator, Alert,
-    FlatList,
-    Keyboard,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    StyleSheet, Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  Animated,
+  FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet, Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,10 +28,13 @@ import { addNote, deleteNote, getNotes, Note, updateNote } from '../../lib/notes
 export default function NotesScreen() {
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress;
+  const router = useRouter();
   
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const colors = getColors(isDark)
+  
+  const backButtonScale = useRef(new Animated.Value(1)).current;
 
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,10 +54,10 @@ export default function NotesScreen() {
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Time filter state
-  const [timeFilter, setTimeFilter] = useState<'all' | 'today' | '30days' | 'month' | 'custom'>('all');
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [calendarModalVisible, setCalendarModalVisible] = useState(false);
+  const [timeFilter, setTimeFilter] = useState<'all' | 'today' | 'month' | 'custom'>('all');
+  const [customStart, setCustomStart] = useState<Date>(new Date());
+  const [customEnd, setCustomEnd] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState<'start' | 'end' | null>(null);
 
   useEffect(() => {
     if (email) {
@@ -58,6 +66,23 @@ export default function NotesScreen() {
       setLoading(false);
     }
   }, [email]);
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(backButtonScale, {
+          toValue: 1.06,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(backButtonScale, {
+          toValue: 1.0,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
 
   const loadNotes = async () => {
     if (!email) return;
@@ -158,16 +183,11 @@ export default function NotesScreen() {
       switch (timeFilter) {
         case 'today':
           return noteDateOnly.getTime() === today.getTime();
-        case '30days':
-          const thirtyDaysAgo = new Date(today);
-          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-          return noteDateOnly.getTime() >= thirtyDaysAgo.getTime();
         case 'month':
           return noteDate.getFullYear() === now.getFullYear() &&
                  noteDate.getMonth() === now.getMonth();
         case 'custom':
-          const selectedDateOnly = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
-          return noteDateOnly.getTime() === selectedDateOnly.getTime();
+          return noteDateOnly.getTime() >= customStart.getTime() && noteDateOnly.getTime() <= customEnd.getTime();
         default:
           return true;
       }
@@ -202,13 +222,38 @@ export default function NotesScreen() {
     },
     headerArea: {
       paddingHorizontal: 20,
-      marginTop: 20, 
-      marginBottom: 10,
+      paddingTop: Platform.OS === 'ios' ? 12 : 20,
+      paddingBottom: 20,
+      overflow: 'hidden',
+      borderBottomWidth: 1,
+      borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+      marginBottom: 0,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 16,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+      borderWidth: 1.5,
+      borderColor: colors.primary,
+    },
+    backButtonText: {
+      fontSize: 22,
+      color: isDark ? '#FFFFFF' : '#000000',
+      marginTop: -2,
     },
     pageTitle: {
-      fontSize: 28,
-      fontWeight: '800',
-      color: colors.text,
+      fontSize: 24,
+      fontFamily: 'Roboto Slab',
+      color: isDark ? '#FFFFFF' : '#000000',
+      letterSpacing: -0.5,
     },
     center: {
       flex: 1,
@@ -233,14 +278,14 @@ export default function NotesScreen() {
     // Inline Create Styles
     createCard: {
       backgroundColor: colors.card,
-      borderRadius: 16,
+      borderRadius: 20,
       marginBottom: 20,
-      shadowColor: colors.primary,
+      shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.1,
       shadowRadius: 12,
       elevation: 4,
-      borderWidth: 1,
+      borderWidth: 1.5,
       borderColor: colors.border,
       overflow: 'hidden',
     },
@@ -305,15 +350,15 @@ export default function NotesScreen() {
     // Note Card
     noteCard: {
       backgroundColor: colors.card,
-      borderRadius: 16,
+      borderRadius: 18,
       padding: 16,
-      marginBottom: 12,
+      marginBottom: 14,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.05,
-      shadowRadius: 8,
-      elevation: 2,
-      borderWidth: 1,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 10,
+      elevation: 3,
+      borderWidth: 1.5,
       borderColor: colors.border,
     },
     noteHeader: {
@@ -328,12 +373,14 @@ export default function NotesScreen() {
       color: colors.text,
       flex: 1,
       marginRight: 10,
+      fontFamily: 'Roboto Slab',
     },
     noteContent: {
-      fontSize: 15,
+      fontSize: 14,
       color: colors.textSecondary,
       lineHeight: 22,
       marginBottom: 12,
+      fontWeight: '500',
     },
     noteDate: {
       fontSize: 12,
@@ -387,28 +434,59 @@ export default function NotesScreen() {
     filterContainer: {
       flexDirection: 'row',
       gap: 8,
-      marginBottom: 16,
+      marginBottom: 20,
+      marginTop: 24,
       paddingHorizontal: 0,
+      justifyContent: 'flex-start',
+      flexWrap: 'wrap',
     },
     filterBtn: {
       paddingVertical: 8,
-      paddingHorizontal: 14,
-      borderRadius: 20,
+      paddingHorizontal: 12,
+      borderRadius: 8,
       backgroundColor: colors.background,
       borderWidth: 1,
       borderColor: colors.border,
     },
     filterBtnActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
+      backgroundColor: `rgba(255, 215, 0, ${isDark ? 0.15 : 0.1})`,
+      borderColor: '#FFD700',
     },
     filterBtnText: {
-      fontSize: 13,
-      fontWeight: '600',
-      color: colors.textSecondary,
+      fontSize: 12,
+      fontWeight: '500',
+      color: colors.text,
     },
     filterBtnTextActive: {
-      color: colors.card,
+      color: '#FFD700',
+      fontWeight: '600',
+    },
+    customDateContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginTop: 12,
+      paddingHorizontal: 0,
+    },
+    customDateBtn: {
+      flex: 1,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: '#FFD700',
+      backgroundColor: `rgba(255, 215, 0, ${isDark ? 0.08 : 0.05})`,
+    },
+    customDateText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: '#FFD700',
+      textAlign: 'center',
+    },
+    dateRangeSeparator: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: '500',
     },
     // Date Picker Container Styles
     datePickerIOSContainer: {
@@ -489,53 +567,66 @@ export default function NotesScreen() {
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={[dynamicStyles.filterBtn, timeFilter === 'custom' && dynamicStyles.filterBtnActive]}
-          onPress={() => setShowDatePicker(!showDatePicker)}
-        >
-          <Ionicons name="calendar-outline" size={18} color={timeFilter === 'custom' ? colors.card : colors.textSecondary} />
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[dynamicStyles.filterBtn, timeFilter === '30days' && dynamicStyles.filterBtnActive]}
-          onPress={() => setTimeFilter('30days')}
-        >
-          <Text style={[dynamicStyles.filterBtnText, timeFilter === '30days' && dynamicStyles.filterBtnTextActive]}>30 Days</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
           style={[dynamicStyles.filterBtn, timeFilter === 'month' && dynamicStyles.filterBtnActive]}
           onPress={() => setTimeFilter('month')}
         >
           <Text style={[dynamicStyles.filterBtnText, timeFilter === 'month' && dynamicStyles.filterBtnTextActive]}>Month</Text>
         </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[dynamicStyles.filterBtn, timeFilter === 'custom' && dynamicStyles.filterBtnActive]}
+          onPress={() => setShowDatePicker(showDatePicker ? null : 'start')}
+        >
+          <Text style={[dynamicStyles.filterBtnText, timeFilter === 'custom' && dynamicStyles.filterBtnTextActive]}>Custom</Text>
+        </TouchableOpacity>
       </View>
 
-      {showDatePicker && Platform.OS === 'ios' && (
-        <View style={dynamicStyles.datePickerIOSContainer}>
-          <DateTimePicker
-            value={selectedDate}
-            mode="date"
-            display="spinner"
-            onChange={(event: DateTimePickerEvent, date?: Date) => {
-              if (date) {
-                setSelectedDate(date);
-                setTimeFilter('custom');
-              }
-            }}
-            textColor={colors.text}
-          />
+      {showDatePicker && (
+        <View style={dynamicStyles.customDateContainer}>
+          <TouchableOpacity
+            onPress={() => setShowDatePicker('start')}
+            style={dynamicStyles.customDateBtn}
+          >
+            <Text style={dynamicStyles.customDateText}>
+              {customStart.toLocaleDateString()}
+            </Text>
+          </TouchableOpacity>
+          <Text style={dynamicStyles.dateRangeSeparator}>to</Text>
+          <TouchableOpacity
+            onPress={() => setShowDatePicker('end')}
+            style={dynamicStyles.customDateBtn}
+          >
+            <Text style={dynamicStyles.customDateText}>
+              {customEnd.toLocaleDateString()}
+            </Text>
+          </TouchableOpacity>
         </View>
       )}
 
-      {showDatePicker && Platform.OS !== 'ios' && (
+      {showDatePicker === 'start' && (
         <DateTimePicker
-          value={selectedDate}
+          value={customStart}
           mode="date"
-          display="default"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
           onChange={(event: DateTimePickerEvent, date?: Date) => {
-            setShowDatePicker(false);
+            if (Platform.OS !== 'ios') setShowDatePicker(null);
             if (date) {
-              setSelectedDate(date);
+              setCustomStart(date);
+              setTimeFilter('custom');
+            }
+          }}
+        />
+      )}
+
+      {showDatePicker === 'end' && (
+        <DateTimePicker
+          value={customEnd}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={(event: DateTimePickerEvent, date?: Date) => {
+            if (Platform.OS !== 'ios') setShowDatePicker(null);
+            if (date) {
+              setCustomEnd(date);
               setTimeFilter('custom');
             }
           }}
@@ -602,15 +693,28 @@ export default function NotesScreen() {
   );
 
   return (
-    <KeyboardAvoidingView 
-      style={dynamicStyles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <SafeAreaView style={dynamicStyles.container} edges={['top', 'left', 'right']}>
+      <View style={{ flex: 1 }}>
+        <View style={dynamicStyles.headerArea}>
+          <BlurView intensity={isDark ? 40 : 60} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+          <View style={dynamicStyles.headerRow}>
+            <Animated.View style={{ transform: [{ scale: backButtonScale }] }}>
+              <TouchableOpacity
+                style={dynamicStyles.backButton}
+                onPress={() => router.replace('/(tabs)')}
+                hitSlop={10}
+              >
+                <Text style={dynamicStyles.backButtonText}>←</Text>
+              </TouchableOpacity>
+            </Animated.View>
+            <Text style={dynamicStyles.pageTitle}>My Notes</Text>
+          </View>
+        </View>
 
-      
-      <View style={dynamicStyles.headerArea}>
-        <Text style={dynamicStyles.pageTitle}>My Notes</Text>
-      </View>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
 
       {loading ? (
         <View style={dynamicStyles.center}>
@@ -681,6 +785,8 @@ export default function NotesScreen() {
       </Modal>
 
 
-    </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </View>
+    </SafeAreaView>
   );
 }
