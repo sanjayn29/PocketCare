@@ -11,7 +11,7 @@ import { useFonts } from "expo-font";
 import { useRouter } from "expo-router";
 import LottieView from "lottie-react-native";
 import React, { useCallback, useEffect, useState } from "react";
-import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 interface MemoryScore {
@@ -33,6 +33,7 @@ const ProfileScreen: React.FC = () => {
   const logoutIconColor = isDark ? "#0F172A" : "#FFFFFF";
   const [fontsLoaded] = useFonts({
     "Roboto Slab": require("../../assets/Font/RobotoSlab-VariableFont_wght.ttf"),
+    "Momo Signature": require("../../assets/Font/MomoSignature-Regular.ttf"),
   });
 
   const [showMemoryGame, setShowMemoryGame] = useState(false);
@@ -357,6 +358,100 @@ const ProfileScreen: React.FC = () => {
     gameButtonArrow: {
       marginLeft: 10,
     },
+    gamingAnimation: {
+      width: 28,
+      height: 28,
+    },
+    logoutSection: {
+      marginTop: 6,
+      marginBottom: 6,
+    },
+    logoutFullButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#EF4444",
+      borderRadius: 16,
+      paddingVertical: 11,
+      paddingHorizontal: 18,
+      borderWidth: 1.5,
+      borderColor: "#DC2626",
+      shadowColor: "#EF4444",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.35,
+      shadowRadius: 10,
+      elevation: 5,
+      gap: 8,
+    },
+    logoutFullAnimation: {
+      width: 22,
+      height: 22,
+    },
+    logoutFullLabel: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: "#FFFFFF",
+      letterSpacing: 0.4,
+      fontFamily: "Roboto Slab",
+    },
+    attributionCard: {
+      alignItems: "center",
+      marginBottom: 14,
+      marginTop: 4,
+      paddingVertical: 18,
+      paddingHorizontal: 20,
+      borderRadius: 20,
+      backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(212,175,55,0.18)" : "rgba(212,175,55,0.25)",
+    },
+    rocketWrapper: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: "#D4AF37",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 10,
+      shadowColor: "#D4AF37",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.5,
+      shadowRadius: 10,
+      elevation: 6,
+    },
+    rocketAnimation: {
+      width: 52,
+      height: 52,
+    },
+    attributionTagline: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      letterSpacing: 1.2,
+      textTransform: "uppercase",
+      fontWeight: "600",
+      marginBottom: 4,
+    },
+    attributionName: {
+      fontSize: 32,
+      color: colors.text,
+      fontFamily: "Momo Signature",
+      letterSpacing: 1,
+      marginBottom: 8,
+    },
+    attributionDivider: {
+      width: 36,
+      height: 2,
+      borderRadius: 2,
+      backgroundColor: "#D4AF37",
+      marginBottom: 8,
+    },
+    attributionLink: {
+      fontSize: 13,
+      color: "#D4AF37",
+      fontWeight: "700",
+      letterSpacing: 0.3,
+      textDecorationLine: "underline",
+    },
   });
 
   return (
@@ -480,7 +575,12 @@ const ProfileScreen: React.FC = () => {
                 { backgroundColor: isDark ? "rgba(59, 130, 246, 0.2)" : "rgba(59, 130, 246, 0.14)" },
               ]}
             >
-              <Ionicons name="game-controller-outline" size={16} color="#3B82F6" />
+              <LottieView
+                source={require("../../assets/animations/gaming.json")}
+                autoPlay
+                loop
+                style={dynamicStyles.gamingAnimation}
+              />
             </View>
             <Text style={dynamicStyles.sectionTitle}>Play Games</Text>
           </View>
@@ -505,6 +605,47 @@ const ProfileScreen: React.FC = () => {
               <Text style={dynamicStyles.gameButtonSubtitle}>Tap as fast as you can</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={dynamicStyles.gameButtonArrow} />
+          </TouchableOpacity>
+        </View>
+
+        {/* ── Made by ── */}
+        <TouchableOpacity
+          style={dynamicStyles.attributionCard}
+          activeOpacity={0.75}
+          onPress={() => Linking.openURL("https://www.sanjayn.me")}
+        >
+          <View style={dynamicStyles.rocketWrapper}>
+            <LottieView
+              source={require("../../assets/animations/Rocketship.json")}
+              autoPlay
+              loop
+              style={dynamicStyles.rocketAnimation}
+            />
+          </View>
+          <Text style={dynamicStyles.attributionTagline}>Crafted with passion by</Text>
+          <Text style={dynamicStyles.attributionName}>Sanjay N</Text>
+          <View style={dynamicStyles.attributionDivider} />
+          <Text style={dynamicStyles.attributionLink}>www.sanjayn.me</Text>
+        </TouchableOpacity>
+
+        {/* ── Logout ── */}
+        <View style={dynamicStyles.logoutSection}>
+          <TouchableOpacity
+            style={dynamicStyles.logoutFullButton}
+            onPress={handleLogout}
+            activeOpacity={0.82}
+          >
+            <LottieView
+              source={require("../../assets/animations/Logout.json")}
+              autoPlay
+              loop
+              colorFilters={[
+                { keypath: "logout 2.logout.Fill 1", color: "#FFFFFF" },
+                { keypath: "logout.logout.Fill 1", color: "#FFFFFF" },
+              ]}
+              style={dynamicStyles.logoutFullAnimation}
+            />
+            <Text style={dynamicStyles.logoutFullLabel}>Sign Out</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
