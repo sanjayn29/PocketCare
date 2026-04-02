@@ -1,10 +1,14 @@
+import { ThemeProvider } from '@/context/ThemeContext'
 import { recordVisit } from '@/lib/streak-service'
- import { ThemeProvider } from '@/context/ThemeContext'
 import { ClerkProvider, useUser } from '@clerk/expo'
 import { tokenCache } from '@clerk/expo/token-cache'
+import * as Font from 'expo-font'
 import { Stack } from 'expo-router'
+import * as SplashScreen from 'expo-splash-screen'
 import { StatusBar } from 'expo-status-bar'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
+
+SplashScreen.preventAutoHideAsync()
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!
 
@@ -32,6 +36,29 @@ function RootLayoutContent() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded, setFontsLoaded] = useState(false)
+
+  useEffect(() => {
+    async function loadFonts() {
+      try {
+        await Font.loadAsync({
+          MomoSignature: require('@/assets/Font/MomoSignature-Regular.ttf'),
+        })
+      } catch (e) {
+        console.warn('Error loading fonts:', e)
+      } finally {
+        setFontsLoaded(true)
+        await SplashScreen.hideAsync()
+      }
+    }
+
+    loadFonts()
+  }, [])
+
+  if (!fontsLoaded) {
+    return null
+  }
+
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
       <ThemeProvider>

@@ -11,26 +11,26 @@ import { getScheduleEvents } from '@/lib/schedule-service'
 import { getStreakData } from '@/lib/streak-service'
 import { getTasks } from '@/lib/tasks-service'
 import {
-  ALL_WIDGETS,
-  WidgetConfig,
-  WidgetId,
-  getWidgetConfig,
-  saveWidgetConfig,
+    ALL_WIDGETS,
+    WidgetConfig,
+    WidgetId,
+    getWidgetConfig,
+    saveWidgetConfig,
 } from '@/lib/widget-service'
 import { useUser } from '@clerk/expo'
 import { Ionicons } from '@expo/vector-icons'
 import LottieView from 'lottie-react-native'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  Animated,
-  Modal,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
+    Animated,
+    Modal,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -402,8 +402,8 @@ export default function HomeScreen() {
 
       {/* ── Header ── */}
       <View style={s.header}>
-        <View>
-          <Text style={s.headerTitle}>PocketCare</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={s.headerTitle} numberOfLines={1} adjustsFontSizeToFit>PocketCare</Text>
           <Text style={s.headerSub}>
             {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' })}
           </Text>
@@ -533,7 +533,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
     backgroundColor: colors.background,
   },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: colors.text, letterSpacing: -0.5 },
+  headerTitle: { fontSize: 28, fontFamily: 'MomoSignature', color: '#D4AF37', letterSpacing: -0.8 },
   headerSub: { fontSize: 12, color: colors.textSecondary, marginTop: 2, fontWeight: '500' },
   headerActions: { flexDirection: 'row', gap: 8 },
   hBtn: {

@@ -40,7 +40,12 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-font"
+      [
+        "expo-font",
+        {
+          "fonts": ["./assets/Font/MomoSignature-Regular.ttf"]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
