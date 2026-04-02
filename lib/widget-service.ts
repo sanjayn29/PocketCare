@@ -18,17 +18,17 @@ export interface WidgetConfig {
   order: number;
 }
 
-export const ALL_WIDGETS: { id: WidgetId; title: string; subtitle: string; emoji: string; color: string }[] = [
-  { id: 'greeting',        title: 'Greeting',         subtitle: 'Personalized welcome',      emoji: '👋', color: '#D4AF37' },
-  { id: 'streak',          title: 'Streak',            subtitle: 'Daily visit streak',         emoji: '🔥', color: '#F97316' },
-  { id: 'finance_summary', title: 'Finance',           subtitle: 'Income vs Expense',          emoji: '💰', color: '#22C55E' },
-  { id: 'tasks_today',     title: 'Tasks Today',       subtitle: 'Pending tasks due today',    emoji: '✅', color: '#3B82F6' },
-  { id: 'goals_progress',  title: 'Goals',             subtitle: 'Active goal progress',       emoji: '🎯', color: '#8B5CF6' },
-  { id: 'next_event',      title: 'Next Event',        subtitle: 'Upcoming schedule item',     emoji: '📅', color: '#EC4899' },
-  { id: 'fitness_today',   title: 'Fitness',           subtitle: "Today's fitness plan",       emoji: '💪', color: '#14B8A6' },
-  { id: 'placement_status',title: 'Placement',         subtitle: 'Latest placement status',   emoji: '🏢', color: '#6366F1' },
-  { id: 'notes_quick',     title: 'Recent Note',       subtitle: 'Latest quick note',          emoji: '📝', color: '#A855F7' },
-  { id: 'ai_tip',          title: 'AI Tip',            subtitle: 'Daily AI-powered insight',   emoji: '🤖', color: '#0EA5E9' },
+export const ALL_WIDGETS: { id: WidgetId; title: string; subtitle: string; iconName: string; color: string }[] = [
+  { id: 'greeting',         title: 'Greeting',        subtitle: 'Personalized welcome',     iconName: 'sunny',               color: '#D4AF37' },
+  { id: 'streak',           title: 'Streak',           subtitle: 'Daily visit streak',        iconName: 'flame',               color: '#F97316' },
+  { id: 'finance_summary',  title: 'Finance',          subtitle: 'Income vs Expense',         iconName: 'wallet',              color: '#22C55E' },
+  { id: 'tasks_today',      title: 'Tasks Today',      subtitle: 'Pending tasks due today',   iconName: 'checkmark-circle',    color: '#3B82F6' },
+  { id: 'goals_progress',   title: 'Goals',            subtitle: 'Active goal progress',      iconName: 'trophy',              color: '#8B5CF6' },
+  { id: 'next_event',       title: 'Next Event',       subtitle: 'Upcoming schedule item',    iconName: 'calendar',            color: '#EC4899' },
+  { id: 'fitness_today',    title: 'Fitness',          subtitle: "Today's fitness plan",      iconName: 'barbell',             color: '#14B8A6' },
+  { id: 'placement_status', title: 'Placement',        subtitle: 'Latest placement status',   iconName: 'business',            color: '#6366F1' },
+  { id: 'notes_quick',      title: 'Recent Note',      subtitle: 'Latest quick note',         iconName: 'document-text',       color: '#A855F7' },
+  { id: 'ai_tip',           title: 'AI Tips',          subtitle: 'Daily AI-powered insight',  iconName: 'sparkles',            color: '#0EA5E9' },
 ];
 
 const STORAGE_KEY = 'pocketcare_widget_config';

@@ -19,13 +19,11 @@ import {
 } from '@/lib/widget-service'
 import { useUser } from '@clerk/expo'
 import { Ionicons } from '@expo/vector-icons'
-import { LinearGradient } from 'expo-linear-gradient'
 import LottieView from 'lottie-react-native'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Animated,
   Modal,
-  PanResponder,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -36,18 +34,45 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-// ─── Data snapshot type ───────────────────────────────────────────────────────
 interface HomeData {
   streak: number
   maxStreak: number
   income: number
   expenses: number
   pendingTasks: number
-  activeGoals: { title: string; pct: number }[]
-  nextEvent: { title: string; time: string } | null
-  fitnessToday: string | null
+  totalTasks: number
+  activeGoals: { title: string; pct: number; color: string }[]
+  nextEvent: { title: string; date: string; time: string } | null
+  fitnessToday: { name: string; done: boolean } | null
   placementLatest: { company: string; status: string } | null
-  latestNote: string | null
+  latestNote: { title: string; content: string } | null
+  totalGoals: number
+  completedGoals: number
+}
+
+// Animated number hook
+function useAnimatedNumber(target: number, duration = 800) {
+  const anim = useRef(new Animated.Value(0)).current
+  const [display, setDisplay] = useState(0)
+  useEffect(() => {
+    Animated.timing(anim, { toValue: target, duration, useNativeDriver: false }).start()
+    const id = anim.addListener(({ value }) => setDisplay(Math.round(value)))
+    return () => anim.removeListener(id)
+  }, [target])
+  return display
+}
+
+// Mini bar chart
+const MiniBar = ({ value, max, color, isDark }: { value: number; max: number; color: string; isDark: boolean }) => {
+  const w = useRef(new Animated.Value(0)).current
+  useEffect(() => {
+    Animated.timing(w, { toValue: max > 0 ? (value / max) * 100 : 0, duration: 900, useNativeDriver: false }).start()
+  }, [value, max])
+  return (
+    <View style={{ height: 7, borderRadius: 4, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)', overflow: 'hidden' }}>
+      <Animated.View style={{ height: 7, borderRadius: 4, backgroundColor: color, width: w.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }) }} />
+    </View>
+  )
 }
 
 export default function HomeScreen() {
@@ -59,95 +84,73 @@ export default function HomeScreen() {
   const email = user?.emailAddresses?.[0]?.emailAddress
 
   const [data, setData] = useState<HomeData>({
-    streak: 0, maxStreak: 0,
-    income: 0, expenses: 0,
-    pendingTasks: 0,
-    activeGoals: [],
-    nextEvent: null,
-    fitnessToday: null,
-    placementLatest: null,
-    latestNote: null,
+    streak: 0, maxStreak: 0, income: 0, expenses: 0,
+    pendingTasks: 0, totalTasks: 0, activeGoals: [],
+    nextEvent: null, fitnessToday: null, placementLatest: null, latestNote: null,
+    totalGoals: 0, completedGoals: 0,
   })
-
   const [widgets, setWidgets] = useState<WidgetConfig[]>([])
   const [showPicker, setShowPicker] = useState(false)
   const [editMode, setEditMode] = useState(false)
-  const [loading, setLoading] = useState(true)
-
-  // Drag state
-  const [draggingIndex, setDraggingIndex] = useState<number | null>(null)
-  const dragY = useRef(new Animated.Value(0)).current
-  const dragStartY = useRef(0)
-  const itemHeight = 92
-  const pickerSlide = useRef(new Animated.Value(600)).current
+  const pickerSlide = useRef(new Animated.Value(700)).current
   const pickerFade = useRef(new Animated.Value(0)).current
 
-  // ── Load config & data ──────────────────────────────────────────────────────
+  // Animated numbers
+  const animStreak = useAnimatedNumber(data.streak)
+  const animIncome = useAnimatedNumber(data.income)
+  const animExpenses = useAnimatedNumber(data.expenses)
+  const animTasks = useAnimatedNumber(data.pendingTasks)
+
   useEffect(() => {
-    if (user) {
+    if (user && email) {
       const provider = user.externalAccounts?.length > 0
         ? user.externalAccounts[0].provider || 'google' : 'email'
       saveUserToFirestore({ email, firstName: user.firstName, lastName: user.lastName, imageUrl: user.imageUrl, clerkUserId: user.id, provider })
     }
-  }, [user])
+  }, [user, email])
 
-  useEffect(() => {
-    getWidgetConfig().then(setWidgets)
-  }, [])
+  useEffect(() => { getWidgetConfig().then(setWidgets) }, [])
 
   const loadData = useCallback(async () => {
     if (!email) return
-    setLoading(true)
     try {
       const today = new Date().toISOString().split('T')[0]
       const [streakData, finData, tasks, goals, healthData, events, placements, notes] = await Promise.all([
-        getStreakData(email),
-        getFinanceData(email),
-        getTasks(email),
-        getGoals(email),
-        getHealthData(email),
-        getScheduleEvents(email),
-        getPlacements(email),
-        getNotes(email),
+        getStreakData(email), getFinanceData(email), getTasks(email),
+        getGoals(email), getHealthData(email), getScheduleEvents(email),
+        getPlacements(email), getNotes(email),
       ])
 
-      // Finance
       const income = (finData.transactions || []).filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
       const expenses = (finData.transactions || []).filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
-
-      // Tasks due today
       const pendingTasks = tasks.filter(t => t.status === 'pending' && t.due_date === today).length
+      const goalColors = ['#8B5CF6', '#3B82F6', '#EC4899', '#F97316']
+      const activeGoals = goals.filter(g => g.status === 'active').slice(0, 3)
+        .map((g, i) => ({ title: g.title, pct: Math.min(100, Math.round((g.current_value / Math.max(g.target_value, 1)) * 100)), color: goalColors[i % goalColors.length] }))
 
-      // Goals
-      const activeGoals = goals
-        .filter(g => g.status === 'active')
-        .slice(0, 2)
-        .map(g => ({ title: g.title, pct: Math.min(100, Math.round((g.current_value / Math.max(g.target_value, 1)) * 100)) }))
-
-      // Next event
       const upcoming = events.filter(e => e.date >= today && e.status === 'Upcoming').sort((a, b) => a.date.localeCompare(b.date))
-      const nextEvent = upcoming[0] ? { title: upcoming[0].title, time: `${upcoming[0].date} ${upcoming[0].startTime}` } : null
+      const nextEvent = upcoming[0] ? { title: upcoming[0].title, date: upcoming[0].date, time: upcoming[0].startTime } : null
 
-      // Fitness today
       const todayFitness = healthData.fitness.find(f => f.start_date <= today && f.end_date >= today)
-      const fitnessToday = todayFitness?.name || null
+      const fitnessToday = todayFitness ? { name: todayFitness.name, done: todayFitness.completed_dates.includes(today) } : null
 
-      // Placement
-      const latest = placements.sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
-      const placementLatest = latest ? { company: latest.company_name, status: latest.status } : null
+      const latestP = placements.sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
+      const placementLatest = latestP ? { company: latestP.company_name, status: latestP.status } : null
 
-      // Notes
       const sortedNotes = [...(notes || [])].sort((a, b) => b.created_at.localeCompare(a.created_at))
-      const latestNote = sortedNotes[0]?.content?.slice(0, 60) || null
+      const latestNote = sortedNotes[0] ? { title: sortedNotes[0].title, content: sortedNotes[0].content?.slice(0, 80) || '' } : null
 
-      setData({ streak: streakData.currentStreak, maxStreak: streakData.maxStreak, income, expenses, pendingTasks, activeGoals, nextEvent, fitnessToday, placementLatest, latestNote })
+      setData({
+        streak: streakData.currentStreak, maxStreak: streakData.maxStreak,
+        income, expenses, pendingTasks, totalTasks: tasks.filter(t => t.due_date === today).length,
+        activeGoals, nextEvent, fitnessToday, placementLatest, latestNote,
+        totalGoals: goals.length, completedGoals: goals.filter(g => g.status === 'achieved').length,
+      })
     } catch (e) { console.error(e) }
-    setLoading(false)
   }, [email])
 
   useEffect(() => { if (email) loadData() }, [email, loadData])
 
-  // ── Widget picker ────────────────────────────────────────────────────────────
   const openPicker = () => {
     setShowPicker(true)
     Animated.parallel([
@@ -155,321 +158,365 @@ export default function HomeScreen() {
       Animated.timing(pickerFade, { toValue: 1, duration: 250, useNativeDriver: true }),
     ]).start()
   }
-
   const closePicker = () => {
     Animated.parallel([
-      Animated.timing(pickerSlide, { toValue: 600, duration: 260, useNativeDriver: true }),
+      Animated.timing(pickerSlide, { toValue: 700, duration: 260, useNativeDriver: true }),
       Animated.timing(pickerFade, { toValue: 0, duration: 220, useNativeDriver: true }),
     ]).start(() => setShowPicker(false))
   }
-
   const toggleWidget = (id: WidgetId) => {
     const updated = widgets.map(w => w.id === id ? { ...w, enabled: !w.enabled } : w)
-    setWidgets(updated)
-    saveWidgetConfig(updated)
+    setWidgets(updated); saveWidgetConfig(updated)
   }
-
-  // ── Drag-and-drop (simple swap on long press) ────────────────────────────────
   const enabledWidgets = widgets.filter(w => w.enabled).sort((a, b) => a.order - b.order)
-
   const moveWidget = (fromIdx: number, toIdx: number) => {
     if (fromIdx === toIdx) return
-    const reordered = [...enabledWidgets]
-    const [moved] = reordered.splice(fromIdx, 1)
-    reordered.splice(toIdx, 0, moved)
-    const updated = widgets.map(w => {
-      const newOrder = reordered.findIndex(r => r.id === w.id)
-      return newOrder !== -1 ? { ...w, order: newOrder } : w
-    })
-    setWidgets(updated)
-    saveWidgetConfig(updated)
+    const re = [...enabledWidgets]; const [m] = re.splice(fromIdx, 1); re.splice(toIdx, 0, m)
+    const updated = widgets.map(w => { const n = re.findIndex(r => r.id === w.id); return n !== -1 ? { ...w, order: n } : w })
+    setWidgets(updated); saveWidgetConfig(updated)
   }
 
-  // ── Render individual widget content ─────────────────────────────────────────
-  const renderWidgetContent = (id: WidgetId) => {
+  const s = getStyles(colors, isDark)
+
+  // ── Widget content renderer ─────────────────────────────────────────────────
+  const renderWidget = (id: WidgetId, color: string) => {
     switch (id) {
+
       case 'greeting':
         return (
-          <View style={s.wRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={s.wTitle}>{greeting.message}</Text>
-              <Text style={[s.wSub, { marginTop: 4 }]} numberOfLines={2}>{greeting.motivational}</Text>
+          <View>
+            <Text style={s.wHeadline} numberOfLines={2}>{greeting.message}</Text>
+            <View style={[s.wDividerH, { backgroundColor: color + '40', marginVertical: 10 }]} />
+            <Text style={s.wBodyText} numberOfLines={2}>{greeting.motivational}</Text>
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+              <View style={[s.chip, { backgroundColor: color + '20', borderColor: color + '40' }]}>
+                <Ionicons name="time-outline" size={11} color={color} />
+                <Text style={[s.chipText, { color }]}>{new Date().toLocaleDateString('en-IN', { weekday: 'long' })}</Text>
+              </View>
             </View>
-            <LottieView source={require('../../assets/animations/Intro.json')} autoPlay loop style={{ width: 56, height: 56 }} />
           </View>
         )
+
       case 'streak':
         return (
-          <View style={s.wRow}>
-            <View style={s.wStatBlock}>
-              <Text style={s.wBigNum}>{data.streak}</Text>
-              <Text style={s.wStatLabel}>Current</Text>
+          <View>
+            <View style={s.wStatRow}>
+              <View style={s.wStatBlock}>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 2 }}>
+                  <Text style={[s.wBigNum, { color }]}>{animStreak}</Text>
+                  <Text style={[s.wUnit, { color }]}>days</Text>
+                </View>
+                <Text style={s.wStatLabel}>Current Streak</Text>
+              </View>
+              <View style={[s.wVertDiv, { backgroundColor: color + '30' }]} />
+              <View style={s.wStatBlock}>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 2 }}>
+                  <Text style={[s.wBigNum, { color: colors.text }]}>{data.maxStreak}</Text>
+                  <Text style={s.wUnit}>days</Text>
+                </View>
+                <Text style={s.wStatLabel}>Best Streak</Text>
+              </View>
             </View>
-            <View style={s.wDivider} />
-            <View style={s.wStatBlock}>
-              <Text style={s.wBigNum}>{data.maxStreak}</Text>
-              <Text style={s.wStatLabel}>Best</Text>
+            <View style={{ marginTop: 10 }}>
+              <MiniBar value={data.streak} max={Math.max(data.maxStreak, 1)} color={color} isDark={isDark} />
+              <Text style={[s.wCaption, { marginTop: 5 }]}>{data.streak > 0 ? `${Math.round((data.streak / Math.max(data.maxStreak, 1)) * 100)}% of your best` : 'Start your streak today!'}</Text>
             </View>
-            <LottieView source={require('../../assets/animations/Morphing.json')} autoPlay loop style={{ width: 52, height: 52 }} />
           </View>
         )
+
       case 'finance_summary':
         const net = data.income - data.expenses
         return (
           <View>
-            <View style={s.wRow}>
+            <View style={s.wStatRow}>
               <View style={s.wStatBlock}>
-                <Text style={[s.wBigNum, { color: '#22C55E' }]}>₹{data.income.toLocaleString()}</Text>
+                <Text style={[s.wBigNum, { color: '#22C55E', fontSize: 20 }]}>₹{animIncome.toLocaleString()}</Text>
                 <Text style={s.wStatLabel}>Income</Text>
               </View>
-              <View style={s.wDivider} />
+              <View style={[s.wVertDiv, { backgroundColor: '#ffffff20' }]} />
               <View style={s.wStatBlock}>
-                <Text style={[s.wBigNum, { color: '#EF4444' }]}>₹{data.expenses.toLocaleString()}</Text>
+                <Text style={[s.wBigNum, { color: '#EF4444', fontSize: 20 }]}>₹{animExpenses.toLocaleString()}</Text>
                 <Text style={s.wStatLabel}>Expense</Text>
               </View>
             </View>
-            <Text style={[s.wSub, { marginTop: 6 }]}>Net: <Text style={{ color: net >= 0 ? '#22C55E' : '#EF4444', fontWeight: '700' }}>₹{net.toLocaleString()}</Text></Text>
+            <View style={[s.wDividerH, { backgroundColor: color + '30', marginVertical: 10 }]} />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={s.wBodyText}>Net Balance</Text>
+              <View style={[s.chip, { backgroundColor: (net >= 0 ? '#22C55E' : '#EF4444') + '20', borderColor: (net >= 0 ? '#22C55E' : '#EF4444') + '40' }]}>
+                <Ionicons name={net >= 0 ? 'trending-up' : 'trending-down'} size={12} color={net >= 0 ? '#22C55E' : '#EF4444'} />
+                <Text style={[s.chipText, { color: net >= 0 ? '#22C55E' : '#EF4444', fontWeight: '800' }]}>₹{Math.abs(net).toLocaleString()}</Text>
+              </View>
+            </View>
+            <MiniBar value={data.expenses} max={Math.max(data.income, 1)} color="#EF4444" isDark={isDark} />
+            <Text style={[s.wCaption, { marginTop: 4 }]}>
+              {data.income > 0 ? `${Math.round((data.expenses / data.income) * 100)}% spent of income` : 'No income tracked'}
+            </Text>
           </View>
         )
+
       case 'tasks_today':
+        const done = data.totalTasks - data.pendingTasks
         return (
-          <View style={s.wRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={s.wBigNum}>{data.pendingTasks}</Text>
-              <Text style={s.wSub}>{data.pendingTasks === 1 ? 'task due today' : 'tasks due today'}</Text>
+          <View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View>
+                <Text style={[s.wBigNum, { color }]}>{animTasks}</Text>
+                <Text style={s.wStatLabel}>Tasks due today</Text>
+              </View>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={[s.wBigNum, { color: '#22C55E', fontSize: 20 }]}>{done}</Text>
+                <Text style={s.wStatLabel}>Done</Text>
+              </View>
             </View>
-            <View style={[s.wIconCircle, { backgroundColor: '#3B82F620' }]}>
-              <Ionicons name="checkmark-done" size={22} color="#3B82F6" />
+            <View style={{ marginTop: 10 }}>
+              <MiniBar value={done} max={Math.max(data.totalTasks, 1)} color="#22C55E" isDark={isDark} />
+              <Text style={[s.wCaption, { marginTop: 5 }]}>
+                {data.totalTasks > 0 ? `${done}/${data.totalTasks} completed` : 'No tasks due today'}
+              </Text>
             </View>
           </View>
         )
+
       case 'goals_progress':
         return data.activeGoals.length === 0 ? (
-          <Text style={s.wSub}>No active goals</Text>
+          <View style={{ alignItems: 'center', paddingVertical: 8 }}>
+            <Ionicons name="trophy-outline" size={28} color={colors.border} />
+            <Text style={[s.wBodyText, { marginTop: 6, textAlign: 'center' }]}>No active goals</Text>
+          </View>
         ) : (
-          <View style={{ gap: 8 }}>
-            {data.activeGoals.map(g => (
-              <View key={g.title}>
-                <View style={[s.wRow, { marginBottom: 3 }]}>
-                  <Text style={s.wSub} numberOfLines={1}>{g.title}</Text>
-                  <Text style={[s.wSub, { fontWeight: '700' }]}>{g.pct}%</Text>
+          <View style={{ gap: 12 }}>
+            {data.activeGoals.map((g, i) => (
+              <View key={i}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
+                  <Text style={s.wBodyText} numberOfLines={1}>{g.title}</Text>
+                  <Text style={[s.wCaption, { fontWeight: '700', color: g.color }]}>{g.pct}%</Text>
                 </View>
-                <View style={s.progressTrack}>
-                  <View style={[s.progressFill, { width: `${g.pct}%` as any, backgroundColor: '#8B5CF6' }]} />
-                </View>
+                <MiniBar value={g.pct} max={100} color={g.color} isDark={isDark} />
               </View>
             ))}
-          </View>
-        )
-      case 'next_event':
-        return data.nextEvent ? (
-          <View style={s.wRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={s.wTitle} numberOfLines={1}>{data.nextEvent.title}</Text>
-              <Text style={s.wSub}>{data.nextEvent.time}</Text>
-            </View>
-            <View style={[s.wIconCircle, { backgroundColor: '#EC489920' }]}>
-              <Ionicons name="calendar" size={20} color="#EC4899" />
-            </View>
-          </View>
-        ) : <Text style={s.wSub}>No upcoming events</Text>
-      case 'fitness_today':
-        return (
-          <View style={s.wRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={s.wTitle} numberOfLines={1}>{data.fitnessToday || 'Rest day'}</Text>
-              <Text style={s.wSub}>Today's fitness plan</Text>
-            </View>
-            <View style={[s.wIconCircle, { backgroundColor: '#14B8A620' }]}>
-              <Ionicons name="barbell" size={20} color="#14B8A6" />
-            </View>
-          </View>
-        )
-      case 'placement_status':
-        return data.placementLatest ? (
-          <View style={s.wRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={s.wTitle} numberOfLines={1}>{data.placementLatest.company}</Text>
-              <View style={[s.badge, { backgroundColor: data.placementLatest.status === 'offer' ? '#22C55E20' : '#6366F120' }]}>
-                <Text style={[s.badgeText, { color: data.placementLatest.status === 'offer' ? '#22C55E' : '#6366F1' }]}>
-                  {data.placementLatest.status.toUpperCase()}
-                </Text>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <View style={[s.chip, { backgroundColor: color + '20', borderColor: color + '40' }]}>
+                <Ionicons name="checkmark-circle" size={11} color={color} />
+                <Text style={[s.chipText, { color }]}>{data.completedGoals} achieved</Text>
+              </View>
+              <View style={[s.chip, { backgroundColor: color + '20', borderColor: color + '40' }]}>
+                <Ionicons name="ellipse-outline" size={11} color={color} />
+                <Text style={[s.chipText, { color }]}>{data.totalGoals} total</Text>
               </View>
             </View>
-            <View style={[s.wIconCircle, { backgroundColor: '#6366F120' }]}>
-              <Ionicons name="business" size={20} color="#6366F1" />
-            </View>
-          </View>
-        ) : <Text style={s.wSub}>No placements tracked</Text>
-      case 'notes_quick':
-        return (
-          <View style={s.wRow}>
-            <Text style={[s.wSub, { flex: 1, fontStyle: data.latestNote ? 'italic' : 'normal' }]} numberOfLines={2}>
-              {data.latestNote || 'No notes yet'}
-            </Text>
-            <View style={[s.wIconCircle, { backgroundColor: '#A855F720' }]}>
-              <Ionicons name="document-text" size={20} color="#A855F7" />
-            </View>
           </View>
         )
+
+      case 'next_event':
+        return data.nextEvent ? (
+          <View>
+            <Text style={s.wHeadline} numberOfLines={1}>{data.nextEvent.title}</Text>
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+              <View style={[s.chip, { backgroundColor: color + '20', borderColor: color + '40' }]}>
+                <Ionicons name="calendar-outline" size={11} color={color} />
+                <Text style={[s.chipText, { color }]}>{data.nextEvent.date}</Text>
+              </View>
+              <View style={[s.chip, { backgroundColor: color + '20', borderColor: color + '40' }]}>
+                <Ionicons name="time-outline" size={11} color={color} />
+                <Text style={[s.chipText, { color }]}>{data.nextEvent.time}</Text>
+              </View>
+            </View>
+          </View>
+        ) : (
+          <View style={{ alignItems: 'center', paddingVertical: 8 }}>
+            <Ionicons name="calendar-outline" size={28} color={colors.border} />
+            <Text style={[s.wBodyText, { marginTop: 6 }]}>No upcoming events</Text>
+          </View>
+        )
+
+      case 'fitness_today':
+        return data.fitnessToday ? (
+          <View>
+            <Text style={s.wHeadline} numberOfLines={1}>{data.fitnessToday.name}</Text>
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+              <View style={[s.chip, { backgroundColor: (data.fitnessToday.done ? '#22C55E' : color) + '20', borderColor: (data.fitnessToday.done ? '#22C55E' : color) + '40' }]}>
+                <Ionicons name={data.fitnessToday.done ? 'checkmark-circle' : 'ellipse-outline'} size={11} color={data.fitnessToday.done ? '#22C55E' : color} />
+                <Text style={[s.chipText, { color: data.fitnessToday.done ? '#22C55E' : color }]}>{data.fitnessToday.done ? 'Completed' : 'Pending'}</Text>
+              </View>
+            </View>
+          </View>
+        ) : (
+          <View style={{ alignItems: 'center', paddingVertical: 8 }}>
+            <Ionicons name="bed-outline" size={28} color={colors.border} />
+            <Text style={[s.wBodyText, { marginTop: 6 }]}>Rest day — no plan</Text>
+          </View>
+        )
+
+      case 'placement_status':
+        const statusColors: Record<string, string> = { offer: '#22C55E', applied: '#3B82F6', interview: '#F97316', rejected: '#EF4444' }
+        const sc = statusColors[data.placementLatest?.status || ''] || color
+        return data.placementLatest ? (
+          <View>
+            <Text style={s.wHeadline} numberOfLines={1}>{data.placementLatest.company}</Text>
+            <View style={{ marginTop: 8 }}>
+              <View style={[s.chip, { backgroundColor: sc + '20', borderColor: sc + '40' }]}>
+                <Ionicons name="briefcase-outline" size={11} color={sc} />
+                <Text style={[s.chipText, { color: sc, fontWeight: '700' }]}>{data.placementLatest.status.toUpperCase()}</Text>
+              </View>
+            </View>
+          </View>
+        ) : (
+          <View style={{ alignItems: 'center', paddingVertical: 8 }}>
+            <Ionicons name="business-outline" size={28} color={colors.border} />
+            <Text style={[s.wBodyText, { marginTop: 6 }]}>No placements tracked</Text>
+          </View>
+        )
+
+      case 'notes_quick':
+        return data.latestNote ? (
+          <View>
+            <Text style={[s.wBodyText, { fontWeight: '700', color: colors.text }]} numberOfLines={1}>{data.latestNote.title}</Text>
+            <View style={[s.wDividerH, { backgroundColor: color + '30', marginVertical: 8 }]} />
+            <Text style={s.wBodyText} numberOfLines={3}>{data.latestNote.content}</Text>
+          </View>
+        ) : (
+          <View style={{ alignItems: 'center', paddingVertical: 8 }}>
+            <Ionicons name="document-text-outline" size={28} color={colors.border} />
+            <Text style={[s.wBodyText, { marginTop: 6 }]}>No notes yet</Text>
+          </View>
+        )
+
       case 'ai_tip':
         return (
-          <View style={s.wRow}>
-            <Text style={[s.wSub, { flex: 1 }]}>Ask PocketCare AI for daily tips, insights, and help with your plans.</Text>
-            <LottieView source={require('../../assets/animations/Loader.json')} autoPlay loop style={{ width: 44, height: 44 }} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={s.wHeadline}>Ask anything</Text>
+              <Text style={s.wBodyText}>Get AI insights about your finances, health, goals & more.</Text>
+            </View>
+            <LottieView source={require('../../assets/animations/Loader.json')} autoPlay loop style={{ width: 48, height: 48 }} />
           </View>
         )
+
       default: return null
     }
   }
-
-  const s = getStyles(colors, isDark)
 
   return (
     <SafeAreaView style={s.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* ── Header ── */}
-      <LinearGradient
-        colors={isDark ? ['#1a1a2e', '#16213e'] : ['#ffffff', '#f8f9ff']}
-        style={s.header}
-      >
+      <View style={s.header}>
         <View>
-          <Text style={s.headerHi}>PocketCare ✨</Text>
-          <Text style={s.headerSub}>Your personal dashboard</Text>
+          <Text style={s.headerTitle}>PocketCare</Text>
+          <Text style={s.headerSub}>
+            {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' })}
+          </Text>
         </View>
         <View style={s.headerActions}>
           {editMode && (
-            <TouchableOpacity style={[s.headerBtn, { backgroundColor: '#22C55E20', borderColor: '#22C55E40' }]} onPress={() => setEditMode(false)}>
+            <TouchableOpacity style={[s.hBtn, { backgroundColor: '#22C55E20', borderColor: '#22C55E50' }]} onPress={() => setEditMode(false)}>
               <Ionicons name="checkmark" size={18} color="#22C55E" />
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={s.headerBtn} onPress={() => setEditMode(e => !e)}>
-            <Ionicons name={editMode ? 'reorder-three' : 'reorder-three-outline'} size={20} color={colors.text} />
+          <TouchableOpacity style={s.hBtn} onPress={() => setEditMode(e => !e)}>
+            <Ionicons name="swap-vertical-outline" size={19} color={editMode ? '#D4AF37' : colors.text} />
           </TouchableOpacity>
-          <TouchableOpacity style={[s.headerBtn, { backgroundColor: '#D4AF3720', borderColor: '#D4AF3740' }]} onPress={openPicker}>
-            <Ionicons name="add-circle" size={20} color="#D4AF37" />
+          <TouchableOpacity style={[s.hBtn, { backgroundColor: '#D4AF3715', borderColor: '#D4AF3740' }]} onPress={openPicker}>
+            <Ionicons name="apps-outline" size={19} color="#D4AF37" />
           </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </View>
 
-      {/* ── Edit mode banner ── */}
       {editMode && (
         <View style={s.editBanner}>
-          <Ionicons name="swap-vertical" size={14} color="#D4AF37" />
-          <Text style={s.editBannerText}>Long press a widget to drag and reorder</Text>
+          <Ionicons name="information-circle-outline" size={14} color="#D4AF37" />
+          <Text style={s.editBannerText}>Use ▲▼ to reorder · Tap × to remove</Text>
         </View>
       )}
 
-      {/* ── Widget List ── */}
-      <ScrollView
-        contentContainerStyle={s.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      {/* ── Widget grid ── */}
+      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         {enabledWidgets.map((w, idx) => {
           const meta = ALL_WIDGETS.find(a => a.id === w.id)!
           return (
-            <View key={w.id} style={s.widgetCard}>
-              {/* Widget header */}
-              <View style={s.widgetHeader}>
-                <View style={[s.widgetIconWrap, { backgroundColor: meta.color + '22' }]}>
-                  <Text style={s.widgetEmoji}>{meta.emoji}</Text>
+            <View key={w.id} style={s.card}>
+              {/* Card header row */}
+              <View style={s.cardHeader}>
+                <View style={[s.cardIcon, { backgroundColor: meta.color + '22' }]}>
+                  <Ionicons name={meta.iconName as any} size={18} color={meta.color} />
                 </View>
-                <Text style={s.widgetLabel}>{meta.title}</Text>
+                <Text style={[s.cardLabel, { color: meta.color }]}>{meta.title.toUpperCase()}</Text>
                 {editMode && (
-                  <View style={s.editControls}>
-                    <TouchableOpacity
-                      style={s.orderBtn}
-                      onPress={() => moveWidget(idx, Math.max(0, idx - 1))}
-                      disabled={idx === 0}
-                    >
-                      <Ionicons name="chevron-up" size={16} color={idx === 0 ? colors.border : colors.textSecondary} />
+                  <View style={s.editRow}>
+                    <TouchableOpacity style={s.orderBtn} onPress={() => moveWidget(idx, Math.max(0, idx - 1))} disabled={idx === 0}>
+                      <Ionicons name="chevron-up" size={15} color={idx === 0 ? colors.border : colors.textSecondary} />
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      style={s.orderBtn}
-                      onPress={() => moveWidget(idx, Math.min(enabledWidgets.length - 1, idx + 1))}
-                      disabled={idx === enabledWidgets.length - 1}
-                    >
-                      <Ionicons name="chevron-down" size={16} color={idx === enabledWidgets.length - 1 ? colors.border : colors.textSecondary} />
+                    <TouchableOpacity style={s.orderBtn} onPress={() => moveWidget(idx, Math.min(enabledWidgets.length - 1, idx + 1))} disabled={idx === enabledWidgets.length - 1}>
+                      <Ionicons name="chevron-down" size={15} color={idx === enabledWidgets.length - 1 ? colors.border : colors.textSecondary} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={s.removeBtn} onPress={() => toggleWidget(w.id)}>
-                      <Ionicons name="close-circle" size={18} color="#EF4444" />
+                    <TouchableOpacity onPress={() => toggleWidget(w.id)}>
+                      <Ionicons name="close-circle" size={19} color="#EF4444" />
                     </TouchableOpacity>
                   </View>
                 )}
               </View>
 
-              {/* Accent line */}
-              <View style={[s.accentLine, { backgroundColor: meta.color }]} />
+              {/* Accent */}
+              <View style={[s.accent, { backgroundColor: meta.color }]} />
 
-              {/* Widget content */}
-              <View style={s.widgetBody}>
-                {renderWidgetContent(w.id)}
+              {/* Body */}
+              <View style={s.cardBody}>
+                {renderWidget(w.id, meta.color)}
               </View>
             </View>
           )
         })}
 
         {enabledWidgets.length === 0 && (
-          <View style={s.emptyState}>
-            <LottieView source={require('../../assets/animations/Rocketship.json')} autoPlay loop style={{ width: 120, height: 120 }} />
-            <Text style={s.emptyTitle}>No widgets yet</Text>
-            <Text style={s.emptySub}>Tap the + button to add your first widget</Text>
-            <TouchableOpacity style={s.emptyBtn} onPress={openPicker}>
+          <View style={s.empty}>
+            <Ionicons name="grid-outline" size={52} color={colors.border} />
+            <Text style={s.emptyTitle}>No widgets</Text>
+            <Text style={s.emptySub}>Tap the grid icon to add widgets</Text>
+            <TouchableOpacity style={[s.emptyBtn, { backgroundColor: '#D4AF37' }]} onPress={openPicker}>
+              <Ionicons name="add" size={16} color="#fff" />
               <Text style={s.emptyBtnText}>Add Widgets</Text>
             </TouchableOpacity>
           </View>
         )}
       </ScrollView>
 
-      {/* ── Widget Picker Modal ── */}
+      {/* ── Widget Picker ── */}
       <Modal visible={showPicker} transparent animationType="none">
         <Animated.View style={[s.backdrop, { opacity: pickerFade }]}>
-          <TouchableWithoutFeedback onPress={closePicker}>
-            <View style={{ flex: 1 }} />
-          </TouchableWithoutFeedback>
+          <TouchableWithoutFeedback onPress={closePicker}><View style={{ flex: 1 }} /></TouchableWithoutFeedback>
         </Animated.View>
-
-        <Animated.View style={[s.pickerSheet, { transform: [{ translateY: pickerSlide }] }]}>
-          {/* Handle */}
-          <View style={s.dragHandle} />
-
-          {/* Picker header */}
-          <View style={s.pickerHeader}>
+        <Animated.View style={[s.sheet, { transform: [{ translateY: pickerSlide }] }]}>
+          <View style={s.handle} />
+          <View style={s.sheetHeader}>
             <View>
-              <Text style={s.pickerTitle}>Customize Widgets</Text>
-              <Text style={s.pickerSub}>Toggle to show or hide on your home</Text>
+              <Text style={s.sheetTitle}>Customize Widgets</Text>
+              <Text style={s.sheetSub}>Choose what appears on your home</Text>
             </View>
-            <TouchableOpacity style={s.pickerClose} onPress={closePicker}>
-              <Ionicons name="close" size={18} color={isDark ? '#000' : '#fff'} />
+            <TouchableOpacity style={s.sheetClose} onPress={closePicker}>
+              <Ionicons name="close" size={17} color={isDark ? '#000' : '#fff'} />
             </TouchableOpacity>
           </View>
-
-          <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+          <ScrollView showsVerticalScrollIndicator={false}>
             {ALL_WIDGETS.map(meta => {
-              const wConfig = widgets.find(w => w.id === meta.id)
-              const enabled = wConfig?.enabled ?? false
+              const enabled = widgets.find(w => w.id === meta.id)?.enabled ?? false
               return (
-                <TouchableOpacity
-                  key={meta.id}
-                  style={[s.pickerItem, enabled && s.pickerItemActive]}
-                  onPress={() => toggleWidget(meta.id)}
-                  activeOpacity={0.8}
-                >
-                  <View style={[s.pickerEmoji, { backgroundColor: meta.color + '22' }]}>
-                    <Text style={{ fontSize: 20 }}>{meta.emoji}</Text>
+                <TouchableOpacity key={meta.id} style={[s.pickerRow, enabled && { backgroundColor: meta.color + '12', borderColor: meta.color + '40' }]} onPress={() => toggleWidget(meta.id)} activeOpacity={0.8}>
+                  <View style={[s.pickerIcon, { backgroundColor: meta.color + '22' }]}>
+                    <Ionicons name={meta.iconName as any} size={20} color={meta.color} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={s.pickerItemTitle}>{meta.title}</Text>
                     <Text style={s.pickerItemSub}>{meta.subtitle}</Text>
                   </View>
-                  <View style={[s.toggle, enabled && s.toggleOn]}>
+                  {/* Custom toggle */}
+                  <View style={[s.toggle, enabled && { backgroundColor: meta.color }]}>
                     <View style={[s.toggleThumb, enabled && s.toggleThumbOn]} />
                   </View>
                 </TouchableOpacity>
               )
             })}
-            <View style={{ height: 40 }} />
+            <View style={{ height: 48 }} />
           </ScrollView>
         </Animated.View>
       </Modal>
@@ -478,315 +525,103 @@ export default function HomeScreen() {
 }
 
 const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 18, paddingVertical: 13,
     borderBottomWidth: 1,
     borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+    backgroundColor: colors.background,
   },
-  headerHi: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: colors.text,
-    letterSpacing: -0.5,
-  },
-  headerSub: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'center',
-  },
-  headerBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+  headerTitle: { fontSize: 22, fontWeight: '800', color: colors.text, letterSpacing: -0.5 },
+  headerSub: { fontSize: 12, color: colors.textSecondary, marginTop: 2, fontWeight: '500' },
+  headerActions: { flexDirection: 'row', gap: 8 },
+  hBtn: {
+    width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
     backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)',
     borderWidth: 1,
     borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
   },
   editBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: isDark ? 'rgba(212,175,55,0.1)' : 'rgba(212,175,55,0.08)',
-    paddingVertical: 7,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(212,175,55,0.2)',
+    paddingVertical: 7, paddingHorizontal: 16,
+    borderBottomWidth: 1, borderBottomColor: 'rgba(212,175,55,0.2)',
   },
-  editBannerText: {
-    fontSize: 12,
-    color: '#D4AF37',
-    fontWeight: '600',
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 120,
-    gap: 14,
-  },
-  widgetCard: {
+  editBannerText: { fontSize: 12, color: '#D4AF37', fontWeight: '600' },
+  scroll: { paddingHorizontal: 14, paddingTop: 14, paddingBottom: 120, gap: 14 },
+  // Card
+  card: {
     backgroundColor: colors.card,
     borderRadius: 20,
     borderWidth: 1.5,
     borderColor: colors.border,
     overflow: 'hidden',
-    shadowColor: colors.text,
-    shadowOffset: { width: 0, height: 3 },
+    shadowColor: isDark ? '#000' : '#888',
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
     elevation: 3,
   },
-  widgetHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    paddingBottom: 8,
+  cardHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 14, paddingTop: 12, paddingBottom: 6,
   },
-  widgetIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+  cardIcon: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  cardLabel: { flex: 1, fontSize: 11, fontWeight: '800', letterSpacing: 1 },
+  editRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  orderBtn: { width: 26, height: 26, borderRadius: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' },
+  accent: { height: 2, marginHorizontal: 14, borderRadius: 1, opacity: 0.5, marginBottom: 10 },
+  cardBody: { paddingHorizontal: 14, paddingBottom: 14 },
+  // Widget atoms
+  wHeadline: { fontSize: 17, fontWeight: '700', color: colors.text, letterSpacing: -0.2 },
+  wBodyText: { fontSize: 13, color: colors.textSecondary, lineHeight: 19 },
+  wBigNum: { fontSize: 30, fontWeight: '900', color: colors.text, letterSpacing: -1 },
+  wUnit: { fontSize: 13, color: colors.textSecondary, marginBottom: 4, fontWeight: '600' },
+  wStatRow: { flexDirection: 'row', alignItems: 'center' },
+  wStatBlock: { flex: 1, alignItems: 'center' },
+  wStatLabel: { fontSize: 11, color: colors.textSecondary, fontWeight: '600', marginTop: 3, textTransform: 'uppercase', letterSpacing: 0.5 },
+  wVertDiv: { width: 1, height: 44, marginHorizontal: 8 },
+  wDividerH: { height: 1 },
+  wCaption: { fontSize: 11, color: colors.textSecondary, fontWeight: '500' },
+  chip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    borderRadius: 8, paddingVertical: 4, paddingHorizontal: 8,
+    borderWidth: 1, alignSelf: 'flex-start',
   },
-  widgetEmoji: { fontSize: 16 },
-  widgetLabel: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  editControls: {
-    flexDirection: 'row',
-    gap: 4,
-    alignItems: 'center',
-  },
-  orderBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-  },
-  removeBtn: {
-    width: 28,
-    height: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  accentLine: {
-    height: 2,
-    marginHorizontal: 14,
-    borderRadius: 1,
-    opacity: 0.6,
-    marginBottom: 10,
-  },
-  widgetBody: {
-    paddingHorizontal: 14,
-    paddingBottom: 14,
-  },
-  // Widget content atoms
-  wRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  wTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  wSub: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    fontWeight: '500',
-    lineHeight: 18,
-  },
-  wBigNum: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: colors.text,
-  },
-  wStatBlock: { alignItems: 'center', flex: 1 },
-  wStatLabel: { fontSize: 11, color: colors.textSecondary, fontWeight: '600', marginTop: 2 },
-  wDivider: { width: 1, height: 36, backgroundColor: colors.border },
-  wIconCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  progressTrack: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)',
-  },
-  progressFill: {
-    height: 6,
-    borderRadius: 3,
-  },
-  badge: {
-    alignSelf: 'flex-start',
-    borderRadius: 6,
-    paddingVertical: 2,
-    paddingHorizontal: 8,
-    marginTop: 4,
-  },
-  badgeText: { fontSize: 11, fontWeight: '700' },
-  // Empty state
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 60,
-    gap: 10,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: colors.text,
-  },
-  emptySub: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  emptyBtn: {
-    marginTop: 8,
-    backgroundColor: '#D4AF37',
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 28,
-  },
+  chipText: { fontSize: 11, fontWeight: '600' },
+  // Empty
+  empty: { alignItems: 'center', paddingVertical: 70, gap: 10 },
+  emptyTitle: { fontSize: 20, fontWeight: '800', color: colors.text },
+  emptySub: { fontSize: 14, color: colors.textSecondary },
+  emptyBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 24, marginTop: 8 },
   emptyBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   // Picker
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-  },
-  pickerSheet: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '78%',
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
+  sheet: {
+    position: 'absolute', bottom: 0, left: 0, right: 0, height: '78%',
     backgroundColor: colors.background,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-    borderTopWidth: 1,
-    borderColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 20,
+    borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    paddingHorizontal: 16, paddingBottom: 24,
+    borderTopWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
+    shadowColor: '#000', shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.2, shadowRadius: 16, elevation: 20,
   },
-  dragHandle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.14)',
-    marginTop: 10,
-    marginBottom: 14,
-  },
-  pickerHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  pickerTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.text,
-  },
-  pickerSub: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  pickerClose: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: '#D4AF37',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pickerItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    marginBottom: 8,
+  handle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.14)', marginTop: 10, marginBottom: 14 },
+  sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  sheetTitle: { fontSize: 18, fontWeight: '800', color: colors.text },
+  sheetSub: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
+  sheetClose: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#D4AF37', alignItems: 'center', justifyContent: 'center' },
+  pickerRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingVertical: 12, paddingHorizontal: 12,
+    borderRadius: 16, marginBottom: 8,
     backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: 1, borderColor: colors.border,
   },
-  pickerItemActive: {
-    backgroundColor: isDark ? 'rgba(212,175,55,0.1)' : 'rgba(212,175,55,0.08)',
-    borderColor: 'rgba(212,175,55,0.35)',
-  },
-  pickerEmoji: {
-    width: 44,
-    height: 44,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pickerItemTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 2,
-  },
-  pickerItemSub: {
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  toggle: {
-    width: 44,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
-    justifyContent: 'center',
-    paddingHorizontal: 2,
-  },
-  toggleOn: { backgroundColor: '#D4AF37' },
-  toggleThumb: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
-  },
+  pickerIcon: { width: 44, height: 44, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  pickerItemTitle: { fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: 2 },
+  pickerItemSub: { fontSize: 12, color: colors.textSecondary },
+  toggle: { width: 44, height: 24, borderRadius: 12, backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)', justifyContent: 'center', paddingHorizontal: 2 },
+  toggleThumb: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#fff', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 2 },
   toggleThumbOn: { alignSelf: 'flex-end' },
 })
