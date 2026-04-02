@@ -30,6 +30,7 @@ const ProfileScreen: React.FC = () => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const colors = getColors(isDark);
+  const logoutIconColor = isDark ? "#0F172A" : "#FFFFFF";
   const [fontsLoaded] = useFonts({
     "Roboto Slab": require("../../assets/Font/RobotoSlab-VariableFont_wght.ttf"),
   });
@@ -110,9 +111,9 @@ const ProfileScreen: React.FC = () => {
       borderRadius: 14,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: colors.card,
+      backgroundColor: "#F59E0B",
       borderWidth: 1.5,
-      borderColor: colors.border,
+      borderColor: "#D97706",
       shadowColor: colors.text,
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.06,
@@ -137,9 +138,9 @@ const ProfileScreen: React.FC = () => {
       borderRadius: 14,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: colors.card,
+      backgroundColor: "#EF4444",
       borderWidth: 1.5,
-      borderColor: colors.border,
+      borderColor: "#DC2626",
       shadowColor: colors.text,
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.06,
@@ -174,6 +175,10 @@ const ProfileScreen: React.FC = () => {
       alignItems: "center",
       gap: 12,
     },
+    userTextWrap: {
+      flex: 1,
+      minWidth: 0,
+    },
     avatar: {
       width: 62,
       height: 62,
@@ -202,7 +207,8 @@ const ProfileScreen: React.FC = () => {
       fontSize: 14,
       color: colors.textSecondary,
       marginTop: 2,
-      maxWidth: "88%",
+      flexShrink: 1,
+      lineHeight: 20,
     },
     sectionBlock: {
       marginBottom: 20,
@@ -359,7 +365,7 @@ const ProfileScreen: React.FC = () => {
         <BlurView intensity={isDark ? 40 : 60} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
         <View style={dynamicStyles.headerRow}>
           <TouchableOpacity style={dynamicStyles.backButton} onPress={() => router.replace("/(tabs)")}>
-            <Ionicons name="chevron-back" size={22} color={colors.text} />
+            <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
           </TouchableOpacity>
           <View style={dynamicStyles.headerTitleWrap}>
             <Text style={dynamicStyles.pageTitle}>Profile</Text>
@@ -370,6 +376,10 @@ const ProfileScreen: React.FC = () => {
               source={require("../../assets/animations/Logout.json")}
               autoPlay
               loop
+              colorFilters={[
+                { keypath: "logout 2.logout.Fill 1", color: logoutIconColor },
+                { keypath: "logout.logout.Fill 1", color: logoutIconColor },
+              ]}
               style={dynamicStyles.logoutAnimation}
             />
           </TouchableOpacity>
@@ -386,7 +396,7 @@ const ProfileScreen: React.FC = () => {
                 <Ionicons name="person" size={26} color={colors.primary} />
               </View>
             )}
-            <View>
+            <View style={dynamicStyles.userTextWrap}>
               <Text style={dynamicStyles.userName}>{user?.firstName || "User"}</Text>
               <Text style={dynamicStyles.userEmail}>{email}</Text>
             </View>
