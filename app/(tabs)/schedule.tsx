@@ -2,11 +2,11 @@
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import {
-  addScheduleEvent,
-  deleteScheduleEvent,
-  getScheduleEvents,
-  ScheduleEvent,
-  updateScheduleEvent,
+    addScheduleEvent,
+    deleteScheduleEvent,
+    getScheduleEvents,
+    ScheduleEvent,
+    updateScheduleEvent,
 } from '@/lib/schedule-service';
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,20 +16,20 @@ import { useFonts } from 'expo-font';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  FlatList,
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Animated,
+    FlatList,
+    Keyboard,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -452,17 +452,9 @@ export default function ScheduleScreen() {
         <View style={styles.headerArea}>
           <BlurView intensity={isDark ? 40 : 60} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
           <View style={styles.headerRow}>
-            <Animated.View style={{ transform: [{ scale: backButtonScale }] }}>
-              <TouchableOpacity
-                style={[
-                  styles.backButton,
-                  { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)' },
-                ]}
-                onPress={() => router.replace('/(tabs)')}
-              >
-                <Text style={[styles.backButtonText, { color: isDark ? '#FFFFFF' : '#000000' }]}>←</Text>
-              </TouchableOpacity>
-            </Animated.View>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/(tabs)')}>
+              <Ionicons name="chevron-back" size={22} color={isDark ? "#000000" : "#FFFFFF"} />
+            </TouchableOpacity>
             <View>
               <Text style={[styles.pageTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}>Schedule</Text>
               <Text style={styles.pageSubtitle}>Plan your meetings</Text>
@@ -872,16 +864,20 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
+    width: 42,
+    height: 42,
+    borderRadius: 14,
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    justifyContent: 'center',
+    backgroundColor: '#D4AF37',
     borderWidth: 1.5,
-    borderColor: colors.primary,
+    borderColor: '#D4AF37',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
   },
-  backButtonText: { fontSize: 22, color: '#000000', marginTop: -2 },
   pageTitle: { fontSize: 24, fontFamily: 'Roboto Slab', color: '#000000', letterSpacing: -0.5 },
   pageSubtitle: { fontSize: 12, color: colors.textSecondary, fontWeight: '500', marginTop: 2 },
   content: { flex: 1, paddingHorizontal: 16 },

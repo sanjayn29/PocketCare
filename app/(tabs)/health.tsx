@@ -9,27 +9,27 @@ import { useFonts } from 'expo-font';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Animated, FlatList,
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal, Platform, ScrollView, StyleSheet, Text,
-  TextInput, TouchableOpacity, View
+    ActivityIndicator, Alert, Animated, FlatList,
+    Keyboard,
+    KeyboardAvoidingView,
+    Modal, Platform, ScrollView, StyleSheet, Text,
+    TextInput, TouchableOpacity, View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  addDiet,
-  addFitness,
-  addMedical,
-  deleteDiet,
-  deleteFitness,
-  deleteMedical,
-  DietPlan, FitnessPlan, getHealthData,
-  MedicalRecord,
-  toggleDietDate,
-  toggleFitnessDate,
-  updateDiet,
-  updateFitness,
-  updateMedical
+    addDiet,
+    addFitness,
+    addMedical,
+    deleteDiet,
+    deleteFitness,
+    deleteMedical,
+    DietPlan, FitnessPlan, getHealthData,
+    MedicalRecord,
+    toggleDietDate,
+    toggleFitnessDate,
+    updateDiet,
+    updateFitness,
+    updateMedical
 } from '../../lib/health-service';
 
 // ─── UTILS ──────────────────────────────────────────────────────────────────
@@ -478,20 +478,19 @@ export default function HealthScreen() {
   const dynamicStyles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     backButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      justifyContent: 'center',
+      width: 42,
+      height: 42,
+      borderRadius: 14,
       alignItems: 'center',
-      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+      justifyContent: 'center',
+      backgroundColor: '#D4AF37',
       borderWidth: 1.5,
-      borderColor: activeTab === 'Medical' ? uiColors.medical : 
-                   activeTab === 'Diet' ? uiColors.diet : uiColors.fitness,
-    },
-    backButtonText: {
-      fontSize: 22,
-      color: isDark ? '#FFFFFF' : '#000000',
-      marginTop: -2,
+      borderColor: '#D4AF37',
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.06,
+      shadowRadius: 3,
+      elevation: 1,
     },
     headerArea: {
       paddingHorizontal: 20,
@@ -621,11 +620,9 @@ export default function HealthScreen() {
         <View style={dynamicStyles.headerArea}>
           <BlurView intensity={isDark ? 40 : 60} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
           <View style={dynamicStyles.headerRow}>
-            <Animated.View style={{ transform: [{ scale: backButtonScale }] }}>
-              <TouchableOpacity style={dynamicStyles.backButton} onPress={() => router.replace('/(tabs)')}>
-                <Text style={dynamicStyles.backButtonText}>←</Text>
-              </TouchableOpacity>
-            </Animated.View>
+            <TouchableOpacity style={dynamicStyles.backButton} onPress={() => router.replace('/(tabs)')}>
+              <Ionicons name="chevron-back" size={22} color={isDark ? "#000000" : "#FFFFFF"} />
+            </TouchableOpacity>
             <View>
               <Text style={dynamicStyles.pageTitle}>Health</Text>
             </View>
