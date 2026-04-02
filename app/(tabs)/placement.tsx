@@ -647,11 +647,10 @@ export default function PlacementScreen() {
   );
 
   // Filtered companies by company status
+  // "All" should list every company entry, even if company_status is not set yet.
   const filteredCompanies = useMemo(() => {
-    const withCompanyStatus = placements.filter(p => p.company_status);
-    return companyStatusFilter === 'all'
-      ? withCompanyStatus
-      : withCompanyStatus.filter(p => p.company_status === companyStatusFilter);
+    if (companyStatusFilter === 'all') return placements;
+    return placements.filter(p => p.company_status === companyStatusFilter);
   }, [placements, companyStatusFilter]);
 
   // ── Memoize header so FlatList doesn't remount it ──
