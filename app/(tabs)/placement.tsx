@@ -8,6 +8,7 @@ import { BlurView } from 'expo-blur';
 import { useFonts } from 'expo-font';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ActivityIndicator, Alert, Animated,
   FlatList,
@@ -458,15 +459,8 @@ export default function PlacementScreen() {
     pageTitle: {
       fontSize: 24,
       fontFamily: 'Roboto Slab',
-      fontWeight: '400',
       color: isDark ? '#FFFFFF' : '#000000',
       letterSpacing: -0.5,
-    },
-    pageSubtitle: {
-      fontSize: 12,
-      color: colors.textSecondary,
-      fontWeight: '500',
-      marginTop: 6,
     },
     tabRow: {
       flexDirection: 'row',
@@ -751,7 +745,8 @@ export default function PlacementScreen() {
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <KeyboardAvoidingView style={[dynamicStyles.container, { backgroundColor: colors.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <SafeAreaView style={dynamicStyles.container} edges={['top', 'left', 'right']}>
+      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.background }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 
       {/* ── Page Header ── */}
       <View style={dynamicStyles.headerArea}>
@@ -956,7 +951,8 @@ export default function PlacementScreen() {
       </Modal>
 
 
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
