@@ -365,7 +365,7 @@ const ProfileScreen: React.FC = () => {
         <BlurView intensity={isDark ? 40 : 60} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
         <View style={dynamicStyles.headerRow}>
           <TouchableOpacity style={dynamicStyles.backButton} onPress={() => router.replace("/(tabs)")}>
-            <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
+            <Ionicons name="chevron-back" size={22} color={isDark ? "#000000" : "#FFFFFF"} />
           </TouchableOpacity>
           <View style={dynamicStyles.headerTitleWrap}>
             <Text style={dynamicStyles.pageTitle}>Profile</Text>
