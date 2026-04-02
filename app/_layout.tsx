@@ -43,6 +43,7 @@ export default function RootLayout() {
       try {
         await Font.loadAsync({
           MomoSignature: require('@/assets/Font/MomoSignature-Regular.ttf'),
+          RobotoSlab: require('@/assets/Font/RobotoSlab-VariableFont_wght.ttf'),
         })
       } catch (e) {
         console.warn('Error loading fonts:', e)

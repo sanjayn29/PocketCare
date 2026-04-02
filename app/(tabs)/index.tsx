@@ -534,7 +534,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     backgroundColor: colors.background,
   },
   headerTitle: { fontSize: 28, fontFamily: 'MomoSignature', color: '#D4AF37', letterSpacing: -0.8 },
-  headerSub: { fontSize: 12, color: colors.textSecondary, marginTop: 2, fontWeight: '500' },
+  headerSub: { fontSize: 15, fontFamily: 'RobotoSlab', color: colors.textSecondary, marginTop: 4, fontWeight: '600' },
   headerActions: { flexDirection: 'row', gap: 8 },
   hBtn: {
     width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
