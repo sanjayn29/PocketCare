@@ -1,4 +1,5 @@
 import { recordVisit } from '@/lib/streak-service'
+ import { ThemeProvider } from '@/context/ThemeContext'
 import { ClerkProvider, useUser } from '@clerk/expo'
 import { tokenCache } from '@clerk/expo/token-cache'
 import { Stack } from 'expo-router'
@@ -33,8 +34,10 @@ function RootLayoutContent() {
 export default function RootLayout() {
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <RootLayoutContent />
-      <StatusBar style="auto" />
+      <ThemeProvider>
+        <RootLayoutContent />
+        <StatusBar style="auto" />
+      </ThemeProvider>
     </ClerkProvider>
   )
 }

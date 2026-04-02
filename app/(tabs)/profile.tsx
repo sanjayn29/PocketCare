@@ -1,5 +1,6 @@
 import MemoryGameComponent from "@/components/MemoryGameComponent";
 import TapGameComponent from "@/components/TapGameComponent";
+import { useTheme } from "@/context/ThemeContext";
 import { getColors } from "@/constants/styles";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { getMemoryGameScore, getTapGameScore } from "@/lib/games-service";
@@ -10,7 +11,7 @@ import { BlurView } from "expo-blur";
 import { useFonts } from "expo-font";
 import { useRouter } from "expo-router";
 import LottieView from "lottie-react-native";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -30,7 +31,8 @@ const ProfileScreen: React.FC = () => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const colors = getColors(isDark);
-  const logoutIconColor = isDark ? "#0F172A" : "#FFFFFF";
+  const { toggleTheme } = useTheme();
+  const switchRef = useRef<LottieView>(null);
   const [fontsLoaded] = useFonts({
     "Roboto Slab": require("../../assets/Font/RobotoSlab-VariableFont_wght.ttf"),
     "Momo Signature": require("../../assets/Font/MomoSignature-Regular.ttf"),
@@ -133,24 +135,59 @@ const ProfileScreen: React.FC = () => {
       fontWeight: "500",
       color: colors.textSecondary,
     },
-    logoutButton: {
+    themeToggle: {
       width: 42,
       height: 42,
       borderRadius: 14,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: "#EF4444",
+      backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)",
       borderWidth: 1.5,
-      borderColor: "#DC2626",
-      shadowColor: colors.text,
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.06,
-      shadowRadius: 3,
-      elevation: 1,
+      borderColor: isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.08)",
     },
-    logoutAnimation: {
-      width: 28,
-      height: 28,
+    themeAnimation: {
+      width: 36,
+      height: 36,
+    },
+    themeRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: colors.card,
+      borderRadius: 20,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      marginBottom: 20,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.06,
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    themeRowLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    themeRowIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 11,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark ? "rgba(129,140,248,0.15)" : "rgba(245,158,11,0.12)",
+    },
+    themeRowLabel: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    themeRowSub: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 1,
     },
     scrollContent: {
       paddingHorizontal: 16,
@@ -466,18 +503,6 @@ const ProfileScreen: React.FC = () => {
             <Text style={dynamicStyles.pageTitle}>Profile</Text>
             <Text style={dynamicStyles.pageSubtitle}>Your activity, streaks, and game stats</Text>
           </View>
-          <TouchableOpacity style={dynamicStyles.logoutButton} onPress={handleLogout}>
-            <LottieView
-              source={require("../../assets/animations/Logout.json")}
-              autoPlay
-              loop
-              colorFilters={[
-                { keypath: "logout 2.logout.Fill 1", color: logoutIconColor },
-                { keypath: "logout.logout.Fill 1", color: logoutIconColor },
-              ]}
-              style={dynamicStyles.logoutAnimation}
-            />
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -497,6 +522,31 @@ const ProfileScreen: React.FC = () => {
             </View>
           </View>
         </View>
+
+        {/* Theme Toggle Row */}
+        <TouchableOpacity
+          style={dynamicStyles.themeRow}
+          onPress={toggleTheme}
+          activeOpacity={0.8}
+        >
+          <View style={dynamicStyles.themeRowLeft}>
+            <View style={dynamicStyles.themeRowIcon}>
+              <Ionicons name={isDark ? "moon" : "sunny"} size={16} color={isDark ? "#818CF8" : "#F59E0B"} />
+            </View>
+            <View>
+              <Text style={dynamicStyles.themeRowLabel}>{isDark ? "Dark Mode" : "Light Mode"}</Text>
+              <Text style={dynamicStyles.themeRowSub}>Tap to switch appearance</Text>
+            </View>
+          </View>
+          <LottieView
+            ref={switchRef}
+            source={require("../../assets/animations/switch.json")}
+            autoPlay={false}
+            loop={false}
+            progress={isDark ? 1 : 0}
+            style={dynamicStyles.themeAnimation}
+          />
+        </TouchableOpacity>
 
         <View style={dynamicStyles.sectionBlock}>
           <View style={dynamicStyles.sectionHeader}>
