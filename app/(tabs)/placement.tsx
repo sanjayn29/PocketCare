@@ -738,10 +738,10 @@ export default function PlacementScreen() {
         </TouchableOpacity>
 
         <View style={styles.actionButtonsArea}>
-          <TouchableOpacity style={styles.editArea} onPress={() => openEdit(item)} hitSlop={10}>
+          <TouchableOpacity style={styles.actionButton} onPress={() => openEdit(item)} hitSlop={10}>
             <Ionicons name="pencil-outline" size={20} color={activeTab === 'placements' ? uiColors.placements : uiColors.companies} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.deleteArea} onPress={() => handleDelete(item.id)} hitSlop={10}>
+          <TouchableOpacity style={styles.actionButton} onPress={() => handleDelete(item.id)} hitSlop={10}>
             <Ionicons name="trash-outline" size={20} color={colors.danger} />
           </TouchableOpacity>
         </View>
@@ -1072,16 +1072,16 @@ const getStyles = (colors: any, isDark: boolean, activeTab: 'placements' | 'comp
 
   // ── Create Card ─────────────────────────────────────────────────────────────
   createCard: {
-    backgroundColor: colors.card, borderRadius: 16, marginBottom: 16,
-    borderWidth: 1, borderColor: colors.border,
-    shadowColor: activeTab === 'placements' ? '#3B82F6' : '#10B981', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08, shadowRadius: 10, elevation: 3, overflow: 'hidden',
+    backgroundColor: colors.card, borderRadius: 20, marginBottom: 20,
+    borderWidth: 1.5, borderColor: colors.border,
+    shadowColor: activeTab === 'placements' ? '#3B82F6' : '#10B981', shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.15, shadowRadius: 14, elevation: 5, overflow: 'hidden',
   },
   createCollapsed: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
   createIconWrap: { width: 36, height: 36, borderRadius: 10, backgroundColor: activeTab === 'placements' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)', alignItems: 'center', justifyContent: 'center' },
-  createCollapsedText: { flex: 1, fontSize: 15, color: colors.textSecondary, fontWeight: '500' },
+  createCollapsedText: { flex: 1, fontSize: 16, color: colors.textSecondary, fontWeight: '600' },
   createExpanded: { padding: 16 },
-  createTitleInput: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 12, paddingVertical: 4 },
+  createTitleInput: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 12, paddingVertical: 4, fontFamily: 'Roboto Slab' },
   input: {
     backgroundColor: colors.background, borderRadius: 10,
     paddingHorizontal: 12, paddingVertical: 10,
@@ -1150,27 +1150,38 @@ const getStyles = (colors: any, isDark: boolean, activeTab: 'placements' | 'comp
 
   // ── Placement Card ──────────────────────────────────────────────────────────
   card: {
-    backgroundColor: colors.card, borderRadius: 16, marginBottom: 14,
-    flexDirection: 'row', borderWidth: 1, borderColor: colors.border,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
+    backgroundColor: colors.card, borderRadius: 20, marginBottom: 18,
+    flexDirection: 'row', borderWidth: 1.5, borderColor: colors.border,
+    shadowColor: colors.text, shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12, shadowRadius: 12, elevation: 5, overflow: 'hidden',
   },
-  cardMain: { flex: 1, padding: 16 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
-  companyName: { fontSize: 18, fontWeight: '800', color: colors.text },
-  cardDate: { fontSize: 12, color: colors.textSecondary, fontWeight: '500', marginTop: 2 },
-  statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
-  statusBadgeText: { fontSize: 11, fontWeight: '800' },
-  metaRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 10 },
-  metaChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1, borderColor: colors.border },
+  cardMain: { flex: 1, padding: 18 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
+  companyName: { flex: 1, marginRight: 8, fontSize: 19, fontWeight: '700', color: colors.text, fontFamily: 'Roboto Slab', letterSpacing: -0.3 },
+  cardDate: { fontSize: 13, color: colors.textSecondary, fontWeight: '600', marginTop: 2, letterSpacing: 0.3 },
+  statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10, borderWidth: 1.5, borderColor: colors.border },
+  statusBadgeText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
+  metaRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap', marginBottom: 12 },
+  metaChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 7,
+    borderRadius: 10, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.background,
+    shadowColor: colors.text, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 2, elevation: 1
+  },
   metaChipText: { fontSize: 12, fontWeight: '600', color: colors.text },
-  roundPreview: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  roundPreview: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6, paddingVertical: 2 },
   roundPreviewDot: { width: 7, height: 7, borderRadius: 99 },
-  roundPreviewTopic: { flex: 1, fontSize: 13, color: colors.textSecondary, fontWeight: '500' },
-  roundPreviewResult: { fontSize: 11, fontWeight: '700' },
-  actionButtonsArea: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingTop: 18 },
-  editArea: { paddingHorizontal: 8, justifyContent: 'flex-start', alignItems: 'center' },
-  deleteArea: { paddingHorizontal: 14, justifyContent: 'flex-start', alignItems: 'center', paddingTop: 18 },
+  roundPreviewTopic: { flex: 1, fontSize: 13, color: colors.text, fontWeight: '500' },
+  roundPreviewResult: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
+  actionButtonsArea: {
+    padding: 14, justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: 10,
+    borderLeftWidth: 1.5, borderLeftColor: colors.border,
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.01)'
+  },
+  actionButton: {
+    width: 42, height: 42, borderRadius: 14, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border,
+    shadowColor: colors.text, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3, elevation: 1
+  },
 
   // ── Round Card ──────────────────────────────────────────────────────────────
   roundCard: { backgroundColor: colors.background, borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: colors.border },
