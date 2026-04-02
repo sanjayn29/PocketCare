@@ -4,12 +4,16 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { BlurView } from 'expo-blur';
+import { useFonts } from 'expo-font';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert, FlatList,
+  ActivityIndicator, Alert, Animated,
+  FlatList,
   Keyboard, KeyboardAvoidingView, Modal, Platform,
   ScrollView, StyleSheet, Switch, Text, TextInput,
-  TouchableOpacity, View,
+  TouchableOpacity, View
 } from 'react-native';
 import {
   CompanyStatus,
@@ -23,7 +27,7 @@ type TabView = 'placements' | 'companies';
 
 // Dynamic config based on theme
 const getStatusConfig = (colors: any): Record<PlacementStatus, { label: string; color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }> => ({
-  applied:   { label: 'Applied',   color: colors.info, bg: colors.overlay, icon: 'paper-plane' },
+  applied:   { label: 'Applied',   color: '#F59E0B', bg: colors.overlay, icon: 'paper-plane' },
   interview: { label: 'Interview', color: colors.warning, bg: colors.overlay, icon: 'mic' },
   offer:     { label: 'Offer',     color: colors.success, bg: colors.overlay, icon: 'trophy' },
   rejected:  { label: 'Rejected',  color: colors.danger, bg: colors.overlay, icon: 'close-circle' },
@@ -200,6 +204,7 @@ type CreateCardProps = {
   resetCreate: () => void;
   colors: any;
   styles: any;
+  activeTab: 'placements' | 'companies';
 };
 
 const CreateCard = React.memo(({
@@ -218,6 +223,7 @@ const CreateCard = React.memo(({
   handleSave, isSavingNew, resetCreate,
   colors,
   styles,
+  activeTab,
 }: CreateCardProps) => {
   const STATUS_CONFIG = getStatusConfig(colors);
   const ROUND_RESULT_CONFIG = getRoundResultConfig(colors);
@@ -315,7 +321,7 @@ const CreateCard = React.memo(({
     ) : (
       <TouchableOpacity style={styles.createCollapsed} onPress={() => setIsCreating(true)}>
         <View style={styles.createIconWrap}>
-          <Ionicons name="briefcase-outline" size={20} color={colors.info} />
+          <Ionicons name="briefcase-outline" size={20} color={activeTab === 'placements' ? '#3B82F6' : '#10B981'} />
         </View>
         <Text style={styles.createCollapsedText}>Track a new company application…</Text>
         <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
@@ -330,20 +336,58 @@ const CreateCard = React.memo(({
 export default function PlacementScreen() {
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress;
+  const router = useRouter();
 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const colors = getColors(isDark);
 
-  // Dynamic styles based on theme
-  const styles = useMemo(() => getStyles(colors), [colors]);
+  // Multi-color palette for premium feel
+  const uiColors = {
+    placements: '#3B82F6',    // Blue
+    companies: '#10B981',     // Green
+  };
 
+  const backButtonScale = useRef(new Animated.Value(1)).current;
+  const [fontsLoaded] = useFonts({
+    'Roboto Slab': require('../../assets/Font/RobotoSlab-VariableFont_wght.ttf'),
+  });
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(backButtonScale, {
+          toValue: 1.06,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(backButtonScale, {
+          toValue: 1,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ]),
+    ).start();
+  }, [backButtonScale]);
+
+  // ── State ──
+  const [activeTab, setActiveTab] = useState<TabView>('placements');
   const [placements, setPlacements] = useState<Placement[]>([]);
   const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabView>('placements');
   const [filterStatus, setFilterStatus] = useState<PlacementStatus | 'all'>('all');
   const [companyStatusFilter, setCompanyStatusFilter] = useState<CompanyStatus | 'all'>('all');
+
+  // Dynamic styles based on theme
+  const styles = useMemo(() => getStyles(colors, isDark, activeTab), [colors, isDark, activeTab]);
+
+  // ── Helper: Convert hex color to rgba ──
+  const getRgbaColor = (hex: string, opacity: number) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
 
   // ── Create state ──
   const [isCreating, setIsCreating] = useState(false);
@@ -384,176 +428,80 @@ export default function PlacementScreen() {
     },
     headerArea: {
       paddingHorizontal: 20,
-      paddingTop: 56,
-      paddingBottom: 12,
+      paddingTop: Platform.OS === 'ios' ? 12 : 20,
+      paddingBottom: 20,
+      overflow: 'hidden',
       borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+      borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+      marginBottom: 0,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 16,
+    },
+    backButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+      borderWidth: 1.5,
+      borderColor: activeTab === 'placements' ? uiColors.placements : uiColors.companies,
+    },
+    backButtonText: {
+      fontSize: 22,
+      color: isDark ? '#FFFFFF' : '#000000',
+      marginTop: -2,
     },
     pageTitle: {
-      fontSize: 28,
-      fontWeight: '800',
-      color: colors.text,
+      fontSize: 24,
+      fontFamily: 'Roboto Slab',
+      fontWeight: '400',
+      color: isDark ? '#FFFFFF' : '#000000',
+      letterSpacing: -0.5,
     },
     pageSubtitle: {
-      fontSize: 13,
+      fontSize: 12,
       color: colors.textSecondary,
       fontWeight: '500',
-      marginTop: 2,
+      marginTop: 6,
     },
     tabRow: {
       flexDirection: 'row',
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    tabBtn: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: 14,
-      borderBottomWidth: 2,
-      borderBottomColor: 'transparent',
-    },
-    tabBtnActive: {
-      borderBottomColor: colors.primary,
-    },
-    tabBtnText: {
-      marginLeft: 8,
-      fontSize: 14,
-      fontWeight: '600',
-      color: colors.textSecondary,
-    },
-    tabBtnTextActive: {
-      color: colors.primary,
-    },
-    contentArea: {
-      flex: 1,
-    },
-    floatingArea: {
-      padding: 16,
-    },
-    card: {
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      padding: 14,
-      marginHorizontal: 16,
-      marginVertical: 8,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    cardMain: {
-      marginBottom: 12,
-    },
-    cardHeader: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      justifyContent: 'space-between',
-      marginBottom: 10,
-    },
-    companyName: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: colors.text,
-      flex: 1,
-    },
-    cardDate: {
-      fontSize: 12,
-      color: colors.textSecondary,
-      marginTop: 2,
-    },
-    statusBadge: {
-      paddingHorizontal: 10,
-      paddingVertical: 6,
-      borderRadius: 8,
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    statusBadgeText: {
-      fontSize: 12,
-      fontWeight: '600',
-      marginLeft: 4,
-    },
-    metaRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
-      marginBottom: 10,
-    },
-    metaChip: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
       paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 6,
-      backgroundColor: colors.card,
-    },
-    metaChipText: {
-      fontSize: 11,
-      fontWeight: '500',
-    },
-    roundPreview: {
-      flexDirection: 'row',
-      alignItems: 'center',
       paddingVertical: 8,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-    },
-    roundPreviewDot: {
-      width: 6,
-      height: 6,
-      borderRadius: 3,
-      marginRight: 8,
-    },
-    roundPreviewTopic: {
-      flex: 1,
-      fontSize: 12,
-      fontWeight: '600',
-      color: colors.text,
-    },
-    roundPreviewResult: {
-      fontSize: 11,
-      fontWeight: '600',
-    },
-    deleteArea: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-    },
-    modalContainer: {
-      flex: 1,
       backgroundColor: colors.background,
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
-      overflow: 'hidden',
-    },
-    modalHeader: {
-      paddingHorizontal: 20,
-      paddingTop: 16,
-      paddingBottom: 12,
       borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
     },
-    modalTitle: {
-      fontSize: 18,
-      fontWeight: '700',
-      color: colors.text,
-    },
-    emptyWrap: {
+    tab: {
       flex: 1,
+      flexDirection: 'column',
+      paddingVertical: 10,
+      paddingHorizontal: 4,
       alignItems: 'center',
       justifyContent: 'center',
+      position: 'relative',
     },
-    emptyText: {
-      fontSize: 16,
+    tabText: {
+      fontSize: 11,
+      fontWeight: '700',
       color: colors.textSecondary,
-      marginTop: 12,
+      marginBottom: 6,
     },
-  }), [colors]);
+    tabTextActivePlacements: { color: uiColors.placements, fontWeight: '900' },
+    tabTextActiveCompanies: { color: uiColors.companies, fontWeight: '900' },
+    activeIndicatorPlacements: {
+      position: 'absolute', bottom: -8, width: '60%', height: 3, backgroundColor: uiColors.placements, borderRadius: 2,
+      shadowColor: uiColors.placements, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4,
+    },
+    activeIndicatorCompanies: {
+      position: 'absolute', bottom: -8, width: '60%', height: 3, backgroundColor: uiColors.companies, borderRadius: 2,
+      shadowColor: uiColors.companies, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4,
+    },
+  }), [colors, isDark, activeTab]);
 
   useEffect(() => {
     if (email) loadPlacements();
@@ -724,11 +672,12 @@ export default function PlacementScreen() {
       handleSave={handleSave} isSavingNew={isSavingNew} resetCreate={resetCreate}
       colors={colors}
       styles={styles}
+      activeTab={activeTab}
     />
   ), [
     isCreating, newCompany, newStatus, newCompanyStatus, newDate, newStudied, newRounds,
     showAddRound, roundTopic, roundDesc, roundResult,
-    addRoundToNew, removeRoundFromNew, handleSave, isSavingNew, resetCreate, colors, styles, isDark
+    addRoundToNew, removeRoundFromNew, handleSave, isSavingNew, resetCreate, colors, styles, isDark, activeTab
   ]);
 
   // ── Placement card render ──
@@ -788,9 +737,14 @@ export default function PlacementScreen() {
           })}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.deleteArea} onPress={() => handleDelete(item.id)} hitSlop={10}>
-          <Ionicons name="trash-outline" size={20} color={colors.danger} />
-        </TouchableOpacity>
+        <View style={styles.actionButtonsArea}>
+          <TouchableOpacity style={styles.editArea} onPress={() => openEdit(item)} hitSlop={10}>
+            <Ionicons name="pencil-outline" size={20} color={activeTab === 'placements' ? uiColors.placements : uiColors.companies} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.deleteArea} onPress={() => handleDelete(item.id)} hitSlop={10}>
+            <Ionicons name="trash-outline" size={20} color={colors.danger} />
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }, [placements, colors, styles, isDark]);
@@ -798,29 +752,39 @@ export default function PlacementScreen() {
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <KeyboardAvoidingView style={[styles.container, { backgroundColor: colors.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={[dynamicStyles.container, { backgroundColor: colors.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 
       {/* ── Page Header ── */}
-      <View style={[styles.headerArea, { borderBottomColor: colors.border }]}>
-        <Text style={[styles.pageTitle, { color: colors.text }]}>Placement Tracker</Text>
-        <Text style={[styles.pageSubtitle, { color: colors.textSecondary }]}>Track companies, rounds & status</Text>
+      <View style={dynamicStyles.headerArea}>
+        <BlurView intensity={isDark ? 40 : 60} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+        <View style={dynamicStyles.headerRow}>
+          <Animated.View style={{ transform: [{ scale: backButtonScale }] }}>
+            <TouchableOpacity style={dynamicStyles.backButton} onPress={() => router.replace('/(tabs)')}>
+              <Text style={dynamicStyles.backButtonText}>←</Text>
+            </TouchableOpacity>
+          </Animated.View>
+          <View>
+            <Text style={dynamicStyles.pageTitle}>Placement Tracker</Text>
+          </View>
+        </View>
       </View>
 
       {/* ── Tab Navigation ── */}
-      <View style={[styles.tabRow, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity
-          style={[styles.tabBtn, activeTab === 'placements' && { borderBottomColor: colors.primary }]}
-          onPress={() => setActiveTab('placements')}
-        >
-          <Ionicons name="list" size={18} color={activeTab === 'placements' ? colors.primary : colors.textSecondary} />
-          <Text style={[styles.tabBtnText, activeTab === 'placements' && { color: colors.primary }]}>Placements</Text>
+      <View style={dynamicStyles.tabRow}>
+        <TouchableOpacity style={dynamicStyles.tab} onPress={() => setActiveTab('placements')}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="list-outline" size={18} color={activeTab === 'placements' ? uiColors.placements : '#64748B'} style={{ marginRight: 8 }} />
+            <Text style={[dynamicStyles.tabText, activeTab === 'placements' && dynamicStyles.tabTextActivePlacements, { marginBottom: 0 }]}>Placements</Text>
+          </View>
+          {activeTab === 'placements' && <View style={dynamicStyles.activeIndicatorPlacements} />}
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tabBtn, activeTab === 'companies' && { borderBottomColor: colors.primary }]}
-          onPress={() => setActiveTab('companies')}
-        >
-          <Ionicons name="layers" size={18} color={activeTab === 'companies' ? colors.primary : colors.textSecondary} />
-          <Text style={[styles.tabBtnText, activeTab === 'companies' && { color: colors.primary }]}>Companies</Text>
+
+        <TouchableOpacity style={dynamicStyles.tab} onPress={() => setActiveTab('companies')}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="layers-outline" size={18} color={activeTab === 'companies' ? uiColors.companies : '#64748B'} style={{ marginRight: 8 }} />
+            <Text style={[dynamicStyles.tabText, activeTab === 'companies' && dynamicStyles.tabTextActiveCompanies, { marginBottom: 0 }]}>Companies</Text>
+          </View>
+          {activeTab === 'companies' && <View style={dynamicStyles.activeIndicatorCompanies} />}
         </TouchableOpacity>
       </View>
 
@@ -828,17 +792,17 @@ export default function PlacementScreen() {
       {activeTab === 'placements' && (
         <>
           {/* Filter Bar */}
-          <View style={styles.filterRow}>
+          <View style={styles.segmentBlock}>
             {(['all', 'interview', 'offer', 'rejected'] as const).map(s => {
               const active = filterStatus === s;
               const label = s === 'all' ? 'All' : getStatusConfig(colors)[s].label;
               return (
                 <TouchableOpacity
                   key={s}
-                  style={[styles.filterChip, active && styles.filterChipActive]}
+                  style={[styles.segmentBtn, active && { backgroundColor: getRgbaColor('#3B82F6', isDark ? 0.15 : 0.1), borderColor: '#3B82F6', borderWidth: 1 }]}
                   onPress={() => setFilterStatus(s)}
                 >
-                  <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
+                  <Text style={[styles.segmentText, active && { color: '#3B82F6', fontWeight: '700' }]}>
                     {label}
                   </Text>
                 </TouchableOpacity>
@@ -876,7 +840,7 @@ export default function PlacementScreen() {
       {activeTab === 'companies' && (
         <>
           {/* Company Status Filter */}
-          <View style={styles.filterRow}>
+          <View style={styles.segmentBlock}>
             {(['all', 'present', 'completed', 'upcoming'] as const).map(s => {
               const active = companyStatusFilter === s;
               const label = s === 'all' ? 'All' : getCompanyStatusConfig(colors)[s].label;
@@ -884,10 +848,10 @@ export default function PlacementScreen() {
               return (
                 <TouchableOpacity
                   key={s}
-                  style={[styles.filterChip, active && styles.filterChipActive]}
+                  style={[styles.segmentBtn, active && { backgroundColor: getRgbaColor('#10B981', isDark ? 0.15 : 0.1), borderColor: '#10B981', borderWidth: 1 }]}
                   onPress={() => setCompanyStatusFilter(s as any)}
                 >
-                  <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
+                  <Text style={[styles.segmentText, active && { color: '#10B981', fontWeight: '700' }]}>
                     {label}
                   </Text>
                 </TouchableOpacity>
@@ -999,37 +963,35 @@ export default function PlacementScreen() {
 
 // ─── Styles (Dynamic based on theme) ──────────────────────────────────────────
 
-const getStyles = (colors: any) => StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean, activeTab: 'placements' | 'companies' = 'placements') => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  headerArea: { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 6 },
-  pageTitle: { fontSize: 28, fontWeight: '800', color: colors.text },
-  pageSubtitle: { fontSize: 13, color: colors.textSecondary, fontWeight: '500', marginTop: 2 },
+  headerArea: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 },
+  pageTitle: { fontSize: 24, fontFamily: 'Roboto Slab', fontWeight: '800', color: colors.text, letterSpacing: -0.5 },
+  pageSubtitle: { fontSize: 12, color: colors.textSecondary, fontWeight: '500', marginTop: 2 },
 
   // ── Tab Navigation ─────────────────────────────────────────────────────────
   tabRow: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 16,
-    gap: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    backgroundColor: colors.background,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    paddingBottom: 12,
   },
   tabBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: colors.card,
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
   },
   tabBtnActive: {
-    backgroundColor: colors.overlay,
-    borderBottomWidth: 2,
     borderBottomColor: colors.primary,
   },
   tabBtnText: {
+    marginLeft: 8,
     fontSize: 14,
     fontWeight: '600',
     color: colors.textSecondary,
@@ -1037,17 +999,24 @@ const getStyles = (colors: any) => StyleSheet.create({
   tabBtnTextActive: {
     color: colors.primary,
   },
+  contentArea: {
+    flex: 1,
+  },
+  floatingArea: {
+    padding: 16,
+  },
 
   // ── Filter Bar ──────────────────────────────────────────────────────────────
   filterRow: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     marginBottom: 16,
+    marginTop: 12,
     gap: 10,
     flexWrap: 'wrap',
   },
   filterChip: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: colors.card,
@@ -1055,16 +1024,45 @@ const getStyles = (colors: any) => StyleSheet.create({
     borderColor: colors.border,
   },
   filterChipActive: {
-    backgroundColor: colors.info,
-    borderColor: colors.info,
+    backgroundColor: '#F59E0B',
+    borderColor: '#F59E0B',
   },
   filterChipText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: colors.textSecondary,
   },
   filterChipTextActive: {
     color: '#FFFFFF',
+    fontWeight: '700',
+  },
+
+  // ── Segment Block (Health-style filter) ────────────────────────────────────
+  segmentBlock: { 
+    flexDirection: 'row', 
+    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', 
+    borderRadius: 14, 
+    padding: 4, 
+    marginBottom: 16,
+    marginHorizontal: 16,
+    marginTop: 12,
+    borderWidth: 1, 
+    borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' 
+  },
+  segmentBtn: { 
+    flex: 1, 
+    paddingVertical: 10, 
+    alignItems: 'center', 
+    borderRadius: 10 
+  },
+  segmentText: { 
+    fontSize: 13, 
+    fontWeight: '600', 
+    color: colors.textSecondary 
+  },
+  segmentTextActive: { 
+    color: '#F59E0B', 
+    fontWeight: '700' 
   },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
@@ -1076,11 +1074,11 @@ const getStyles = (colors: any) => StyleSheet.create({
   createCard: {
     backgroundColor: colors.card, borderRadius: 16, marginBottom: 16,
     borderWidth: 1, borderColor: colors.border,
-    shadowColor: colors.info, shadowOffset: { width: 0, height: 4 },
+    shadowColor: activeTab === 'placements' ? '#3B82F6' : '#10B981', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08, shadowRadius: 10, elevation: 3, overflow: 'hidden',
   },
   createCollapsed: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
-  createIconWrap: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.overlay, alignItems: 'center', justifyContent: 'center' },
+  createIconWrap: { width: 36, height: 36, borderRadius: 10, backgroundColor: activeTab === 'placements' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)', alignItems: 'center', justifyContent: 'center' },
   createCollapsedText: { flex: 1, fontSize: 15, color: colors.textSecondary, fontWeight: '500' },
   createExpanded: { padding: 16 },
   createTitleInput: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 12, paddingVertical: 4 },
@@ -1089,6 +1087,18 @@ const getStyles = (colors: any) => StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 10,
     fontSize: 14, color: colors.text,
     borderWidth: 1, borderColor: colors.border, marginBottom: 12,
+  },
+  titleInput: {
+    backgroundColor: colors.card,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   selectorLabel: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, marginBottom: 8 },
   statusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
@@ -1108,14 +1118,14 @@ const getStyles = (colors: any) => StyleSheet.create({
   rowBtns: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12 },
   cancelBtn: { paddingVertical: 8, paddingHorizontal: 16, justifyContent: 'center' },
   cancelBtnText: { color: colors.textSecondary, fontWeight: '600', fontSize: 14 },
-  saveBtn: { backgroundColor: colors.info, paddingVertical: 8, paddingHorizontal: 20, borderRadius: 20, justifyContent: 'center' },
+  saveBtn: { backgroundColor: activeTab === 'placements' ? '#3B82F6' : '#10B981', paddingVertical: 8, paddingHorizontal: 20, borderRadius: 20, justifyContent: 'center' },
   saveBtnText: { color: '#FFF', fontWeight: '700', fontSize: 14 },
   addRoundBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingVertical: 10, borderWidth: 1.5, borderColor: colors.border,
     borderRadius: 10, borderStyle: 'dashed', justifyContent: 'center', marginTop: 4,
   },
-  addRoundBtnText: { fontSize: 14, color: colors.info, fontWeight: '600' },
+  addRoundBtnText: { fontSize: 14, color: '#F59E0B', fontWeight: '600' },
 
   // ── Date Picker ─────────────────────────────────────────────────────────────
   dateBtn: {
@@ -1127,15 +1137,15 @@ const getStyles = (colors: any) => StyleSheet.create({
   dateBtnText: { fontSize: 14, color: colors.text, fontWeight: '500' },
   dateDoneBtn: {
     alignSelf: 'flex-end', marginBottom: 8,
-    backgroundColor: colors.info, paddingHorizontal: 20, paddingVertical: 7,
+    backgroundColor: '#F59E0B', paddingHorizontal: 20, paddingVertical: 7,
     borderRadius: 20,
   },
   dateDoneBtnText: { color: '#FFF', fontWeight: '700', fontSize: 14 },
 
   // ── Add Round Form ──────────────────────────────────────────────────────────
-  addRoundForm: { backgroundColor: colors.overlay, borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: colors.border },
+  addRoundForm: { backgroundColor: colors.card, borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: colors.border },
   resultRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 12 },
-  resultChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+  resultChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
   resultChipText: { fontSize: 12, fontWeight: '700', color: colors.textSecondary },
 
   // ── Placement Card ──────────────────────────────────────────────────────────
@@ -1158,10 +1168,12 @@ const getStyles = (colors: any) => StyleSheet.create({
   roundPreviewDot: { width: 7, height: 7, borderRadius: 99 },
   roundPreviewTopic: { flex: 1, fontSize: 13, color: colors.textSecondary, fontWeight: '500' },
   roundPreviewResult: { fontSize: 11, fontWeight: '700' },
+  actionButtonsArea: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingTop: 18 },
+  editArea: { paddingHorizontal: 8, justifyContent: 'flex-start', alignItems: 'center' },
   deleteArea: { paddingHorizontal: 14, justifyContent: 'flex-start', alignItems: 'center', paddingTop: 18 },
 
   // ── Round Card ──────────────────────────────────────────────────────────────
-  roundCard: { backgroundColor: colors.card, borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: colors.border },
+  roundCard: { backgroundColor: colors.background, borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: colors.border },
   roundHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 4, gap: 6 },
   roundDotLarge: { width: 8, height: 8, borderRadius: 99 },
   roundTopic: { flex: 1, fontSize: 14, fontWeight: '700', color: colors.text },
@@ -1174,7 +1186,6 @@ const getStyles = (colors: any) => StyleSheet.create({
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderColor: colors.border },
   modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
   cancelText: { fontSize: 16, color: colors.textSecondary },
-  saveHeaderText: { fontSize: 16, fontWeight: '700', color: colors.info },
+  saveHeaderText: { fontSize: 16, fontWeight: '700', color: '#F59E0B' },
   modalBody: { padding: 20, flex: 1 },
-  titleInput: { fontSize: 22, fontWeight: '700', color: colors.text, marginBottom: 14, borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 8 },
 });

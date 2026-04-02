@@ -678,4 +678,3 @@ export default function HealthScreen() {
     </SafeAreaView>
   );
 }
-

@@ -48,9 +48,13 @@ export async function addPlacement(
       status,
       date,
       studied,
-      company_status,
       rounds,
       created_at: now,
+    }
+
+    // Only include company_status if it's defined (Firestore doesn't allow undefined values)
+    if (company_status !== undefined) {
+      newPlacement.company_status = company_status
     }
 
     const docSnap = await getDoc(userDocRef)
