@@ -39,7 +39,7 @@ export default function AIScreen() {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const colors = getColors(isDark)
-  const brightGold = '#FFD700'
+  const brightGold = '#D4AF37'
   const softGold = '#E8C96A'
   const backButtonScale = useRef(new Animated.Value(1)).current
   const fadeAnim = useRef(new Animated.Value(0)).current
@@ -544,3 +544,4 @@ export default function AIScreen() {
     </SafeAreaView>
   )
 }
+

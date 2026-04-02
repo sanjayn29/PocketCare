@@ -62,7 +62,7 @@ export default function FinanceScreen() {
     overview: '#3B82F6',     // Blue
     transactions: '#EF4444', // Red
     debts: '#10B981',        // Green
-    goals: '#F59E0B',        // Amber
+    goals: '#D4AF37',        // Amber
   }
 
   const backButtonScale = useRef(new Animated.Value(1)).current
@@ -733,7 +733,7 @@ export default function FinanceScreen() {
         </View>
       ) : (
         <TouchableOpacity style={dynamicStyles.createCollapsed} onPress={()=>setIsCreatingGoal(true)}>
-          <View style={[dynamicStyles.createIconWrap, {backgroundColor: 'rgba(245, 158, 11, 0.1)'}]}>
+          <View style={[dynamicStyles.createIconWrap, {backgroundColor: 'rgba(212, 175, 55, 0.1)'}]}>
              <Ionicons name="flag-outline" size={20} color={uiColors.goals} />
           </View>
           <Text style={dynamicStyles.createCollapsedText}>Create a financial goal...</Text>
@@ -1054,7 +1054,7 @@ export default function FinanceScreen() {
         <>
           <View style={dynamicStyles.segmentBlock}>
             {(['All','Today','Month','Year','Custom'] as TimeFilter[]).map(t => (
-              <TouchableOpacity key={t} style={[dynamicStyles.segmentBtn, timeFilter===t && {backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)', borderColor: uiColors.goals, borderWidth: 1}]} onPress={()=>setTimeFilter(t)}>
+              <TouchableOpacity key={t} style={[dynamicStyles.segmentBtn, timeFilter===t && {backgroundColor: isDark ? 'rgba(212, 175, 55, 0.15)' : 'rgba(212, 175, 55, 0.1)', borderColor: uiColors.goals, borderWidth: 1}]} onPress={()=>setTimeFilter(t)}>
                 <Text style={[dynamicStyles.segmentText, timeFilter===t && {color: uiColors.goals, fontWeight: '700'}]}>{t}</Text>
               </TouchableOpacity>
             ))}
@@ -1107,7 +1107,7 @@ export default function FinanceScreen() {
 
               <TouchableOpacity 
                 style={{ 
-                  backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)', 
+                  backgroundColor: isDark ? 'rgba(212, 175, 55, 0.15)' : 'rgba(212, 175, 55, 0.1)', 
                   paddingVertical: 8, 
                   paddingHorizontal: 12, 
                   borderRadius: 10, 
@@ -1312,6 +1312,7 @@ export default function FinanceScreen() {
     </SafeAreaView>
   );
 }
+
 
 
 

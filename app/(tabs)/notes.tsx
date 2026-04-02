@@ -532,7 +532,7 @@ export default function NotesScreen() {
     <>
       <View style={dynamicStyles.segmentBlock}>
         {(['all', 'today', 'month', 'custom'] as const).map((t) => {
-          const themeColor = '#FFD700';
+          const themeColor = '#D4AF37';
           const getRgbaColor = (hex: string, opacity: number) => {
             const r = parseInt(hex.slice(1, 3), 16);
             const g = parseInt(hex.slice(3, 5), 16);
@@ -559,7 +559,7 @@ export default function NotesScreen() {
               <Text
                 style={[
                   dynamicStyles.segmentText,
-                  timeFilter === t && { color: '#FFD700', fontWeight: '700' },
+                  timeFilter === t && { color: '#D4AF37', fontWeight: '700' },
                 ]}
               >
                 {label}
@@ -778,3 +778,4 @@ export default function NotesScreen() {
     </SafeAreaView>
   );
 }
+

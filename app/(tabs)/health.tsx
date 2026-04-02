@@ -50,7 +50,7 @@ export default function HealthScreen() {
   const uiColors = {
     medical: '#3B82F6',  // Blue
     diet: '#10B981',     // Green
-    fitness: '#F59E0B',  // Amber (Goals color from finance)
+    fitness: '#D4AF37',  // Amber (Goals color from finance)
   }
 
   const [fontsLoaded] = useFonts({
@@ -678,3 +678,4 @@ export default function HealthScreen() {
     </SafeAreaView>
   );
 }
+

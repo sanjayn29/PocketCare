@@ -28,7 +28,7 @@ type TabView = 'placements' | 'companies';
 
 // Dynamic config based on theme
 const getStatusConfig = (colors: any): Record<PlacementStatus, { label: string; color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }> => ({
-  applied:   { label: 'Applied',   color: '#F59E0B', bg: colors.overlay, icon: 'paper-plane' },
+  applied:   { label: 'Applied',   color: '#D4AF37', bg: colors.overlay, icon: 'paper-plane' },
   interview: { label: 'Interview', color: colors.warning, bg: colors.overlay, icon: 'mic' },
   offer:     { label: 'Offer',     color: colors.success, bg: colors.overlay, icon: 'trophy' },
   rejected:  { label: 'Rejected',  color: colors.danger, bg: colors.overlay, icon: 'close-circle' },
@@ -1019,8 +1019,8 @@ const getStyles = (colors: any, isDark: boolean, activeTab: 'placements' | 'comp
     borderColor: colors.border,
   },
   filterChipActive: {
-    backgroundColor: '#F59E0B',
-    borderColor: '#F59E0B',
+    backgroundColor: '#D4AF37',
+    borderColor: '#D4AF37',
   },
   filterChipText: {
     fontSize: 13,
@@ -1056,7 +1056,7 @@ const getStyles = (colors: any, isDark: boolean, activeTab: 'placements' | 'comp
     color: colors.textSecondary 
   },
   segmentTextActive: { 
-    color: '#F59E0B', 
+    color: '#D4AF37', 
     fontWeight: '700' 
   },
 
@@ -1120,7 +1120,7 @@ const getStyles = (colors: any, isDark: boolean, activeTab: 'placements' | 'comp
     paddingVertical: 10, borderWidth: 1.5, borderColor: colors.border,
     borderRadius: 10, borderStyle: 'dashed', justifyContent: 'center', marginTop: 4,
   },
-  addRoundBtnText: { fontSize: 14, color: '#F59E0B', fontWeight: '600' },
+  addRoundBtnText: { fontSize: 14, color: '#D4AF37', fontWeight: '600' },
 
   // ── Date Picker ─────────────────────────────────────────────────────────────
   dateBtn: {
@@ -1132,7 +1132,7 @@ const getStyles = (colors: any, isDark: boolean, activeTab: 'placements' | 'comp
   dateBtnText: { fontSize: 14, color: colors.text, fontWeight: '500' },
   dateDoneBtn: {
     alignSelf: 'flex-end', marginBottom: 8,
-    backgroundColor: '#F59E0B', paddingHorizontal: 20, paddingVertical: 7,
+    backgroundColor: '#D4AF37', paddingHorizontal: 20, paddingVertical: 7,
     borderRadius: 20,
   },
   dateDoneBtnText: { color: '#FFF', fontWeight: '700', fontSize: 14 },
@@ -1192,6 +1192,7 @@ const getStyles = (colors: any, isDark: boolean, activeTab: 'placements' | 'comp
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderColor: colors.border },
   modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
   cancelText: { fontSize: 16, color: colors.textSecondary },
-  saveHeaderText: { fontSize: 16, fontWeight: '700', color: '#F59E0B' },
+  saveHeaderText: { fontSize: 16, fontWeight: '700', color: '#D4AF37' },
   modalBody: { padding: 20, flex: 1 },
 });
+

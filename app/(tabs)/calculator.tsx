@@ -54,7 +54,7 @@ export default function CalculatorScreen() {
     primary: '#3B82F6',   // Blue for Basic
     secondary: '#8B5CF6', // Purple for Interest
     tertiary: '#10B981',  // Green for History
-    accent: '#F59E0B',    // Amber for highlights
+    accent: '#D4AF37',    // Amber for highlights
   }
   
   const backButtonScale = useRef(new Animated.Value(1)).current
@@ -1573,7 +1573,7 @@ export default function CalculatorScreen() {
                     <Ionicons
                       name="calendar-outline"
                       size={16}
-                      color={historyFilterDate === 'custom' ? (isDark ? '#FFD700' : '#B8860B') : '#64748B'}
+                      color={historyFilterDate === 'custom' ? (isDark ? '#D4AF37' : '#D4AF37') : '#64748B'}
                       style={{ marginRight: 4 }}
                     />
                     <Text
@@ -1678,4 +1678,5 @@ export default function CalculatorScreen() {
     </SafeAreaView>
   );
 }
+
 

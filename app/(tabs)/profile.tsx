@@ -111,9 +111,9 @@ const ProfileScreen: React.FC = () => {
       borderRadius: 14,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: "#F59E0B",
+      backgroundColor: "#D4AF37",
       borderWidth: 1.5,
-      borderColor: "#D97706",
+      borderColor: "#D4AF37",
       shadowColor: colors.text,
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.06,
@@ -408,10 +408,10 @@ const ProfileScreen: React.FC = () => {
             <View
               style={[
                 dynamicStyles.sectionIconWrap,
-                { backgroundColor: isDark ? "rgba(245, 158, 11, 0.2)" : "rgba(245, 158, 11, 0.14)" },
+                { backgroundColor: isDark ? "rgba(212, 175, 55, 0.2)" : "rgba(212, 175, 55, 0.14)" },
               ]}
             >
-              <Ionicons name="flame-outline" size={16} color="#F59E0B" />
+              <Ionicons name="flame-outline" size={16} color="#D4AF37" />
             </View>
             <Text style={dynamicStyles.sectionTitle}>Streaks</Text>
           </View>
@@ -438,10 +438,10 @@ const ProfileScreen: React.FC = () => {
             <View
               style={[
                 dynamicStyles.sectionIconWrap,
-                { backgroundColor: isDark ? "rgba(250, 204, 21, 0.2)" : "rgba(250, 204, 21, 0.15)" },
+                { backgroundColor: isDark ? "rgba(212, 175, 55, 0.2)" : "rgba(212, 175, 55, 0.15)" },
               ]}
             >
-              <Ionicons name="trophy-outline" size={16} color="#EAB308" />
+              <Ionicons name="trophy-outline" size={16} color="#D4AF37" />
             </View>
             <Text style={dynamicStyles.sectionTitle}>Best Scores</Text>
           </View>
@@ -516,3 +516,4 @@ const ProfileScreen: React.FC = () => {
 };
 
 export default ProfileScreen;
+

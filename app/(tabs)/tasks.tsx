@@ -95,7 +95,7 @@ export default function TasksScreen() {
       alignItems: 'center',
       backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
       borderWidth: 1.5,
-      borderColor: '#FFD700',
+      borderColor: '#D4AF37',
     },
     backButtonText: {
       fontSize: 22,
@@ -695,7 +695,7 @@ export default function TasksScreen() {
   const PriorityBadge = ({ priority }: { priority: TaskPriority }) => {
     const colors = {
       high: { bg: '#FEE2E2', text: '#EF4444' },
-      medium: { bg: '#FEF3C7', text: '#F59E0B' },
+      medium: { bg: '#D4AF37', text: '#FFFFFF' },
       low: { bg: '#E0F2FE', text: '#0EA5E9' },
     };
     const style = colors[priority];
@@ -946,7 +946,7 @@ export default function TasksScreen() {
 
         <View style={dynamicStyles.segmentBlock}>
           {(['all', 'today', 'pending', 'completed'] as const).map((t) => {
-            const themeColor = '#FFD700';
+            const themeColor = '#D4AF37';
             const getRgbaColor = (hex: string, opacity: number) => {
               const r = parseInt(hex.slice(1, 3), 16);
               const g = parseInt(hex.slice(3, 5), 16);
@@ -969,7 +969,7 @@ export default function TasksScreen() {
                 <Text
                   style={[
                     dynamicStyles.segmentText,
-                    filterMode === t && { color: '#FFD700', fontWeight: '700' },
+                    filterMode === t && { color: '#D4AF37', fontWeight: '700' },
                   ]}
                   numberOfLines={1}
                   ellipsizeMode="clip"
@@ -1171,6 +1171,7 @@ export default function TasksScreen() {
     </SafeAreaView>
   );
 }
+
 
 
 

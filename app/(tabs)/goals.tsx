@@ -311,7 +311,7 @@ export default function GoalsScreen() {
     const safePriority = priority || 'medium';
     const priorityColors = {
       low: { bg: '#10B981', text: '#FFFFFF', icon: 'arrow-down', borderColor: '#10B981' },
-      medium: { bg: '#F59E0B', text: '#FFFFFF', icon: 'ellipsis-horizontal', borderColor: '#F59E0B' },
+      medium: { bg: '#D4AF37', text: '#FFFFFF', icon: 'ellipsis-horizontal', borderColor: '#D4AF37' },
       high: { bg: '#EF4444', text: '#FFFFFF', icon: 'arrow-up', borderColor: '#EF4444' },
     };
     const style = priorityColors[safePriority] || priorityColors.medium;
@@ -346,8 +346,8 @@ export default function GoalsScreen() {
       alignItems: 'center',
       backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
       borderWidth: 1.5,
-      borderColor: '#FFD700',
-      shadowColor: '#FFD700',
+      borderColor: '#D4AF37',
+      shadowColor: '#D4AF37',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.2,
       shadowRadius: 4,
@@ -377,7 +377,7 @@ export default function GoalsScreen() {
     goalTitleCompleted: { color: colors.textSecondary },
     goalDesc: { fontSize: 15, color: colors.textSecondary, lineHeight: 22, marginBottom: 12, fontWeight: '500' },
     goalDescCompleted: { color: colors.textSecondary },
-    targetDateRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14, backgroundColor: isDark ? 'rgba(255, 215, 0, 0.05)' : 'rgba(255, 215, 0, 0.08)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 },
+    targetDateRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14, backgroundColor: isDark ? 'rgba(212, 175, 55, 0.05)' : 'rgba(212, 175, 55, 0.08)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 },
     targetDateText: { fontSize: 13, color: colors.textSecondary, fontWeight: '600', letterSpacing: 0.3 },
     targetDateTextCompleted: { color: colors.textSecondary },
     daysBadge: { marginLeft: 2 },
@@ -528,7 +528,7 @@ export default function GoalsScreen() {
                <View style={dynamicStyles.progressBarTrack}>
                  <View style={[
                    dynamicStyles.progressBarFill, 
-                   { width: `${progressPercent}%`, backgroundColor: progressPercent >= 100 ? '#22C55E' : '#FFD700' }
+                   { width: `${progressPercent}%`, backgroundColor: progressPercent >= 100 ? '#22C55E' : '#D4AF37' }
                  ]} />
                </View>
              </View>
@@ -674,7 +674,7 @@ export default function GoalsScreen() {
               const b = parseInt(hex.slice(5, 7), 16);
               return `rgba(${r}, ${g}, ${b}, ${opacity})`;
             };
-            const themeColor = '#FFD700'; // Gold color for filters
+            const themeColor = '#D4AF37'; // Gold color for filters
             return (
               <TouchableOpacity 
                 key={t} 
@@ -691,7 +691,7 @@ export default function GoalsScreen() {
                 <Text style={[
                   dynamicStyles.segmentText, 
                   timeFilter === t && {
-                    color: '#FFD700', 
+                    color: '#D4AF37', 
                     fontWeight: '700'
                   }
                 ]}>
@@ -955,3 +955,4 @@ export default function GoalsScreen() {
     </SafeAreaView>
   );
 }
+

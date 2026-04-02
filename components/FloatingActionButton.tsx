@@ -161,7 +161,7 @@ export default function FloatingActionButton({ onMenuPress, asTabBarItem, ...pro
           {...swipeUpResponder.panHandlers}
         >
           <LinearGradient
-            colors={isDark ? ['#B8860B', '#D4AF37'] : ['#D4AF37', '#F4D03F']}
+            colors={isDark ? ['#D4AF37', '#D4AF37'] : ['#D4AF37', '#D4AF37']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.fabGradient}
