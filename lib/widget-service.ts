@@ -1,0 +1,69 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+export type WidgetId =
+  | 'greeting'
+  | 'streak'
+  | 'finance_summary'
+  | 'tasks_today'
+  | 'goals_progress'
+  | 'next_event'
+  | 'fitness_today'
+  | 'placement_status'
+  | 'notes_quick'
+  | 'ai_tip';
+
+export interface WidgetConfig {
+  id: WidgetId;
+  enabled: boolean;
+  order: number;
+}
+
+export const ALL_WIDGETS: { id: WidgetId; title: string; subtitle: string; emoji: string; color: string }[] = [
+  { id: 'greeting',        title: 'Greeting',         subtitle: 'Personalized welcome',      emoji: '👋', color: '#D4AF37' },
+  { id: 'streak',          title: 'Streak',            subtitle: 'Daily visit streak',         emoji: '🔥', color: '#F97316' },
+  { id: 'finance_summary', title: 'Finance',           subtitle: 'Income vs Expense',          emoji: '💰', color: '#22C55E' },
+  { id: 'tasks_today',     title: 'Tasks Today',       subtitle: 'Pending tasks due today',    emoji: '✅', color: '#3B82F6' },
+  { id: 'goals_progress',  title: 'Goals',             subtitle: 'Active goal progress',       emoji: '🎯', color: '#8B5CF6' },
+  { id: 'next_event',      title: 'Next Event',        subtitle: 'Upcoming schedule item',     emoji: '📅', color: '#EC4899' },
+  { id: 'fitness_today',   title: 'Fitness',           subtitle: "Today's fitness plan",       emoji: '💪', color: '#14B8A6' },
+  { id: 'placement_status',title: 'Placement',         subtitle: 'Latest placement status',   emoji: '🏢', color: '#6366F1' },
+  { id: 'notes_quick',     title: 'Recent Note',       subtitle: 'Latest quick note',          emoji: '📝', color: '#A855F7' },
+  { id: 'ai_tip',          title: 'AI Tip',            subtitle: 'Daily AI-powered insight',   emoji: '🤖', color: '#0EA5E9' },
+];
+
+const STORAGE_KEY = 'pocketcare_widget_config';
+
+const DEFAULT_WIDGETS: WidgetConfig[] = [
+  { id: 'greeting',        enabled: true,  order: 0 },
+  { id: 'streak',          enabled: true,  order: 1 },
+  { id: 'finance_summary', enabled: true,  order: 2 },
+  { id: 'tasks_today',     enabled: true,  order: 3 },
+  { id: 'goals_progress',  enabled: true,  order: 4 },
+  { id: 'next_event',      enabled: false, order: 5 },
+  { id: 'fitness_today',   enabled: false, order: 6 },
+  { id: 'placement_status',enabled: false, order: 7 },
+  { id: 'notes_quick',     enabled: false, order: 8 },
+  { id: 'ai_tip',          enabled: false, order: 9 },
+];
+
+export async function getWidgetConfig(): Promise<WidgetConfig[]> {
+  try {
+    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    if (!raw) return DEFAULT_WIDGETS;
+    const saved: WidgetConfig[] = JSON.parse(raw);
+    // Merge: add any new widget IDs not in saved config
+    const savedIds = new Set(saved.map(w => w.id));
+    const missing = DEFAULT_WIDGETS.filter(w => !savedIds.has(w.id));
+    return [...saved, ...missing];
+  } catch {
+    return DEFAULT_WIDGETS;
+  }
+}
+
+export async function saveWidgetConfig(config: WidgetConfig[]): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+  } catch (e) {
+    console.error('Failed to save widget config', e);
+  }
+}
