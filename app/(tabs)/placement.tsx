@@ -462,6 +462,12 @@ export default function PlacementScreen() {
       color: isDark ? '#FFFFFF' : '#000000',
       letterSpacing: -0.5,
     },
+    pageSubtitle: {
+      marginTop: 6,
+      fontSize: 12,
+      fontWeight: '500',
+      color: colors.textSecondary,
+    },
     tabRow: {
       flexDirection: 'row',
       paddingHorizontal: 8,
@@ -757,6 +763,7 @@ export default function PlacementScreen() {
           </TouchableOpacity>
           <View>
             <Text style={dynamicStyles.pageTitle}>Placement Tracker</Text>
+            <Text style={dynamicStyles.pageSubtitle}>Track your job placements</Text>
           </View>
         </View>
       </View>
