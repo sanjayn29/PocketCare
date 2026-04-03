@@ -513,6 +513,12 @@ export default function HealthScreen() {
       color: isDark ? '#FFFFFF' : '#000000',
       letterSpacing: -0.5,
     },
+    pageSubtitle: {
+      marginTop: 6,
+      fontSize: 12,
+      fontWeight: '500',
+      color: colors.textSecondary,
+    },
     
     tabContainer: {
       flexDirection: 'row',
@@ -625,6 +631,7 @@ export default function HealthScreen() {
             </TouchableOpacity>
             <View>
               <Text style={dynamicStyles.pageTitle}>Health</Text>
+              <Text style={dynamicStyles.pageSubtitle}>Wellness and fitness tracking</Text>
             </View>
           </View>
         </View>
