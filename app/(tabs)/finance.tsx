@@ -62,7 +62,7 @@ export default function FinanceScreen() {
     overview: '#3B82F6',     // Blue
     transactions: '#EF4444', // Red
     debts: '#10B981',        // Green
-    goals: '#D4AF37',        // Amber
+    goals: '#FF8C00',        // Orange
   }
 
   const backButtonScale = useRef(new Animated.Value(1)).current
@@ -1052,7 +1052,7 @@ export default function FinanceScreen() {
         <>
           <View style={dynamicStyles.segmentBlock}>
             {(['All','Today','Month','Year','Custom'] as TimeFilter[]).map(t => (
-              <TouchableOpacity key={t} style={[dynamicStyles.segmentBtn, timeFilter===t && {backgroundColor: isDark ? 'rgba(212, 175, 55, 0.15)' : 'rgba(212, 175, 55, 0.1)', borderColor: uiColors.goals, borderWidth: 1}]} onPress={()=>setTimeFilter(t)}>
+              <TouchableOpacity key={t} style={[dynamicStyles.segmentBtn, timeFilter===t && {backgroundColor: isDark ? 'rgba(255, 140, 0, 0.15)' : 'rgba(255, 140, 0, 0.1)', borderColor: uiColors.goals, borderWidth: 1}]} onPress={()=>setTimeFilter(t)}>
                 <Text style={[dynamicStyles.segmentText, timeFilter===t && {color: uiColors.goals, fontWeight: '700'}]}>{t}</Text>
               </TouchableOpacity>
             ))}
