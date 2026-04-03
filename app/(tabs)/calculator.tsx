@@ -1098,6 +1098,7 @@ export default function CalculatorScreen() {
             </TouchableOpacity>
             <View>
               <Text style={dynamicStyles.pageTitle}>Calculator</Text>
+              <Text style={dynamicStyles.pageSubTitle}>Basic and financial calculations</Text>
             </View>
           </View>
         </View>
