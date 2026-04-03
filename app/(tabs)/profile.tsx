@@ -1,7 +1,7 @@
 import MemoryGameComponent from "@/components/MemoryGameComponent";
 import TapGameComponent from "@/components/TapGameComponent";
-import { useTheme } from "@/context/ThemeContext";
 import { getColors } from "@/constants/styles";
+import { useTheme } from "@/context/ThemeContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { getMemoryGameScore, getTapGameScore } from "@/lib/games-service";
 import { getStreakData } from "@/lib/streak-service";
@@ -707,4 +707,3 @@ const ProfileScreen: React.FC = () => {
 };
 
 export default ProfileScreen;
-

@@ -952,4 +952,3 @@ export default function GoalsScreen() {
     </SafeAreaView>
   );
 }
-
