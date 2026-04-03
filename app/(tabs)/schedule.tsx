@@ -2,11 +2,11 @@
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import {
-    addScheduleEvent,
-    deleteScheduleEvent,
-    getScheduleEvents,
-    ScheduleEvent,
-    updateScheduleEvent,
+  addScheduleEvent,
+  deleteScheduleEvent,
+  getScheduleEvents,
+  ScheduleEvent,
+  updateScheduleEvent,
 } from '@/lib/schedule-service';
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,20 +16,20 @@ import { useFonts } from 'expo-font';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Animated,
-    FlatList,
-    Keyboard,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Animated,
+  FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -40,7 +40,7 @@ const PRIORITY_CONFIG = (colors: any): Record<'High' | 'Medium' | 'Low', { emoji
 });
 
 const STATUS_CONFIG_SCHEDULE = (colors: any): Record<'Upcoming' | 'Completed' | 'Cancelled', { bg: string; text: string }> => ({
-  Upcoming: { bg: colors.info, text: colors.info },
+  Upcoming: { bg: '#D4AF37', text: '#D4AF37' },
   Completed: { bg: colors.success, text: colors.success },
   Cancelled: { bg: colors.warning, text: colors.warning },
 });
@@ -63,7 +63,7 @@ export default function ScheduleScreen() {
   })
 
   // Dynamic styles based on theme
-  const styles = useMemo(() => getStyles(colors), [colors]);
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -334,13 +334,13 @@ export default function ScheduleScreen() {
       <View style={styles.calendar}>
         <View style={styles.calendarHeader}>
           <TouchableOpacity onPress={goToPreviousMonth}>
-            <Ionicons name="chevron-back" size={24} color={colors.primary} />
+            <Ionicons name="chevron-back" size={24} color={'#D4AF37'} />
           </TouchableOpacity>
           <Text style={styles.calendarTitle}>
             {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
           </Text>
           <TouchableOpacity onPress={goToNextMonth}>
-            <Ionicons name="chevron-forward" size={24} color={colors.primary} />
+            <Ionicons name="chevron-forward" size={24} color={'#D4AF37'} />
           </TouchableOpacity>
         </View>
 
@@ -464,21 +464,21 @@ export default function ScheduleScreen() {
 
         {loading ? (
           <View style={styles.centerWrap}>
-            <ActivityIndicator size="large" color={colors.primary} />
+            <ActivityIndicator size="large" color={'#D4AF37'} />
           </View>
         ) : (
           <>
             <View style={styles.tabContainer}>
               <TouchableOpacity style={styles.tab} onPress={() => setActiveTab('Current')}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Ionicons name="calendar" size={18} color={activeTab === 'Current' ? colors.primary : '#64748B'} style={{ marginRight: 8 }} />
+                  <Ionicons name="calendar" size={18} color={activeTab === 'Current' ? '#D4AF37' : '#64748B'} style={{ marginRight: 8 }} />
                   <Text style={[styles.tabText, activeTab === 'Current' && styles.tabTextActive]}>Current</Text>
                 </View>
                 {activeTab === 'Current' && <View style={styles.activeIndicator} />}
               </TouchableOpacity>
               <TouchableOpacity style={styles.tab} onPress={() => setActiveTab('Schedules')}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Ionicons name="list" size={18} color={activeTab === 'Schedules' ? colors.primary : '#64748B'} style={{ marginRight: 8 }} />
+                  <Ionicons name="list" size={18} color={activeTab === 'Schedules' ? '#D4AF37' : '#64748B'} style={{ marginRight: 8 }} />
                   <Text style={[styles.tabText, activeTab === 'Schedules' && styles.tabTextActive]}>Schedules</Text>
                 </View>
                 {activeTab === 'Schedules' && <View style={styles.activeIndicator} />}
@@ -521,27 +521,17 @@ export default function ScheduleScreen() {
             {activeTab === 'Schedules' && (
               <View style={styles.schedulesSection}>
                 {/* Status Filters */}
-                <View style={[
-                  styles.segmentBlock,
-                  {
-                    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
-                    borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-                  },
-                ]}>
+                <View style={styles.segmentBlock}>
                   {(['All', 'Upcoming', 'Completed', 'Cancelled'] as StatusFilter[]).map(status => (
                     <TouchableOpacity
                       key={status}
                       style={[
                         styles.segmentBtn,
-                        statusFilter === status && {
-                          backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)',
-                          borderColor: colors.primary,
-                          borderWidth: 1,
-                        },
+                        statusFilter === status && styles.segmentBtnActive,
                       ]}
                       onPress={() => setStatusFilter(status)}
                     >
-                      <Text style={[styles.segmentText, statusFilter === status && { color: colors.primary, fontWeight: '700' }]} numberOfLines={1} ellipsizeMode="clip">
+                      <Text style={[styles.segmentText, statusFilter === status && styles.segmentTextActive]} numberOfLines={1} ellipsizeMode="clip">
                         {status}
                       </Text>
                     </TouchableOpacity>
@@ -622,7 +612,7 @@ export default function ScheduleScreen() {
             <Text style={styles.modalTitle}>New Meeting</Text>
             <TouchableOpacity onPress={handleSaveEvent} disabled={isSaving}>
               {isSaving ? (
-                <ActivityIndicator size="small" color={colors.primary} />
+                <ActivityIndicator size="small" color={'#D4AF37'} />
               ) : (
                 <Text style={styles.saveText}>Save</Text>
               )}
@@ -718,7 +708,7 @@ export default function ScheduleScreen() {
               <Ionicons
                 name={newReminder ? 'checkbox' : 'square-outline'}
                 size={24}
-                color={colors.primary}
+                color={'#D4AF37'}
               />
               <Text style={styles.reminderText}>Remind me</Text>
             </TouchableOpacity>
@@ -743,7 +733,7 @@ export default function ScheduleScreen() {
             <Text style={styles.modalTitle}>Edit Meeting</Text>
             <TouchableOpacity onPress={handleSaveEdit} disabled={isEditSaving}>
               {isEditSaving ? (
-                <ActivityIndicator size="small" color={colors.primary} />
+                <ActivityIndicator size="small" color={'#D4AF37'} />
               ) : (
                 <Text style={styles.saveText}>Save</Text>
               )}
@@ -838,7 +828,7 @@ export default function ScheduleScreen() {
               <Ionicons
                 name={editReminder ? 'checkbox' : 'square-outline'}
                 size={24}
-                color={colors.primary}
+                color={'#D4AF37'}
               />
               <Text style={styles.reminderText}>Remind me</Text>
             </TouchableOpacity>
@@ -851,7 +841,7 @@ export default function ScheduleScreen() {
   );
 }
 
-const getStyles = (colors: any) => StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   headerArea: {
     paddingHorizontal: 20,
@@ -911,7 +901,7 @@ const getStyles = (colors: any) => StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.border,
   },
-  dayCellSelected: { backgroundColor: colors.info, borderColor: colors.info },
+  dayCellSelected: { backgroundColor: '#D4AF37', borderColor: '#D4AF37' },
   dayCellHasEvents: { borderWidth: 2, borderColor: colors.warning },
   dayNumber: { fontSize: 14, fontWeight: '600', color: colors.text },
   dayNumberSelected: { color: '#FFFFFF', fontWeight: '700' },
@@ -920,7 +910,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   eventsSection: { marginVertical: 16, paddingBottom: 140 },
   sectionHeader: { marginBottom: 14, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
-  addButton: { backgroundColor: colors.info, borderRadius: 8, padding: 8, justifyContent: 'center', alignItems: 'center' },
+  addButton: { backgroundColor: '#D4AF37', borderRadius: 8, padding: 8, justifyContent: 'center', alignItems: 'center' },
   eventsList: { gap: 10 },
 
   eventCard: {
@@ -963,7 +953,7 @@ const getStyles = (colors: any) => StyleSheet.create({
   },
   cancelText: { fontSize: 16, color: colors.textSecondary, fontWeight: '600' },
   modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
-  saveText: { fontSize: 16, color: colors.info, fontWeight: '700' },
+  saveText: { fontSize: 16, color: '#D4AF37', fontWeight: '700' },
   modalBody: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
 
   input: {
@@ -1006,9 +996,9 @@ const getStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  statusBtnActive: { backgroundColor: colors.overlay, borderColor: colors.info },
+  statusBtnActive: { backgroundColor: colors.overlay, borderColor: '#D4AF37' },
   statusBtnText: { fontSize: 12, color: colors.textSecondary, fontWeight: '600' },
-  statusBtnTextActive: { color: colors.info, fontWeight: '700' },
+  statusBtnTextActive: { color: '#D4AF37', fontWeight: '700' },
 
   reminderToggle: {
     flexDirection: 'row',
@@ -1040,23 +1030,25 @@ const getStyles = (colors: any) => StyleSheet.create({
     position: 'relative',
   },
   tabText: { fontSize: 11, fontWeight: '700', color: colors.textSecondary, marginBottom: 6 },
-  tabTextActive: { color: colors.primary, fontWeight: '900' },
+  tabTextActive: { color: '#D4AF37', fontWeight: '900' },
   activeIndicator: {
     position: 'absolute',
     bottom: -8,
     width: '60%',
     height: 3,
-    backgroundColor: colors.primary,
+    backgroundColor: '#D4AF37',
     borderRadius: 2,
-    shadowColor: colors.primary,
+    shadowColor: '#D4AF37',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.5,
     shadowRadius: 4,
   },
 
-  segmentBlock: { flexDirection: 'row', borderRadius: 14, padding: 4, marginBottom: 16, borderWidth: 1 },
+  segmentBlock: { flexDirection: 'row', backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderRadius: 14, padding: 4, marginBottom: 16, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
   segmentBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
+  segmentBtnActive: { borderWidth: 1, borderColor: '#D4AF37' },
   segmentText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
+  segmentTextActive: { color: isDark ? '#D4AF37' : '#B8860B', fontWeight: '700' },
 
   schedulesSection: {
     paddingVertical: 16,
