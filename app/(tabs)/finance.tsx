@@ -126,6 +126,15 @@ export default function FinanceScreen() {
       color: isDark ? '#FFFFFF' : '#000000',
       letterSpacing: -0.5,
     },
+    pageSubtitle: {
+      marginTop: 6,
+      fontSize: 12,
+      fontWeight: '500',
+      color: colors.textSecondary,
+    },
+    headerTitleWrap: {
+      flex: 1,
+    },
     
     tabContainer: {
       flexDirection: 'row',
@@ -1131,8 +1140,9 @@ export default function FinanceScreen() {
             <TouchableOpacity style={dynamicStyles.backButton} onPress={() => router.replace('/(tabs)')}>
               <Ionicons name="chevron-back" size={22} color={isDark ? "#000000" : "#FFFFFF"} />
             </TouchableOpacity>
-            <View>
+            <View style={dynamicStyles.headerTitleWrap}>
               <Text style={dynamicStyles.pageTitle}>Finance</Text>
+              <Text style={dynamicStyles.pageSubtitle}>Track your money and goals</Text>
             </View>
           </View>
         </View>
