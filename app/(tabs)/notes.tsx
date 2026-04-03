@@ -260,6 +260,12 @@ export default function NotesScreen() {
       color: isDark ? '#FFFFFF' : '#000000',
       letterSpacing: -0.5,
     },
+    pageSubtitle: {
+      marginTop: 6,
+      fontSize: 12,
+      fontWeight: '500',
+      color: colors.textSecondary,
+    },
     center: {
       flex: 1,
       alignItems: 'center',
@@ -693,7 +699,10 @@ export default function NotesScreen() {
             >
               <Ionicons name="chevron-back" size={22} color={isDark ? "#000000" : "#FFFFFF"} />
             </TouchableOpacity>
-            <Text style={dynamicStyles.pageTitle}>My Notes</Text>
+            <View>
+              <Text style={dynamicStyles.pageTitle}>My Notes</Text>
+              <Text style={dynamicStyles.pageSubtitle}>Capture and organize your thoughts</Text>
+            </View>
           </View>
         </View>
 
