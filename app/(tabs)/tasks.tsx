@@ -109,6 +109,12 @@ export default function TasksScreen() {
       color: isDark ? '#FFFFFF' : '#000000',
       letterSpacing: -0.5,
     },
+    pageSubtitle: {
+      marginTop: 6,
+      fontSize: 12,
+      fontWeight: '500',
+      color: colors.textSecondary,
+    },
     segmentBlock: { flexDirection: 'row', backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderRadius: 12, padding: 3, marginBottom: 12, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
     segmentBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 9 },
     segmentText: { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
@@ -936,6 +942,7 @@ export default function TasksScreen() {
             </TouchableOpacity>
             <View>
               <Text style={dynamicStyles.pageTitle}>Tasks</Text>
+              <Text style={dynamicStyles.pageSubtitle}>Manage and prioritize your work</Text>
             </View>
           </View>
         </View>
