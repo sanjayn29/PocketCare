@@ -232,6 +232,12 @@ export default function AIScreen() {
       textShadowOffset: { width: 0, height: 1 },
       textShadowRadius: 3,
     },
+    headerSubtitle: {
+      marginTop: 6,
+      fontSize: 12,
+      fontWeight: '500',
+      color: colors.textSecondary,
+    },
     statusBadge: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -452,9 +458,10 @@ export default function AIScreen() {
               <Ionicons name="chevron-back" size={22} color={isDark ? "#000000" : "#FFFFFF"} />
             </TouchableOpacity>
             <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <View>
-                <Text style={dynamicStyles.headerTitle}>Pocket AI</Text>
-              </View>
+            <View>
+              <Text style={dynamicStyles.headerTitle}>Pocket AI</Text>
+              <Text style={dynamicStyles.headerSubtitle}>Your intelligent assistant</Text>
+            </View>
               <View style={dynamicStyles.aiHeaderIconContainer}>
                 <LottieView
                   source={require('../../assets/animations/AI.json')}
