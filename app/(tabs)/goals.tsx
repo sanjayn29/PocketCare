@@ -360,6 +360,12 @@ export default function GoalsScreen() {
       color: isDark ? '#FFFFFF' : '#000000',
       letterSpacing: -0.5,
     },
+    pageSubtitle: {
+      marginTop: 6,
+      fontSize: 12,
+      fontWeight: '500',
+      color: colors.textSecondary,
+    },
     segmentBlock: { flexDirection: 'row', backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderRadius: 14, padding: 4, marginBottom: 16, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
     segmentBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
     segmentText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
@@ -658,6 +664,7 @@ export default function GoalsScreen() {
             </TouchableOpacity>
             <View>
               <Text style={dynamicStyles.pageTitle}>Goals</Text>
+              <Text style={dynamicStyles.pageSubtitle}>Set and track your aspirations</Text>
             </View>
           </View>
         </View>
