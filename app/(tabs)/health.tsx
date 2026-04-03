@@ -9,27 +9,27 @@ import { useFonts } from 'expo-font';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator, Alert, Animated, FlatList,
-    Keyboard,
-    KeyboardAvoidingView,
-    Modal, Platform, ScrollView, StyleSheet, Text,
-    TextInput, TouchableOpacity, View
+  ActivityIndicator, Alert, Animated, FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal, Platform, ScrollView, StyleSheet, Text,
+  TextInput, TouchableOpacity, View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-    addDiet,
-    addFitness,
-    addMedical,
-    deleteDiet,
-    deleteFitness,
-    deleteMedical,
-    DietPlan, FitnessPlan, getHealthData,
-    MedicalRecord,
-    toggleDietDate,
-    toggleFitnessDate,
-    updateDiet,
-    updateFitness,
-    updateMedical
+  addDiet,
+  addFitness,
+  addMedical,
+  deleteDiet,
+  deleteFitness,
+  deleteMedical,
+  DietPlan, FitnessPlan, getHealthData,
+  MedicalRecord,
+  toggleDietDate,
+  toggleFitnessDate,
+  updateDiet,
+  updateFitness,
+  updateMedical
 } from '../../lib/health-service';
 
 // ─── UTILS ──────────────────────────────────────────────────────────────────
@@ -48,9 +48,9 @@ export default function HealthScreen() {
 
   // Multi-color palette for premium feel
   const uiColors = {
-    medical: '#3B82F6',  // Blue
-    diet: '#10B981',     // Green
-    fitness: '#D4AF37',  // Amber (Goals color from finance)
+    medical: '#10B981',  // Green
+    diet: '#3B82F6',     // Blue
+    fitness: '#EF4444',  // Red
   }
 
   const [fontsLoaded] = useFonts({
