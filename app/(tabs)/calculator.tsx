@@ -52,7 +52,7 @@ export default function CalculatorScreen() {
   // Multi-color palette for premium feel
   const uiColors = {
     primary: '#3B82F6',   // Blue for Basic
-    secondary: '#8B5CF6', // Purple for Interest
+    secondary: '#EF4444', // Red for Interest
     tertiary: '#10B981',  // Green for History
     accent: '#D4AF37',    // Amber for highlights
   }
@@ -547,7 +547,7 @@ export default function CalculatorScreen() {
       fontWeight: '900',
     },
     tabTextActiveInterest: {
-      color: '#8B5CF6',
+      color: '#EF4444',
       fontWeight: '900',
     },
     tabTextActiveHistory: {
@@ -571,9 +571,9 @@ export default function CalculatorScreen() {
       bottom: -8,
       width: '60%',
       height: 3,
-      backgroundColor: '#8B5CF6',
+      backgroundColor: '#EF4444',
       borderRadius: 2,
-      shadowColor: '#8B5CF6',
+      shadowColor: '#EF4444',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.5,
       shadowRadius: 4,
@@ -647,8 +647,8 @@ export default function CalculatorScreen() {
       justifyContent: 'center',
     },
     segmentBtnActive: {
-      backgroundColor: isDark ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.1)',
-      borderColor: '#8B5CF6',
+      backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.1)',
+      borderColor: '#EF4444',
     },
     segmentBtnText: {
       fontSize: 12,
@@ -656,7 +656,7 @@ export default function CalculatorScreen() {
       fontWeight: '600',
     },
     segmentBtnTextActive: {
-      color: isDark ? '#8B5CF6' : '#6D28D9',
+      color: isDark ? '#EF4444' : '#DC2626',
       fontWeight: '700',
     },
     input: {
@@ -672,11 +672,11 @@ export default function CalculatorScreen() {
     },
     calculateBtn: {
       marginTop: 8,
-      backgroundColor: '#8B5CF6',
+      backgroundColor: '#EF4444',
       borderRadius: 18,
       paddingVertical: 14,
       alignItems: 'center',
-      shadowColor: '#8B5CF6',
+      shadowColor: '#EF4444',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.2,
       shadowRadius: 8,
@@ -691,9 +691,9 @@ export default function CalculatorScreen() {
       marginTop: 20,
       padding: 16,
       borderRadius: 20,
-      backgroundColor: isDark ? 'rgba(139, 92, 246, 0.08)' : 'rgba(139, 92, 246, 0.05)',
+      backgroundColor: isDark ? 'rgba(239, 68, 68, 0.08)' : 'rgba(239, 68, 68, 0.05)',
       borderWidth: 1,
-      borderColor: 'rgba(139, 92, 246, 0.3)',
+      borderColor: 'rgba(239, 68, 68, 0.3)',
     },
     resultLabel: {
       fontSize: 12,
@@ -1130,7 +1130,7 @@ export default function CalculatorScreen() {
               <Ionicons
                 name="trending-up-outline"
                 size={18}
-                color={activeTab === 'interest' ? '#8B5CF6' : '#64748B'}
+                color={activeTab === 'interest' ? '#EF4444' : '#64748B'}
                 style={{ marginRight: 8 }}
               />
               <Text style={[dynamicStyles.tabText, activeTab === 'interest' && dynamicStyles.tabTextActiveInterest, { marginBottom: 0 }]}>
