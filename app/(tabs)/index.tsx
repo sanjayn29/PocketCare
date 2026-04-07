@@ -11,11 +11,11 @@ import { getScheduleEvents } from '@/lib/schedule-service'
 import { getStreakData } from '@/lib/streak-service'
 import { getTasks } from '@/lib/tasks-service'
 import {
-    ALL_WIDGETS,
-    WidgetConfig,
-    WidgetId,
-    getWidgetConfig,
-    saveWidgetConfig,
+  ALL_WIDGETS,
+  WidgetConfig,
+  WidgetId,
+  getWidgetConfig,
+  saveWidgetConfig,
 } from '@/lib/widget-service'
 import { useUser } from '@clerk/expo'
 import { Ionicons } from '@expo/vector-icons'
@@ -24,17 +24,17 @@ import { useRouter } from 'expo-router'
 import LottieView from 'lottie-react-native'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
-    Animated,
-    Image,
-    Modal,
-    RefreshControl,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  Animated,
+  Image,
+  Modal,
+  RefreshControl,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -325,37 +325,28 @@ export default function HomeScreen() {
 
       // ── GREETING ─────────────────────────────────────────────────────────
       case 'greeting':
-        const initials = (user?.firstName?.[0] || 'U').toUpperCase()
         const hour = new Date().getHours()
         const timeLabel = hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : hour < 21 ? 'Evening' : 'Night'
+        const displayName = user?.firstName || 'User'
+        const initials = (user?.firstName?.[0] || 'U').toUpperCase()
         return (
-          <View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <View style={{
-                width: 48, height: 48, borderRadius: 24, backgroundColor: color + '25',
-                borderWidth: 2, borderColor: color + '50', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Text style={{ fontSize: 20, fontWeight: '900', color }}>{initials}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 18, fontWeight: '800', color: colors.text, letterSpacing: -0.3 }} numberOfLines={1}>
-                  {greeting.message}
-                </Text>
-                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
-                  {greeting.motivational}
-                </Text>
-              </View>
-              <Text style={{ fontSize: 28 }}>{greeting.emoji}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+            <View style={{
+              width: 56, height: 56, borderRadius: 28, backgroundColor: color + '25',
+              borderWidth: 2, borderColor: color + '50', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+            }}>
+              {user?.imageUrl ? (
+                <Image source={{ uri: user.imageUrl }} style={{ width: 56, height: 56, borderRadius: 28 }} />
+              ) : (
+                <Text style={{ fontSize: 24, fontWeight: '900', color }}>{initials}</Text>
+              )}
             </View>
-
-            <View style={{ flexDirection: 'row', gap: 8, marginTop: 14 }}>
-              <Chip icon="time-outline" label={timeLabel} color={color} />
-              <Chip icon="calendar-outline" label={new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })} color={color} />
-            </View>
-
-            <View style={{ marginTop: 14, padding: 10, borderRadius: 12, backgroundColor: color + '12', borderWidth: 1, borderColor: color + '25' }}>
-              <Text style={{ fontSize: 12, color: colors.textSecondary, fontStyle: 'italic', textAlign: 'center' }}>
-                "{greeting.motivational}"
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: colors.textSecondary, marginBottom: 4 }}>
+                Good {timeLabel}
+              </Text>
+              <Text style={{ fontSize: 28, fontWeight: '900', color: colors.text, letterSpacing: -0.5 }}>
+                {displayName}
               </Text>
             </View>
           </View>
@@ -772,30 +763,6 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* ── Greeting Section ── */}
-      <View style={s.greetingSection}>
-        <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center', marginBottom: 16 }}>
-          <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.primary + '25', borderWidth: 2.5, borderColor: colors.primary + '50', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-            {user?.imageUrl ? (
-              <Image source={{ uri: user.imageUrl }} style={{ width: 64, height: 64, borderRadius: 32 }} />
-            ) : (
-              <Text style={{ fontSize: 28, fontWeight: '900', color: colors.primary }}>{(user?.firstName?.[0] || 'U').toUpperCase()}</Text>
-            )}
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={s.greetingMessage}>
-              {greeting.message}
-            </Text>
-          </View>
-        </View>
-
-        <View style={{ backgroundColor: colors.primary + '15', paddingHorizontal: 16, paddingVertical: 14, borderRadius: 14, borderLeftWidth: 3.5, borderLeftColor: colors.primary }}>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text, fontStyle: 'italic', lineHeight: 20, textAlign: 'center' }}>
-            "{greeting.motivational}"
-          </Text>
-        </View>
-      </View>
-
       {/* ── Widget Grid ── */}
       <ScrollView
         contentContainerStyle={s.scroll}
@@ -952,22 +919,6 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: 'rgba(212,175,55,0.22)',
   },
   editBannerText: { fontSize: 12, color: '#D4AF37', fontWeight: '700', letterSpacing: 0.2 },
-
-  // ── Greeting Section ──
-  greetingSection: {
-    paddingHorizontal: 16, paddingVertical: 18,
-    backgroundColor: colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
-  },
-  greetingMessage: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.text,
-    letterSpacing: -0.5,
-    marginBottom: 4,
-    fontFamily: 'Roboto Slab',
-  },
 
   // ── Scroll ──
   scroll: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 24, gap: 16 },
