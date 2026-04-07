@@ -27,16 +27,16 @@ export default function TabLayout() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: isDark ? '#000000' : '#FFFFFF' }}>
       <Tabs
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
             position: 'absolute',
-            bottom: Platform.OS === 'ios' ? 28 : 20,
+            bottom: Platform.OS === 'ios' ? 8 : 5,
             left: 20,
             right: 20,
-            backgroundColor: isDark ? 'rgba(18, 18, 18, 0.7)' : 'rgba(255, 255, 255, 0.8)',
+            backgroundColor: isDark ? '#000000' : '#FFFFFF',
             borderRadius: 40,
             height: 74,
             borderWidth: 1,
@@ -62,7 +62,6 @@ export default function TabLayout() {
           tabBarLabelStyle: {
             fontSize: 10,
             fontWeight: '900',
-            textTransform: 'uppercase',
             letterSpacing: 0.5,
           },
           tabBarShowLabel: true,

@@ -320,7 +320,6 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     fontWeight: '900',
     color: '#FFFFFF',
     letterSpacing: 0.5,
-    textTransform: 'uppercase',
   },
   fabPressed: {
     transform: [{ scale: 0.96 }],
@@ -424,7 +423,6 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     fontWeight: '800',
     color: colors.text,
     textAlign: 'center',
-    textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
 });
