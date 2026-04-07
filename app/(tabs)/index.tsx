@@ -11,30 +11,32 @@ import { getScheduleEvents } from '@/lib/schedule-service'
 import { getStreakData } from '@/lib/streak-service'
 import { getTasks } from '@/lib/tasks-service'
 import {
-  ALL_WIDGETS,
-  WidgetConfig,
-  WidgetId,
-  getWidgetConfig,
-  saveWidgetConfig,
+    ALL_WIDGETS,
+    WidgetConfig,
+    WidgetId,
+    getWidgetConfig,
+    saveWidgetConfig,
 } from '@/lib/widget-service'
 import { useUser } from '@clerk/expo'
 import { Ionicons } from '@expo/vector-icons'
+import { useFonts } from 'expo-font'
+import { useRouter } from 'expo-router'
 import LottieView from 'lottie-react-native'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  Animated,
-  Modal,
-  RefreshControl,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
+    Animated,
+    Image,
+    Modal,
+    RefreshControl,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface HomeData {
@@ -163,6 +165,9 @@ export default function HomeScreen() {
   const [showPicker, setShowPicker] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+  const [fontsLoaded] = useFonts({
+    'Roboto Slab': require('../../assets/Font/RobotoSlab-VariableFont_wght.ttf'),
+  })
   const pickerSlide = useRef(new Animated.Value(700)).current
   const pickerFade = useRef(new Animated.Value(0)).current
 
@@ -729,6 +734,10 @@ export default function HomeScreen() {
     }
   }
 
+  if (!fontsLoaded) {
+    return null
+  }
+
   return (
     <SafeAreaView style={s.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
@@ -762,6 +771,30 @@ export default function HomeScreen() {
           <Text style={s.editBannerText}>Use ▲▼ to reorder · Tap × to remove</Text>
         </View>
       )}
+
+      {/* ── Greeting Section ── */}
+      <View style={s.greetingSection}>
+        <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center', marginBottom: 16 }}>
+          <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.primary + '25', borderWidth: 2.5, borderColor: colors.primary + '50', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            {user?.imageUrl ? (
+              <Image source={{ uri: user.imageUrl }} style={{ width: 64, height: 64, borderRadius: 32 }} />
+            ) : (
+              <Text style={{ fontSize: 28, fontWeight: '900', color: colors.primary }}>{(user?.firstName?.[0] || 'U').toUpperCase()}</Text>
+            )}
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={s.greetingMessage}>
+              {greeting.message}
+            </Text>
+          </View>
+        </View>
+
+        <View style={{ backgroundColor: colors.primary + '15', paddingHorizontal: 16, paddingVertical: 14, borderRadius: 14, borderLeftWidth: 3.5, borderLeftColor: colors.primary }}>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text, fontStyle: 'italic', lineHeight: 20, textAlign: 'center' }}>
+            "{greeting.motivational}"
+          </Text>
+        </View>
+      </View>
 
       {/* ── Widget Grid ── */}
       <ScrollView
@@ -919,6 +952,22 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: 'rgba(212,175,55,0.22)',
   },
   editBannerText: { fontSize: 12, color: '#D4AF37', fontWeight: '700', letterSpacing: 0.2 },
+
+  // ── Greeting Section ──
+  greetingSection: {
+    paddingHorizontal: 16, paddingVertical: 18,
+    backgroundColor: colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
+  },
+  greetingMessage: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.text,
+    letterSpacing: -0.5,
+    marginBottom: 4,
+    fontFamily: 'Roboto Slab',
+  },
 
   // ── Scroll ──
   scroll: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 24, gap: 16 },
