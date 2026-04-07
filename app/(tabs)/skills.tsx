@@ -269,23 +269,26 @@ export default function SkillsScreen() {
     addTaskRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
     addTaskInput: { flex: 1, backgroundColor: colors.background, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: colors.text, borderWidth: 1, borderColor: colors.border },
     addTaskBtn: { width: 42, height: 42, borderRadius: 10, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-    skillCard: { backgroundColor: colors.card, borderRadius: 20, marginBottom: 14, flexDirection: 'row', borderWidth: 1.5, borderColor: colors.border, shadowColor: colors.text, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+    skillCard: { backgroundColor: colors.card, borderRadius: 20, marginBottom: 14, borderWidth: 1.5, borderColor: colors.border, shadowColor: colors.text, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 5, overflow: 'hidden' },
     skillMain: { flex: 1, padding: 16 },
     skillHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+    skillHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     skillName: { fontSize: 17, fontWeight: '700', color: colors.text, flex: 1, marginRight: 8 },
     levelBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
     levelBadgeText: { fontSize: 11, fontWeight: '800' },
+    skillTopActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    skillTopActionButton: { width: 32, height: 32, borderRadius: 10, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
     progressArea: { backgroundColor: colors.background, padding: 10, borderRadius: 10, marginBottom: 10, borderWidth: 1.5, borderColor: colors.border },
     progressHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
     progressLabel: { fontSize: 12, fontWeight: '600', color: colors.text },
     progressPct: { fontSize: 12, fontWeight: '800', color: colors.text },
     progressTrack: { height: 8, backgroundColor: colors.border, borderRadius: 4, overflow: 'hidden' },
     progressFill: { height: '100%', borderRadius: 4 },
+    skillPreviewPanel: { marginTop: 2, paddingVertical: 10, paddingHorizontal: 12, backgroundColor: `rgba(${isDark ? '255, 255, 255' : '0, 0, 0'}, ${isDark ? 0.05 : 0.02})`, borderRadius: 12, borderWidth: 1, borderColor: colors.border },
     previewRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
     previewText: { fontSize: 13, color: colors.text, fontWeight: '500' },
     previewDone: { color: colors.textSecondary, textDecorationLine: 'line-through' },
     moreText: { fontSize: 12, color: colors.textSecondary, marginTop: 4 },
-    deleteArea: { paddingHorizontal: 14, justifyContent: 'flex-start', alignItems: 'center', paddingTop: 18, borderLeftWidth: 1.5, borderLeftColor: colors.border },
     modalContainer: { flex: 1, backgroundColor: colors.card },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: colors.border },
     modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
@@ -422,8 +425,18 @@ export default function SkillsScreen() {
           {/* Header */}
           <View style={dynamicStyles.skillHeader}>
             <Text style={dynamicStyles.skillName} numberOfLines={1}>{item.name}</Text>
-            <View style={[dynamicStyles.levelBadge, { backgroundColor: cfg.bg }]}>
-              <Text style={[dynamicStyles.levelBadgeText, { color: cfg.color }]}>{cfg.label}</Text>
+            <View style={dynamicStyles.skillHeaderRight}>
+              <View style={[dynamicStyles.levelBadge, { backgroundColor: cfg.bg }]}> 
+                <Text style={[dynamicStyles.levelBadgeText, { color: cfg.color }]}>{cfg.label}</Text>
+              </View>
+              <View style={dynamicStyles.skillTopActions}>
+                <TouchableOpacity onPress={() => openEditModal(item)} hitSlop={10} style={dynamicStyles.skillTopActionButton}>
+                  <Ionicons name="pencil-outline" size={16} color={colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleDelete(item.id)} hitSlop={10} style={dynamicStyles.skillTopActionButton}>
+                  <Ionicons name="trash-outline" size={16} color={colors.danger} />
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
 
@@ -439,25 +452,18 @@ export default function SkillsScreen() {
           </View>
 
           {/* Task list preview */}
-          {item.progress.slice(0, 3).map(t => (
-            <View style={dynamicStyles.previewRow} key={t.id}>
-              <Ionicons name={t.completed ? 'checkmark-circle' : 'ellipse-outline'} size={16} color={t.completed ? colors.success : colors.textSecondary} />
-              <Text style={[dynamicStyles.previewText, t.completed && dynamicStyles.previewDone]}>{t.title}</Text>
-            </View>
-          ))}
-          {item.progress.length > 3 && (
-            <Text style={dynamicStyles.moreText}>+{item.progress.length - 3} more tasks…</Text>
-          )}
+          <View style={dynamicStyles.skillPreviewPanel}>
+            {item.progress.slice(0, 3).map(t => (
+              <View style={dynamicStyles.previewRow} key={t.id}>
+                <Ionicons name={t.completed ? 'checkmark-circle' : 'ellipse-outline'} size={16} color={t.completed ? colors.success : colors.textSecondary} />
+                <Text style={[dynamicStyles.previewText, t.completed && dynamicStyles.previewDone]}>{t.title}</Text>
+              </View>
+            ))}
+            {item.progress.length > 3 && (
+              <Text style={dynamicStyles.moreText}>+{item.progress.length - 3} more tasks…</Text>
+            )}
+          </View>
         </TouchableOpacity>
-
-        <View style={dynamicStyles.deleteArea}>
-          <TouchableOpacity onPress={() => openEditModal(item)} hitSlop={10}>
-            <Ionicons name="pencil-outline" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleDelete(item.id)} hitSlop={10} style={{ marginTop: 10 }}>
-            <Ionicons name="trash-outline" size={20} color={colors.danger} />
-          </TouchableOpacity>
-        </View>
       </View>
     );
   };
