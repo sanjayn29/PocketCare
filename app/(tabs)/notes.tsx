@@ -6,18 +6,18 @@ import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  FlatList,
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  StyleSheet, Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Alert,
+    Animated,
+    FlatList,
+    Keyboard,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    StyleSheet, Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -198,25 +198,31 @@ export default function NotesScreen() {
     const dateStr = new Date(item.updated_at).toLocaleDateString([], { month: 'short', day: 'numeric' });
     
     return (
-      <TouchableOpacity 
-        style={dynamicStyles.noteCard} 
-        onPress={() => openEditModal(item)}
-        activeOpacity={0.7}
-      >
-        <View style={dynamicStyles.noteHeader}>
+      <View style={dynamicStyles.noteCard}>
+        <TouchableOpacity
+          style={dynamicStyles.noteContentArea}
+          onPress={() => openEditModal(item)}
+          activeOpacity={0.7}
+        >
           <Text style={dynamicStyles.noteTitle} numberOfLines={1}>{item.title}</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <TouchableOpacity onPress={() => openEditModal(item)} hitSlop={10}>
-              <Ionicons name="pencil-outline" size={20} color={colors.textSecondary} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleDelete(item.id)} hitSlop={10}>
-              <Ionicons name="trash-outline" size={20} color={colors.danger} />
-            </TouchableOpacity>
+          <Text style={dynamicStyles.noteContent} numberOfLines={3}>{item.content}</Text>
+          <View style={dynamicStyles.noteMetaPanel}>
+            <View style={dynamicStyles.noteMetaRow}>
+              <Ionicons name="calendar-outline" size={12} color={colors.textSecondary} />
+              <Text style={dynamicStyles.noteDate}>Updated: {dateStr}</Text>
+            </View>
           </View>
+        </TouchableOpacity>
+
+        <View style={dynamicStyles.noteActionRail}>
+          <TouchableOpacity onPress={() => openEditModal(item)} hitSlop={10} style={dynamicStyles.noteActionButton}>
+            <Ionicons name="pencil-outline" size={18} color={colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => handleDelete(item.id)} hitSlop={10} style={dynamicStyles.noteActionButton}>
+            <Ionicons name="trash-outline" size={18} color={colors.danger} />
+          </TouchableOpacity>
         </View>
-        <Text style={dynamicStyles.noteContent} numberOfLines={3}>{item.content}</Text>
-        <Text style={dynamicStyles.noteDate}>{dateStr}</Text>
-      </TouchableOpacity>
+      </View>
     );
   };
 
@@ -361,42 +367,79 @@ export default function NotesScreen() {
     // Note Card
     noteCard: {
       backgroundColor: colors.card,
-      borderRadius: 18,
-      padding: 16,
+      borderRadius: 20,
       marginBottom: 14,
-      shadowColor: '#000',
+      flexDirection: 'row',
+      shadowColor: colors.text,
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 10,
-      elevation: 3,
+      shadowOpacity: 0.12,
+      shadowRadius: 12,
+      elevation: 5,
       borderWidth: 1.5,
       borderColor: colors.border,
+      overflow: 'hidden',
     },
-    noteHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
+    noteContentArea: {
+      flex: 1,
+      padding: 16,
+    },
+    noteActionRail: {
+      padding: 12,
+      justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: 8,
+      gap: 10,
+      borderLeftWidth: 1.5,
+      borderLeftColor: colors.border,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.01)',
+    },
+    noteActionButton: {
+      width: 38,
+      height: 38,
+      borderRadius: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.06,
+      shadowRadius: 3,
+      elevation: 1,
     },
     noteTitle: {
       fontSize: 18,
       fontWeight: '700',
       color: colors.text,
-      flex: 1,
-      marginRight: 10,
+      marginBottom: 8,
       fontFamily: 'Roboto Slab',
+      letterSpacing: -0.3,
     },
     noteContent: {
       fontSize: 14,
       color: colors.textSecondary,
-      lineHeight: 22,
-      marginBottom: 12,
+      lineHeight: 20,
+      marginBottom: 10,
       fontWeight: '500',
+    },
+    noteMetaPanel: {
+      marginTop: 2,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      backgroundColor: `rgba(${isDark ? '255, 255, 255' : '0, 0, 0'}, ${isDark ? 0.05 : 0.02})`,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    noteMetaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
     },
     noteDate: {
       fontSize: 12,
       color: colors.textSecondary,
-      fontWeight: '500',
+      fontWeight: '600',
     },
     // Modal styles (Edit)
     modalContainer: {
