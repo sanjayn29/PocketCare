@@ -1,9 +1,9 @@
-import { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
-import * as Haptics from 'expo-haptics';
-import React, { useEffect, useRef, useMemo } from 'react';
-import { Animated, Pressable, StyleSheet, View } from 'react-native';
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
+import * as Haptics from 'expo-haptics';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { Animated, Pressable, StyleSheet } from 'react-native';
 
 export function AnimatedTabButton(props: BottomTabBarButtonProps) {
   const { children, accessibilityState, onPress, onPressIn } = props;
@@ -12,7 +12,7 @@ export function AnimatedTabButton(props: BottomTabBarButtonProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const colors = getColors(isDark);
-  const styles = useMemo(() => getStyles(colors), [colors]);
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
 
   const focusAnim = useRef(new Animated.Value(focused ? 1 : 0)).current;
   const scale = useRef(new Animated.Value(1)).current;
@@ -21,8 +21,8 @@ export function AnimatedTabButton(props: BottomTabBarButtonProps) {
     Animated.spring(focusAnim, {
       toValue: focused ? 1 : 0,
       useNativeDriver: false,
-      friction: 7,
-      tension: 95,
+      friction: 8,
+      tension: 100,
     }).start();
   }, [focusAnim, focused]);
 
@@ -30,9 +30,10 @@ export function AnimatedTabButton(props: BottomTabBarButtonProps) {
     Haptics.selectionAsync();
 
     Animated.spring(scale, {
-      toValue: 0.94,
-      useNativeDriver: true,
-      friction: 6,
+      toValue: 0.9,
+      useNativeDriver: false,
+      friction: 8,
+      tension: 100,
     }).start();
 
     onPressIn?.(ev);
@@ -41,25 +42,35 @@ export function AnimatedTabButton(props: BottomTabBarButtonProps) {
   const handlePressOut = () => {
     Animated.spring(scale, {
       toValue: 1,
-      useNativeDriver: true,
-      friction: 4,
-      tension: 110,
+      useNativeDriver: false,
+      friction: 8,
+      tension: 100,
     }).start();
   };
 
   const animatedTranslateY = focusAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, -7],
+    outputRange: [0, -10],
+  });
+
+  const animatedIconScale = focusAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.15],
   });
 
   const animatedBg = focusAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['transparent', colors.primary + '1A'],
+    outputRange: ['transparent', colors.primary + '12'],
   });
 
-  const animatedDotScale = focusAnim.interpolate({
+  const animatedIndicatorScaleX = focusAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.5, 1],
+    outputRange: [0.17, 1],  // 4/24 = 0.17
+  });
+
+  const animatedIndicatorOpacity = focusAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0, 0, 1],
   });
 
   return (
@@ -74,55 +85,57 @@ export function AnimatedTabButton(props: BottomTabBarButtonProps) {
           styles.content,
           {
             backgroundColor: animatedBg,
-            opacity: 1,
-            transform: [{ translateY: animatedTranslateY }, { scale }],
+            transform: [
+              { translateY: animatedTranslateY },
+              { scale: Animated.multiply(scale, animatedIconScale) }
+            ],
           },
         ]}
       >
         {children}
       </Animated.View>
 
-      <View style={styles.lineContainer}>
-        <Animated.View
-          style={[
-            styles.line,
-            {
-              opacity: focusAnim,
-              transform: [{ scale: animatedDotScale }],
-            },
-          ]}
-        />
-      </View>
+      <Animated.View
+        style={[
+          styles.indicator,
+          {
+            transform: [{ scaleX: animatedIndicatorScaleX }],
+            opacity: animatedIndicatorOpacity,
+            shadowOpacity: focusAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, 0.4],
+            }),
+          },
+        ]}
+      />
     </Pressable>
   );
 }
 
-const getStyles = (colors: any) => StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   button: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 2,
   },
   content: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 16,
+    borderRadius: 20,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    minWidth: 54,
+    paddingVertical: 8,
+    minWidth: 50,
   },
-  lineContainer: {
+  indicator: {
     position: 'absolute',
-    bottom: -1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  line: {
-    height: 5,
-    width: 20, // Slightly wider pill instead of a tiny dot for a more modern look
+    bottom: 12,
+    width: 24,
+    height: 4,
     backgroundColor: colors.primary,
-    borderRadius: 999,
+    borderRadius: 2,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+    elevation: 4,
   },
 });

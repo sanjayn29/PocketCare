@@ -1,9 +1,10 @@
 import { useAuth } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
+import { BlurView } from 'expo-blur';
 import LottieView from 'lottie-react-native';
 import React from 'react';
-import { View } from 'react-native';
+import { View, Platform, StyleSheet } from 'react-native';
 
 import { AnimatedTabButton } from '@/components/AnimatedTabButton';
 import FloatingActionButton from '@/components/FloatingActionButton';
@@ -30,28 +31,39 @@ export default function TabLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
-          sceneStyle: { backgroundColor: 'transparent' },
           tabBarStyle: {
             position: 'absolute',
-            bottom: 24,
-            left: 16,
-            right: 16,
-            backgroundColor: colors.card,
-            borderRadius: 36, // Perfect circular edges for 72 height
-            height: 72,
-            borderWidth: 1, // Softer border
-            borderColor: colors.border,
-            paddingBottom: 8,
-            paddingTop: 8,
+            bottom: Platform.OS === 'ios' ? 28 : 20,
+            left: 20,
+            right: 20,
+            backgroundColor: isDark ? 'rgba(18, 18, 18, 0.7)' : 'rgba(255, 255, 255, 0.8)',
+            borderRadius: 40,
+            height: 74,
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+            elevation: 0,
+            shadowOpacity: 0,
+            paddingBottom: Platform.OS === 'ios' ? 20 : 12,
+            paddingTop: 12,
           },
+          tabBarBackground: () => (
+            <BlurView
+              intensity={isDark ? 30 : 50}
+              tint={isDark ? 'dark' : 'light'}
+              style={{
+                ...StyleSheet.absoluteFillObject,
+                borderRadius: 40,
+                overflow: 'hidden',
+              }}
+            />
+          ),
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textSecondary,
           tabBarLabelStyle: {
-            fontSize: 12,
-            fontWeight: 'bold',
-            marginBottom: 4,
-            marginTop: 4,
-            letterSpacing: 0.2,
+            fontSize: 10,
+            fontWeight: '900',
+            textTransform: 'uppercase',
+            letterSpacing: 0.5,
           },
           tabBarShowLabel: true,
           tabBarButton: (props) => <AnimatedTabButton {...props} />,
