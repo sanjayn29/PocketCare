@@ -9,27 +9,27 @@ import { useFonts } from 'expo-font';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Animated, FlatList,
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal, Platform, ScrollView, StyleSheet, Text,
-  TextInput, TouchableOpacity, View
+    ActivityIndicator, Alert, Animated, FlatList,
+    Keyboard,
+    KeyboardAvoidingView,
+    Modal, Platform, ScrollView, StyleSheet, Text,
+    TextInput, TouchableOpacity, View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  addDiet,
-  addFitness,
-  addMedical,
-  deleteDiet,
-  deleteFitness,
-  deleteMedical,
-  DietPlan, FitnessPlan, getHealthData,
-  MedicalRecord,
-  toggleDietDate,
-  toggleFitnessDate,
-  updateDiet,
-  updateFitness,
-  updateMedical
+    addDiet,
+    addFitness,
+    addMedical,
+    deleteDiet,
+    deleteFitness,
+    deleteMedical,
+    DietPlan, FitnessPlan, getHealthData,
+    MedicalRecord,
+    toggleDietDate,
+    toggleFitnessDate,
+    updateDiet,
+    updateFitness,
+    updateMedical
 } from '../../lib/health-service';
 
 // ─── UTILS ──────────────────────────────────────────────────────────────────
@@ -348,28 +348,35 @@ export default function HealthScreen() {
       contentContainerStyle={{padding: 16, paddingBottom: 100}}
       ListEmptyComponent={<Text style={{textAlign:'center', color: colors.textSecondary, marginTop: 40, fontSize: 16}}>No medical records found.</Text>}
       renderItem={({item}) => (
-        <View style={dynamicStyles.card}>
-          <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'flex-start'}}>
-            <View style={{flex: 1, paddingRight: 10}}>
-              <Text style={{fontSize:20, fontWeight:'900', color: colors.text, fontFamily: 'Roboto Slab'}}>{item.topic}</Text>
-              {item.description ? <Text style={{fontSize:15, color: colors.textSecondary, marginTop: 8, fontWeight: '500'}}>{item.description}</Text> : null}
+        <View style={dynamicStyles.healthCard}>
+          <View style={dynamicStyles.healthCardContent}>
+            <View style={dynamicStyles.healthHeaderRow}>
+              <Text style={dynamicStyles.healthTitle} numberOfLines={1} onPress={()=> openEditMedical(item)}>{item.topic}</Text>
+              <View style={dynamicStyles.healthTopActions}>
+                <TouchableOpacity onPress={()=> openEditMedical(item)} style={dynamicStyles.healthTopActionButton}>
+                  <Ionicons name="pencil-outline" size={17} color={colors.primary}/>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={()=> {
+                    Alert.alert('Delete', 'Delete medical record?', [
+                      {text:'Cancel'}, {text:'Delete', style:'destructive', onPress:() => { deleteMedical(email!, item.id); loadData(); }}
+                    ]);
+                }} style={dynamicStyles.healthTopActionButton}>
+                  <Ionicons name="trash-outline" size={17} color="#EF4444"/>
+                </TouchableOpacity>
+              </View>
             </View>
-            <View style={{flexDirection: 'row', gap: 12}}>
-              <TouchableOpacity onPress={()=> openEditMedical(item)}>
-                <Ionicons name="pencil-outline" size={22} color={colors.textSecondary}/>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={()=> {
-                  Alert.alert('Delete', 'Delete medical record?', [
-                    {text:'Cancel'}, {text:'Delete', style:'destructive', onPress:() => { deleteMedical(email!, item.id); loadData(); }}
-                  ]);
-              }}>
-                <Ionicons name="trash-outline" size={22} color="#EF4444"/>
-              </TouchableOpacity>
+            {item.description ? <Text style={dynamicStyles.healthDesc} numberOfLines={2}>{item.description}</Text> : null}
+
+            <View style={dynamicStyles.healthMetaPanel}>
+              <View style={dynamicStyles.healthMetaRow}>
+                <Ionicons name="calendar-outline" size={12} color={colors.textSecondary} />
+                <Text style={dynamicStyles.healthMetaText}>From: {item.start_date}</Text>
+              </View>
+              <View style={dynamicStyles.healthMetaRow}>
+                <Ionicons name="calendar-clear-outline" size={12} color={colors.textSecondary} />
+                <Text style={dynamicStyles.healthMetaText}>To: {item.end_date}</Text>
+              </View>
             </View>
-          </View>
-          <View style={{marginTop: 14, backgroundColor: colors.border, padding: 12, borderRadius: 12}}>
-             <Text style={{fontSize:12, fontWeight:'700', color: colors.textSecondary, marginBottom: 4}}>Timeline</Text>
-             <Text style={{fontSize:14, color: colors.text, fontWeight: '600'}}>{item.start_date}   →   {item.end_date}</Text>
           </View>
         </View>
       )}
@@ -384,61 +391,62 @@ export default function HealthScreen() {
      const colorTheme = isDiet ? uiColors.diet : uiColors.fitness;
 
      return (
-       <View style={dynamicStyles.card}>
-          <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'flex-start', marginBottom: 12}}>
-            <Text style={{fontSize:20, fontWeight:'900', color: colors.text, flex: 1, fontFamily: 'Roboto Slab'}}>{item.name}</Text>
-            <View style={{flexDirection: 'row', gap: 12}}>
-              <TouchableOpacity onPress={()=> isDiet ? openEditDiet(item as DietPlan) : openEditFitness(item as FitnessPlan)}>
-                <Ionicons name="pencil-outline" size={22} color={colors.textSecondary}/>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={()=> {
-                  Alert.alert('Delete', `Delete ${isDiet ? 'diet' : 'fitness'} plan?`, [
-                    {text:'Cancel'}, {text:'Delete', style:'destructive', onPress:() => { 
-                      isDiet ? deleteDiet(email!, item.id) : deleteFitness(email!, item.id); loadData(); 
-                    }}
-                  ]);
-              }}>
-                <Ionicons name="trash-outline" size={22} color="#EF4444"/>
-              </TouchableOpacity>
+       <View style={dynamicStyles.healthCard}>
+          <View style={dynamicStyles.healthCardContent}>
+            <View style={dynamicStyles.healthHeaderRow}>
+              <Text style={dynamicStyles.healthTitle} numberOfLines={1} onPress={()=> isDiet ? openEditDiet(item as DietPlan) : openEditFitness(item as FitnessPlan)}>{item.name}</Text>
+              <View style={dynamicStyles.healthTopActions}>
+                <TouchableOpacity onPress={()=> isDiet ? openEditDiet(item as DietPlan) : openEditFitness(item as FitnessPlan)} style={dynamicStyles.healthTopActionButton}>
+                  <Ionicons name="pencil-outline" size={17} color={colors.primary}/>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={()=> {
+                    Alert.alert('Delete', `Delete ${isDiet ? 'diet' : 'fitness'} plan?`, [
+                      {text:'Cancel'}, {text:'Delete', style:'destructive', onPress:() => {
+                        isDiet ? deleteDiet(email!, item.id) : deleteFitness(email!, item.id); loadData();
+                      }}
+                    ]);
+                }} style={dynamicStyles.healthTopActionButton}>
+                  <Ionicons name="trash-outline" size={17} color="#EF4444"/>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
 
-          {item.description ? <Text style={{fontSize:15, color: colors.textSecondary, marginBottom: 12, fontWeight: '500'}}>{item.description}</Text> : null}
+            {item.description ? <Text style={dynamicStyles.healthDesc} numberOfLines={2}>{item.description}</Text> : null}
 
-          {/* Progress Bar Header */}
-          <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'flex-end', marginBottom: 10}}>
-            <Text style={{fontSize:13, fontWeight:'700', color: colors.textSecondary}}>Progress: {completedCount} / {totalDays}</Text>
-            <Text style={{fontSize:18, fontWeight:'900', color: colorTheme}}>{pct}%</Text>
-          </View>
+            <View style={dynamicStyles.healthMetaPanel}>
+              <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'flex-end', marginBottom: 8}}>
+                <Text style={{fontSize:13, fontWeight:'700', color: colors.textSecondary}}>Progress: {completedCount} / {totalDays}</Text>
+                <Text style={{fontSize:16, fontWeight:'900', color: colorTheme}}>{pct}%</Text>
+              </View>
+              <View style={dynamicStyles.progressBar}>
+                 <View style={[dynamicStyles.progressFill, {backgroundColor: colorTheme, width:`${pct}%` as any}]} />
+              </View>
+              <View style={{marginTop: 10}}>
+                <Text style={{fontSize:12, fontWeight:'700', color: colors.textSecondary, marginBottom: 8}}>Daily Tracker</Text>
+                <View style={dynamicStyles.gridWrap}>
+                   {datesArray.map(dStr => {
+                     const dObj = new Date(dStr);
+                     const dayLabel = dObj.getDate().toString();
+                     const isToday = dStr === todayStr;
+                     const isTicked = item.completed_dates.includes(dStr);
+                     const canSelect = isToday;
 
-          <View style={dynamicStyles.progressBar}>
-             <View style={[dynamicStyles.progressFill, {backgroundColor: colorTheme, width:`${pct}%` as any}]} />
-          </View>
-
-          <View style={{marginBottom: 12}}>
-            <Text style={{fontSize:13, fontWeight:'700', color: colors.textSecondary, marginBottom: 10}}>Daily Progress Tracker</Text>
-            <View style={dynamicStyles.gridWrap}>
-               {datesArray.map(dStr => {
-                 const dObj = new Date(dStr);
-                 const dayLabel = dObj.getDate().toString();
-                 const isToday = dStr === todayStr;
-                 const isTicked = item.completed_dates.includes(dStr);
-                 const canSelect = isToday;
-                 
-                 return (
-                   <TouchableOpacity 
-                     key={dStr} 
-                     style={[dynamicStyles.gridBox, isTicked && {backgroundColor: colorTheme, borderColor: colorTheme}]}
-                     onPress={() => canSelect && toggleDayAction(isDiet ? 'diet' : 'fitness', item.id, dStr)}
-                     disabled={!canSelect}
-                   >
-                     <Text style={[dynamicStyles.gridText, isTicked && {color: '#FFF'}]}>{dayLabel}</Text>
-                   </TouchableOpacity>
-                 );
-               })}
+                     return (
+                       <TouchableOpacity
+                         key={dStr}
+                         style={[dynamicStyles.gridBox, isTicked && {backgroundColor: colorTheme, borderColor: colorTheme}]}
+                         onPress={() => canSelect && toggleDayAction(isDiet ? 'diet' : 'fitness', item.id, dStr)}
+                         disabled={!canSelect}
+                       >
+                         <Text style={[dynamicStyles.gridText, isTicked && {color: '#FFF'}]}>{dayLabel}</Text>
+                       </TouchableOpacity>
+                     );
+                   })}
+                </View>
+              </View>
             </View>
+            <Text style={{fontSize:11, color: colors.textSecondary, marginTop: 8, textAlign:'center', fontStyle: 'italic'}}>Tap today's date to track your progress</Text>
           </View>
-          <Text style={{fontSize:11, color: colors.textSecondary, textAlign:'center', fontStyle: 'italic'}}>Tap today's date to track your progress</Text>
        </View>
      );
   }
@@ -446,28 +454,34 @@ export default function HealthScreen() {
   // Edit Modals Shared Builder
   const renderEditModal = (visible: boolean, onClose: () => void, onSave: () => void, titleHeader: string, themeColor: string) => (
       <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-        <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={{flex:1}}>
+        <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={{flex:1, backgroundColor: colors.background}}>
           <View style={dynamicStyles.modalHeader}>
             <TouchableOpacity onPress={onClose}><Text style={{fontSize:16, color: colors.textSecondary}}>Cancel</Text></TouchableOpacity>
-            <Text style={{fontSize:18, fontWeight:'700'}}>{titleHeader}</Text>
+            <Text style={{fontSize:18, fontWeight:'700', color: colors.text}}>{titleHeader}</Text>
             <TouchableOpacity onPress={onSave}><Text style={{fontSize:16, fontWeight:'700', color: themeColor}}>Save</Text></TouchableOpacity>
           </View>
-          <ScrollView style={{padding:20}}>
-            <TextInput style={dynamicStyles.titleInput} placeholder="Topic / Name" placeholderTextColor={isDark ? '#FFFFFF' : '#A0AEC0'} value={editTopic} onChangeText={setEditTopic} autoFocus />
-            <TextInput style={dynamicStyles.input} placeholder="Description (Optional)" placeholderTextColor={isDark ? '#FFFFFF' : '#A0AEC0'} value={editDesc} onChangeText={setEditDesc} />
-            
-            <View style={{flexDirection:'row', gap:10, marginBottom: 16}}>
-              <View style={{flex:1}}>
-                  <Text style={dynamicStyles.selectorLabel}>Start Date</Text>
-                  <TouchableOpacity style={dynamicStyles.input} onPress={()=>setShowDatePicker('editStart')}>
-                    <Text style={{color: colors.text}}>{editStart}</Text>
-                  </TouchableOpacity>
-              </View>
-              <View style={{flex:1}}>
-                  <Text style={dynamicStyles.selectorLabel}>End Date</Text>
-                  <TouchableOpacity style={dynamicStyles.input} onPress={()=>setShowDatePicker('editEnd')}>
-                    <Text style={{color: colors.text}}>{editEnd}</Text>
-                  </TouchableOpacity>
+          <ScrollView contentContainerStyle={{padding:20, paddingBottom: 40}}>
+            <View style={dynamicStyles.editFormCard}>
+              <Text style={[dynamicStyles.selectorLabel, { color: themeColor }]}>Details</Text>
+              <TextInput style={dynamicStyles.titleInput} placeholder="Topic / Name" placeholderTextColor={isDark ? '#FFFFFF' : '#A0AEC0'} value={editTopic} onChangeText={setEditTopic} autoFocus />
+              <TextInput style={dynamicStyles.input} placeholder="Description (Optional)" placeholderTextColor={isDark ? '#FFFFFF' : '#A0AEC0'} value={editDesc} onChangeText={setEditDesc} />
+
+              <Text style={[dynamicStyles.selectorLabel, { marginTop: 4, color: themeColor }]}>Timeline</Text>
+              <View style={{flexDirection:'row', gap:10, marginBottom: 4}}>
+                <View style={{flex:1}}>
+                    <Text style={dynamicStyles.selectorLabel}>Start Date</Text>
+                    <TouchableOpacity style={dynamicStyles.editDateButton} onPress={()=>setShowDatePicker('editStart')}>
+                      <Ionicons name="calendar-outline" size={14} color={themeColor} />
+                      <Text style={{color: colors.text, fontWeight: '600'}}>{editStart}</Text>
+                    </TouchableOpacity>
+                </View>
+                <View style={{flex:1}}>
+                    <Text style={dynamicStyles.selectorLabel}>End Date</Text>
+                    <TouchableOpacity style={dynamicStyles.editDateButton} onPress={()=>setShowDatePicker('editEnd')}>
+                      <Ionicons name="calendar-clear-outline" size={14} color={themeColor} />
+                      <Text style={{color: colors.text, fontWeight: '600'}}>{editEnd}</Text>
+                    </TouchableOpacity>
+                </View>
               </View>
             </View>
           </ScrollView>
@@ -571,6 +585,106 @@ export default function HealthScreen() {
       borderRadius: 20, padding: 16, marginBottom: 12, borderWidth: 1, 
       borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
       shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2
+    },
+    healthCard: {
+      backgroundColor: colors.card,
+      borderRadius: 20,
+      marginBottom: 14,
+      flexDirection: 'row',
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.12,
+      shadowRadius: 12,
+      elevation: 5,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      overflow: 'hidden',
+    },
+    healthCardContent: {
+      flex: 1,
+      padding: 16,
+    },
+    healthHeaderRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    healthTopActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginLeft: 10,
+    },
+    healthTopActionButton: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    healthTitle: {
+      fontSize: 19,
+      fontWeight: '900',
+      color: colors.text,
+      flex: 1,
+      fontFamily: 'Roboto Slab',
+      letterSpacing: -0.2,
+    },
+    healthDesc: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 20,
+      marginBottom: 10,
+      fontWeight: '500',
+    },
+    healthMetaPanel: {
+      marginTop: 2,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      backgroundColor: `rgba(${isDark ? '255, 255, 255' : '0, 0, 0'}, ${isDark ? 0.05 : 0.02})`,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    healthMetaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      marginBottom: 6,
+    },
+    healthMetaText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: '600',
+      flex: 1,
+    },
+    editFormCard: {
+      backgroundColor: colors.card,
+      borderRadius: 18,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      padding: 16,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    editDateButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : '#FFFFFF',
+      borderRadius: 16,
+      paddingHorizontal: 12,
+      paddingVertical: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 10,
     },
 
     input: { 
