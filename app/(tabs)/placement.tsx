@@ -9,17 +9,17 @@ import { useFonts } from 'expo-font';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Animated,
-  FlatList,
-  Keyboard, KeyboardAvoidingView, Modal, Platform,
-  ScrollView, StyleSheet, Switch, Text, TextInput,
-  TouchableOpacity, View
+    ActivityIndicator, Alert, Animated,
+    FlatList,
+    Keyboard, KeyboardAvoidingView, Modal, Platform,
+    ScrollView, StyleSheet, Switch, Text, TextInput,
+    TouchableOpacity, View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  CompanyStatus,
-  Placement, PlacementRound, PlacementStatus,
-  addPlacement, deletePlacement, getPlacements, updatePlacement,
+    CompanyStatus,
+    Placement, PlacementRound, PlacementStatus,
+    addPlacement, deletePlacement, getPlacements, updatePlacement,
 } from '../../lib/placement-service';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -693,9 +693,17 @@ export default function PlacementScreen() {
               <Text style={[styles.companyName, { color: colors.text }]} numberOfLines={1}>{item.company_name}</Text>
               <Text style={[styles.cardDate, { color: colors.textSecondary }]}>{item.date || '—'}</Text>
             </View>
-            <View style={[styles.statusBadge, { backgroundColor: cfg.bg }]}>
-              <Ionicons name={cfg.icon} size={12} color={cfg.color} style={{ marginRight: 4 }} />
-              <Text style={[styles.statusBadgeText, { color: cfg.color }]}>{cfg.label}</Text>
+            <View style={styles.headerRightActions}>
+              <View style={[styles.statusBadge, { backgroundColor: cfg.bg }]}> 
+                <Ionicons name={cfg.icon} size={12} color={cfg.color} style={{ marginRight: 4 }} />
+                <Text style={[styles.statusBadgeText, { color: cfg.color }]}>{cfg.label}</Text>
+              </View>
+              <TouchableOpacity style={styles.headerActionBtn} onPress={() => openEdit(item)} hitSlop={10}>
+                <Ionicons name="pencil-outline" size={16} color={activeTab === 'placements' ? uiColors.placements : uiColors.companies} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.headerActionBtn} onPress={() => handleDelete(item.id)} hitSlop={10}>
+                <Ionicons name="trash-outline" size={16} color={colors.danger} />
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -724,29 +732,24 @@ export default function PlacementScreen() {
             )}
           </View>
 
-          {item.rounds.map(r => {
-            const rcfg = ROUND_RESULT_CONFIG[r.result];
-            return (
-              <View style={[styles.roundPreview, { borderTopColor: colors.border }]} key={r.id}>
-                <View style={[styles.roundPreviewDot, { backgroundColor: rcfg.color }]} />
-                <Text style={[styles.roundPreviewTopic, { color: colors.text }]} numberOfLines={1}>{r.topic}</Text>
-                <Text style={[styles.roundPreviewResult, { color: rcfg.color }]}>{rcfg.label}</Text>
-              </View>
-            );
-          })}
+          {item.rounds.length > 0 && (
+            <View style={styles.roundsPanel}>
+              {item.rounds.map(r => {
+                const rcfg = ROUND_RESULT_CONFIG[r.result];
+                return (
+                  <View style={[styles.roundPreview, { borderTopColor: colors.border }]} key={r.id}>
+                    <View style={[styles.roundPreviewDot, { backgroundColor: rcfg.color }]} />
+                    <Text style={[styles.roundPreviewTopic, { color: colors.text }]} numberOfLines={1}>{r.topic}</Text>
+                    <Text style={[styles.roundPreviewResult, { color: rcfg.color }]}>{rcfg.label}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
         </TouchableOpacity>
-
-        <View style={styles.actionButtonsArea}>
-          <TouchableOpacity style={styles.actionButton} onPress={() => openEdit(item)} hitSlop={10}>
-            <Ionicons name="pencil-outline" size={20} color={activeTab === 'placements' ? uiColors.placements : uiColors.companies} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={() => handleDelete(item.id)} hitSlop={10}>
-            <Ionicons name="trash-outline" size={20} color={colors.danger} />
-          </TouchableOpacity>
-        </View>
       </View>
     );
-  }, [placements, colors, styles, isDark]);
+  }, [colors, styles, isDark, activeTab]);
 
   // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1157,10 +1160,16 @@ const getStyles = (colors: any, isDark: boolean, activeTab: 'placements' | 'comp
   },
   cardMain: { flex: 1, padding: 18 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
+  headerRightActions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 8 },
   companyName: { flex: 1, marginRight: 8, fontSize: 19, fontWeight: '700', color: colors.text, fontFamily: 'Roboto Slab', letterSpacing: -0.3 },
   cardDate: { fontSize: 13, color: colors.textSecondary, fontWeight: '600', marginTop: 2, letterSpacing: 0.3 },
   statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10, borderWidth: 1.5, borderColor: colors.border },
   statusBadgeText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
+  headerActionBtn: {
+    width: 34, height: 34, borderRadius: 10,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border,
+  },
   metaRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap', marginBottom: 12 },
   metaChip: {
     flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 7,
@@ -1172,17 +1181,15 @@ const getStyles = (colors: any, isDark: boolean, activeTab: 'placements' | 'comp
   roundPreviewDot: { width: 7, height: 7, borderRadius: 99 },
   roundPreviewTopic: { flex: 1, fontSize: 13, color: colors.text, fontWeight: '500' },
   roundPreviewResult: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
-  actionButtonsArea: {
-    padding: 14, justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: 10,
-    borderLeftWidth: 1.5, borderLeftColor: colors.border,
-    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.01)'
+  roundsPanel: {
+    marginTop: 2,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: `rgba(${isDark ? '255, 255, 255' : '0, 0, 0'}, ${isDark ? 0.05 : 0.02})`,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  actionButton: {
-    width: 42, height: 42, borderRadius: 14, justifyContent: 'center', alignItems: 'center',
-    backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border,
-    shadowColor: colors.text, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3, elevation: 1
-  },
-
   // ── Round Card ──────────────────────────────────────────────────────────────
   roundCard: { backgroundColor: colors.background, borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: colors.border },
   roundHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 4, gap: 6 },
