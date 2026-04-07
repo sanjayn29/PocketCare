@@ -8,34 +8,34 @@ import { useFonts } from 'expo-font';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert,
-  Animated,
-  Dimensions,
-  FlatList,
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal, Platform, ScrollView,
-  StyleSheet,
-  Switch, Text,
-  TextInput, TouchableOpacity, View
+    ActivityIndicator, Alert,
+    Animated,
+    Dimensions,
+    FlatList,
+    Keyboard,
+    KeyboardAvoidingView,
+    Modal, Platform, ScrollView,
+    StyleSheet,
+    Switch, Text,
+    TextInput, TouchableOpacity, View
 } from 'react-native';
 import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  addDebt,
-  addFinanceGoal,
-  addTransaction,
-  Debt,
-  DebtInterestType,
-  deleteDebt,
-  deleteFinanceGoal,
-  deleteTransaction,
-  FinanceGoal, getFinanceData,
-  Transaction,
-  TransactionType,
-  updateDebt,
-  updateFinanceGoal,
-  updateTransaction
+    addDebt,
+    addFinanceGoal,
+    addTransaction,
+    Debt,
+    DebtInterestType,
+    deleteDebt,
+    deleteFinanceGoal,
+    deleteTransaction,
+    FinanceGoal, getFinanceData,
+    Transaction,
+    TransactionType,
+    updateDebt,
+    updateFinanceGoal,
+    updateTransaction
 } from '../../lib/finance-service';
 
 const screenWidth = Dimensions.get('window').width;
@@ -471,6 +471,8 @@ export default function FinanceScreen() {
   const totalIncome = filteredTxs.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount), 0);
   const totalExpense = filteredTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount), 0);
   const netBalance = totalIncome - totalExpense;
+  const formatINR = (value: number) =>
+    `₹${Number(value).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const pieData = [
     { name: 'Income', amount: totalIncome, color: colors.success, legendFontColor: colors.text, legendFontSize: 13 },
@@ -785,18 +787,18 @@ export default function FinanceScreen() {
       <View style={dynamicStyles.summaryGrid}>
         <View style={dynamicStyles.summaryBox}>
           <Text style={dynamicStyles.summaryLabel}>Total Income</Text>
-          <Text style={[dynamicStyles.summaryVal, { color: '#10B981' }]}>${totalIncome.toFixed(2)}</Text>
+          <Text style={[dynamicStyles.summaryVal, { color: '#10B981' }]}>{formatINR(totalIncome)}</Text>
         </View>
         <View style={dynamicStyles.summaryBox}>
           <Text style={dynamicStyles.summaryLabel}>Total Expense</Text>
-          <Text style={[dynamicStyles.summaryVal, { color: '#EF4444' }]}>${totalExpense.toFixed(2)}</Text>
+          <Text style={[dynamicStyles.summaryVal, { color: '#EF4444' }]}>{formatINR(totalExpense)}</Text>
         </View>
       </View>
       
       <View style={[dynamicStyles.summaryBox, { width: '100%', marginBottom: 20 }]}>
         <Text style={dynamicStyles.summaryLabel}>Net Balance</Text>
         <Text style={[dynamicStyles.summaryVal, { color: netBalance >= 0 ? '#10B981' : '#EF4444', fontSize: 28 }]}>
-          ${netBalance.toFixed(2)}
+          {formatINR(netBalance)}
         </Text>
       </View>
 
@@ -847,7 +849,7 @@ export default function FinanceScreen() {
               data={barData}
               width={screenWidth - 80}
               height={220}
-              yAxisLabel="$"
+              yAxisLabel="₹"
               yAxisSuffix=""
               chartConfig={{
                 backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
@@ -882,7 +884,7 @@ export default function FinanceScreen() {
                   <View key={idx} style={{marginBottom: 12}}>
                     <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6}}>
                       <Text style={{fontSize: 13, color: colors.text}}>{cat.name}</Text>
-                      <Text style={{fontSize: 13, fontWeight: '600', color: colors.success}}>${cat.amount.toFixed(2)}</Text>
+                      <Text style={{fontSize: 13, fontWeight: '600', color: colors.success}}>{formatINR(cat.amount)}</Text>
                     </View>
                     <View style={{height: 6, backgroundColor: '#E0E7FF', borderRadius: 3, overflow: 'hidden'}}>
                       <View
@@ -912,7 +914,7 @@ export default function FinanceScreen() {
                   <View key={idx} style={{marginBottom: 12}}>
                     <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6}}>
                       <Text style={{fontSize: 13, color: colors.text}}>{cat.name}</Text>
-                      <Text style={{fontSize: 13, fontWeight: '600', color: colors.danger}}>${cat.amount.toFixed(2)}</Text>
+                      <Text style={{fontSize: 13, fontWeight: '600', color: colors.danger}}>{formatINR(cat.amount)}</Text>
                     </View>
                     <View style={{height: 6, backgroundColor: '#FEE2E2', borderRadius: 3, overflow: 'hidden'}}>
                       <View
@@ -966,7 +968,7 @@ export default function FinanceScreen() {
             </View>
             <View style={{alignItems:'flex-end'}}>
               <Text style={{fontSize:16, fontWeight:'800', color: item.type==='income'?'#10B981':'#EF4444'}}>
-                {item.type === 'income' ? '+' : '-'}${Number(item.amount).toFixed(2)}
+                {item.type === 'income' ? '+' : '-'}{formatINR(Number(item.amount))}
               </Text>
               {!isSynthetic && (
                 <View style={{flexDirection: 'row', gap: 12, marginTop: 8}}>
@@ -1022,9 +1024,9 @@ export default function FinanceScreen() {
               {item.given_back && <Text style={{fontSize:12, color:'#10B981', marginTop:4, fontWeight:'700'}}>✓ Returned on {item.date_given_back}</Text>}
             </View>
             <View style={{alignItems:'flex-end'}}>
-              <Text style={{fontSize:18, fontWeight:'800', color: uiColors.debts}}>${calculatedAmount.toFixed(2)}</Text>
+              <Text style={{fontSize:18, fontWeight:'800', color: uiColors.debts}}>{formatINR(calculatedAmount)}</Text>
               {item.interest_type !== 'none' && (
-                <Text style={{fontSize:10, color: colors.text, marginTop:2, opacity: 0.7}}>Base: ${item.amount}</Text>
+                <Text style={{fontSize:10, color: colors.text, marginTop:2, opacity: 0.7}}>Base: {formatINR(Number(item.amount))}</Text>
               )}
               <View style={{flexDirection:'row', alignItems:'center', marginTop: 8}}>
                 <Text style={{fontSize:11, color: colors.text, marginRight:4}}>Paid?</Text>
@@ -1090,7 +1092,7 @@ export default function FinanceScreen() {
               </View>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
-                  ${item.current_amount.toFixed(2)} / ${item.target_amount.toFixed(2)}
+                  {formatINR(item.current_amount)} / {formatINR(item.target_amount)}
                 </Text>
                 <Text style={{ fontSize: 13, fontWeight: '700', color: uiColors.goals }}>{pct.toFixed(1)}%</Text>
               </View>
