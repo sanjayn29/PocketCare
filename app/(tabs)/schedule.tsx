@@ -2,11 +2,11 @@
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import {
-  addScheduleEvent,
-  deleteScheduleEvent,
-  getScheduleEvents,
-  ScheduleEvent,
-  updateScheduleEvent,
+    addScheduleEvent,
+    deleteScheduleEvent,
+    getScheduleEvents,
+    ScheduleEvent,
+    updateScheduleEvent,
 } from '@/lib/schedule-service';
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,20 +16,20 @@ import { useFonts } from 'expo-font';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  FlatList,
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Animated,
+    FlatList,
+    Keyboard,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -387,6 +387,69 @@ export default function ScheduleScreen() {
   const renderEventCard = ({ item }: { item: ScheduleEvent }) => {
     const priorityConfig = PRIORITY_CONFIG(colors)[item.priority];
     const statusConfig = STATUS_CONFIG_SCHEDULE(colors)[item.status];
+    const isSchedulesTab = activeTab === 'Schedules';
+
+    if (isSchedulesTab) {
+      return (
+        <View style={styles.scheduleCard}>
+          <TouchableOpacity
+            style={styles.scheduleContent}
+            onPress={() => handleOpenEditModal(item)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.scheduleHeaderRow}>
+              <Text style={styles.scheduleTitle} numberOfLines={1}>
+                {item.title}
+              </Text>
+              <View style={styles.scheduleBadgeRow}>
+                <View style={[styles.schedulePriorityBadge, { borderColor: priorityConfig.bg }]}> 
+                  <Ionicons name="flag-outline" size={11} color={priorityConfig.text} />
+                  <Text style={[styles.schedulePriorityText, { color: priorityConfig.text }]}>{item.priority}</Text>
+                </View>
+                <View style={[styles.scheduleStatusBadge, { borderColor: statusConfig.bg }]}> 
+                  <Ionicons name="checkmark-done-outline" size={11} color={statusConfig.text} />
+                  <Text style={[styles.scheduleStatusText, { color: statusConfig.text }]}>{item.status}</Text>
+                </View>
+              </View>
+            </View>
+
+            {item.purpose ? <Text style={styles.schedulePurpose} numberOfLines={2}>{item.purpose}</Text> : null}
+
+            <View style={styles.scheduleInfoPanel}>
+              <View style={styles.scheduleMetaRow}>
+                <Ionicons name="calendar-outline" size={12} color={colors.textSecondary} />
+                <Text style={styles.scheduleMetaText}>{item.date}</Text>
+              </View>
+              <View style={styles.scheduleMetaRow}>
+                <Ionicons name="time-outline" size={12} color={colors.textSecondary} />
+                <Text style={styles.scheduleMetaText}>{item.startTime} - {item.endTime}</Text>
+              </View>
+              {item.location ? (
+                <View style={styles.scheduleMetaRow}>
+                  <Ionicons name="location-outline" size={12} color={colors.textSecondary} />
+                  <Text style={styles.scheduleMetaText} numberOfLines={1}>{item.location}</Text>
+                </View>
+              ) : null}
+              {item.reminder ? (
+                <View style={styles.scheduleMetaRow}>
+                  <Ionicons name="notifications-outline" size={12} color={colors.warning} />
+                  <Text style={styles.scheduleMetaText}>Reminder On</Text>
+                </View>
+              ) : null}
+            </View>
+          </TouchableOpacity>
+
+          <View style={styles.scheduleActionRail}>
+            <TouchableOpacity onPress={() => handleOpenEditModal(item)} hitSlop={10} style={styles.scheduleActionButton}>
+              <Ionicons name="pencil-outline" size={18} color={colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleDeleteEvent(item.id)} hitSlop={10} style={styles.scheduleActionButton}>
+              <Ionicons name="trash-outline" size={18} color={colors.danger} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
 
     return (
       <TouchableOpacity
@@ -923,6 +986,125 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.border,
     marginBottom: 10,
+  },
+  scheduleCard: {
+    backgroundColor: colors.card,
+    borderRadius: 20,
+    marginBottom: 14,
+    flexDirection: 'row',
+    shadowColor: colors.text,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 5,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    overflow: 'hidden',
+  },
+  scheduleContent: {
+    flex: 1,
+    padding: 16,
+  },
+  scheduleHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
+  scheduleTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: colors.text,
+    flex: 1,
+    letterSpacing: -0.2,
+  },
+  scheduleBadgeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
+  schedulePriorityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1.2,
+    backgroundColor: colors.background,
+  },
+  schedulePriorityText: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  scheduleStatusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1.2,
+    backgroundColor: colors.background,
+  },
+  scheduleStatusText: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  schedulePurpose: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: 10,
+    fontWeight: '500',
+  },
+  scheduleInfoPanel: {
+    marginTop: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: `rgba(${isDark ? '255, 255, 255' : '0, 0, 0'}, ${isDark ? 0.05 : 0.02})`,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: 8,
+  },
+  scheduleMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  scheduleMetaText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontWeight: '600',
+    flex: 1,
+  },
+  scheduleActionRail: {
+    padding: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 10,
+    borderLeftWidth: 1.5,
+    borderLeftColor: colors.border,
+    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.01)',
+  },
+  scheduleActionButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: colors.text,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
   },
   eventCardHeader: {
     flexDirection: 'row',
