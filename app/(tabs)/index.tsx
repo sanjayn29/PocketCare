@@ -379,7 +379,9 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            <MiniBar value={data.streak} max={Math.max(data.maxStreak, 1)} color={color} isDark={isDark} height={8} />
+            <View style={{ marginTop: 14 }}>
+              <MiniBar value={data.streak} max={Math.max(data.maxStreak, 1)} color={color} isDark={isDark} height={8} />
+            </View>
 
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
               <Chip icon="flame" label={`${data.streak} day${data.streak !== 1 ? 's' : ''} strong`} color={color} />
@@ -891,95 +893,118 @@ export default function HomeScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+
+  // ── Header ──
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 18, paddingVertical: 13,
+    paddingHorizontal: 20, paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+    borderBottomColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
     backgroundColor: colors.background,
   },
-  headerTitle: { fontSize: 26, fontFamily: 'MomoSignature', color: '#D4AF37', letterSpacing: -0.5 },
-  headerSub: { fontSize: 13, color: colors.textSecondary, marginTop: 3, fontWeight: '600' },
-  headerActions: { flexDirection: 'row', gap: 8 },
+  headerTitle: { fontSize: 28, fontFamily: 'MomoSignature', color: '#D4AF37', letterSpacing: -0.5 },
+  headerSub: { fontSize: 12, color: colors.textSecondary, marginTop: 4, fontWeight: '600', letterSpacing: 0.2 },
+  headerActions: { flexDirection: 'row', gap: 10 },
   hBtn: {
-    width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)',
-    borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+    width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.04)',
+    borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
   },
+
+  // ── Edit Banner ──
   editBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: isDark ? 'rgba(212,175,55,0.1)' : 'rgba(212,175,55,0.08)',
-    paddingVertical: 7, paddingHorizontal: 16,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(212,175,55,0.2)',
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: isDark ? 'rgba(212,175,55,0.1)' : 'rgba(212,175,55,0.07)',
+    paddingVertical: 9, paddingHorizontal: 20,
+    borderBottomWidth: 1, borderBottomColor: 'rgba(212,175,55,0.22)',
   },
-  editBannerText: { fontSize: 12, color: '#D4AF37', fontWeight: '600' },
-  scroll: { paddingHorizontal: 14, paddingTop: 14, gap: 14 },
+  editBannerText: { fontSize: 12, color: '#D4AF37', fontWeight: '700', letterSpacing: 0.2 },
+
+  // ── Scroll ──
+  scroll: { paddingHorizontal: 16, paddingTop: 18, paddingBottom: 24, gap: 16 },
+
+  // ── Card ──
   card: {
     backgroundColor: colors.card,
-    borderRadius: 20,
+    borderRadius: 24,
     borderWidth: 1.5,
     borderColor: colors.border,
     overflow: 'hidden',
-    shadowColor: isDark ? '#000' : '#888',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowColor: isDark ? '#000' : '#555',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: isDark ? 0.30 : 0.08,
+    shadowRadius: 16,
+    elevation: 5,
   },
   cardHeader: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingHorizontal: 14, paddingTop: 12, paddingBottom: 6,
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 18, paddingTop: 16, paddingBottom: 8,
   },
-  cardIcon: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  cardLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1.2 },
-  editRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  cardIcon: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  cardLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1.4 },
+  editRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   orderBtn: {
-    width: 24, height: 24, borderRadius: 6, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+    width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)',
   },
-  accent: { height: 2, marginHorizontal: 14, borderRadius: 1, opacity: 0.45, marginBottom: 12 },
-  cardBody: { paddingHorizontal: 14, paddingBottom: 16 },
-  empty: { alignItems: 'center', paddingVertical: 70, gap: 10 },
+
+  // ── Accent Line ──
+  accent: { height: 2, marginHorizontal: 18, borderRadius: 1, opacity: 0.5, marginBottom: 16 },
+
+  // ── Card Body ──
+  cardBody: { paddingHorizontal: 18, paddingBottom: 20 },
+
+  // ── Empty State ──
+  empty: { alignItems: 'center', paddingVertical: 80, gap: 12 },
   emptyTitle: { fontSize: 20, fontWeight: '800', color: colors.text },
   emptySub: { fontSize: 14, color: colors.textSecondary },
-  emptyBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 24, marginTop: 8 },
-  emptyBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
+  emptyBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    borderRadius: 16, paddingVertical: 14, paddingHorizontal: 28, marginTop: 8,
+  },
+  emptyBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+
+  // ── Modal ──
+  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' },
   sheet: {
     position: 'absolute', bottom: 0, left: 0, right: 0, height: '78%',
     backgroundColor: colors.background,
-    borderTopLeftRadius: 28, borderTopRightRadius: 28,
-    paddingHorizontal: 16, paddingBottom: 24,
-    borderTopWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
-    shadowColor: '#000', shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.2, shadowRadius: 16, elevation: 20,
+    borderTopLeftRadius: 32, borderTopRightRadius: 32,
+    paddingHorizontal: 20, paddingBottom: 32,
+    borderTopWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+    shadowColor: '#000', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.25, shadowRadius: 20, elevation: 24,
   },
   handle: {
-    alignSelf: 'center', width: 40, height: 4, borderRadius: 2,
-    backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.14)',
-    marginTop: 10, marginBottom: 14,
+    alignSelf: 'center', width: 44, height: 5, borderRadius: 3,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.13)',
+    marginTop: 12, marginBottom: 18,
   },
-  sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  sheetTitle: { fontSize: 18, fontWeight: '800', color: colors.text },
-  sheetSub: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
-  sheetClose: { width: 32, height: 32, borderRadius: 10, backgroundColor: '#D4AF37', alignItems: 'center', justifyContent: 'center' },
+  sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 },
+  sheetTitle: { fontSize: 19, fontWeight: '800', color: colors.text },
+  sheetSub: { fontSize: 13, color: colors.textSecondary, marginTop: 3 },
+  sheetClose: { width: 34, height: 34, borderRadius: 11, backgroundColor: '#D4AF37', alignItems: 'center', justifyContent: 'center' },
+
+  // ── Picker rows ──
   pickerRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 12, paddingHorizontal: 12,
-    borderRadius: 16, marginBottom: 8,
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    paddingVertical: 14, paddingHorizontal: 14,
+    borderRadius: 18, marginBottom: 10,
     backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
     borderWidth: 1, borderColor: colors.border,
   },
-  pickerIcon: { width: 44, height: 44, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  pickerItemTitle: { fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: 2 },
+  pickerIcon: { width: 48, height: 48, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  pickerItemTitle: { fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: 3 },
   pickerItemSub: { fontSize: 12, color: colors.textSecondary },
+
+  // ── Toggle ──
   toggle: {
-    width: 44, height: 24, borderRadius: 12,
+    width: 48, height: 26, borderRadius: 13,
     backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
-    justifyContent: 'center', paddingHorizontal: 2,
+    justifyContent: 'center', paddingHorizontal: 3,
   },
   toggleThumb: {
     width: 20, height: 20, borderRadius: 10, backgroundColor: '#fff',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 2,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.25, shadowRadius: 2, elevation: 2,
   },
   toggleThumbOn: { alignSelf: 'flex-end' },
 })
