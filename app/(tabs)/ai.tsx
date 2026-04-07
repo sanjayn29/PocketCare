@@ -391,7 +391,7 @@ export default function AIScreen() {
       lineHeight: 22,
     },
     inputWrapper: {
-      paddingBottom: Platform.OS === 'ios' ? 100 : 90,
+      paddingBottom: Platform.OS === 'ios' ? 30 : 20,
       borderTopWidth: 1,
       borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
       backgroundColor: 'transparent',
@@ -401,7 +401,7 @@ export default function AIScreen() {
       paddingHorizontal: 16,
       paddingVertical: 12,
       alignItems: 'center',
-      marginBottom: Platform.OS === 'ios' ? 80 : 70,
+      marginBottom: Platform.OS === 'ios' ? 10 : 5,
     },
     inputInnerContainer: {
       flex: 1,
