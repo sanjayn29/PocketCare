@@ -206,6 +206,120 @@ export default function FinanceScreen() {
       borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
       flexDirection: 'row', justifyContent: 'space-between' 
     },
+    txCard: {
+      backgroundColor: colors.card,
+      borderRadius: 20,
+      marginBottom: 14,
+      flexDirection: 'row',
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.12,
+      shadowRadius: 12,
+      elevation: 5,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      overflow: 'hidden',
+    },
+    txCardSynthetic: {
+      borderLeftWidth: 3,
+      borderLeftColor: isDark ? 'rgba(148,163,184,0.6)' : 'rgba(100,116,139,0.6)',
+    },
+    txCardContent: {
+      flex: 1,
+      padding: 16,
+    },
+    txCardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8,
+      gap: 8,
+    },
+    txTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.text,
+      flex: 1,
+    },
+    txAmount: {
+      fontSize: 16,
+      fontWeight: '900',
+      letterSpacing: -0.2,
+    },
+    txNote: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      lineHeight: 19,
+      marginBottom: 10,
+    },
+    txMetaPanel: {
+      marginTop: 2,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      backgroundColor: `rgba(${isDark ? '255, 255, 255' : '0, 0, 0'}, ${isDark ? 0.05 : 0.02})`,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      gap: 8,
+    },
+    txMetaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    txMetaText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: '600',
+      flex: 1,
+    },
+    txActionRail: {
+      padding: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 10,
+      borderLeftWidth: 1.5,
+      borderLeftColor: colors.border,
+      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.01)',
+    },
+    txActionButton: {
+      width: 38,
+      height: 38,
+      borderRadius: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.06,
+      shadowRadius: 3,
+      elevation: 1,
+    },
+    txEditCard: {
+      backgroundColor: colors.card,
+      borderRadius: 18,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      padding: 16,
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    txDateButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : '#FFFFFF',
+      borderRadius: 16,
+      paddingHorizontal: 16,
+      paddingVertical: 13,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
 
     input: { 
       backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : '#FFFFFF', 
@@ -958,33 +1072,54 @@ export default function FinanceScreen() {
       renderItem={({item}) => {
         const isSynthetic = item.id.startsWith('debt_');
         return (
-          <View style={[dynamicStyles.card, isSynthetic && {borderLeftWidth: 4, borderLeftColor: item.type==='income'?'#10B981':'#EF4444'}]}>
-            <View style={{flex:1}}>
-              <Text style={{fontSize:16, fontWeight:'700', color: colors.text}}>
-                {item.category} {isSynthetic && ' (Auto)'}
-              </Text>
-              {item.note ? <Text style={{fontSize:13, color: colors.text, marginTop:2}}>{item.note}</Text> : null}
-              <Text style={{fontSize:12, color: colors.text, marginTop:4, opacity: 0.6}}>{item.date}</Text>
-            </View>
-            <View style={{alignItems:'flex-end'}}>
-              <Text style={{fontSize:16, fontWeight:'800', color: item.type==='income'?'#10B981':'#EF4444'}}>
-                {item.type === 'income' ? '+' : '-'}{formatINR(Number(item.amount))}
-              </Text>
-              {!isSynthetic && (
-                <View style={{flexDirection: 'row', gap: 12, marginTop: 8}}>
-                  <TouchableOpacity onPress={()=> openEditTx(item)}>
-                    <Ionicons name="pencil-outline" size={18} color={colors.textSecondary}/>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={()=> {
+          <View style={[dynamicStyles.txCard, isSynthetic && dynamicStyles.txCardSynthetic]}>
+            <TouchableOpacity
+              style={dynamicStyles.txCardContent}
+              onPress={() => !isSynthetic ? openEditTx(item) : undefined}
+              activeOpacity={!isSynthetic ? 0.7 : 1}
+            >
+              <View style={dynamicStyles.txCardHeader}>
+                <Text style={dynamicStyles.txTitle} numberOfLines={1}>
+                  {item.category}
+                </Text>
+                <Text style={[dynamicStyles.txAmount, { color: item.type === 'income' ? '#10B981' : '#EF4444' }]}>
+                  {item.type === 'income' ? '+' : '-'}{formatINR(Number(item.amount))}
+                </Text>
+              </View>
+
+              {item.note ? <Text style={dynamicStyles.txNote} numberOfLines={2}>{item.note}</Text> : null}
+
+              <View style={dynamicStyles.txMetaPanel}>
+                <View style={dynamicStyles.txMetaRow}>
+                  <Ionicons name="calendar-outline" size={12} color={colors.textSecondary} />
+                  <Text style={dynamicStyles.txMetaText}>{item.date}</Text>
+                </View>
+                <View style={dynamicStyles.txMetaRow}>
+                  <Ionicons name={item.type === 'income' ? 'arrow-down-outline' : 'arrow-up-outline'} size={12} color={item.type === 'income' ? '#10B981' : '#EF4444'} />
+                  <Text style={dynamicStyles.txMetaText}>
+                    {item.type === 'income' ? 'Income' : 'Expense'} {isSynthetic ? '· Auto Entry' : '· Manual'}
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+
+            {!isSynthetic && (
+              <View style={dynamicStyles.txActionRail}>
+                <TouchableOpacity onPress={() => openEditTx(item)} style={dynamicStyles.txActionButton}>
+                  <Ionicons name="pencil-outline" size={18} color={colors.primary}/>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
                     Alert.alert('Delete', 'Delete transaction?', [
                       {text:'Cancel'}, {text:'Delete', style:'destructive', onPress:() => { deleteTransaction(email!, item.id); loadData(); }}
                     ]);
-                  }}>
-                    <Ionicons name="trash-outline" size={18} color="#EF4444"/>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
+                  }}
+                  style={dynamicStyles.txActionButton}
+                >
+                  <Ionicons name="trash-outline" size={18} color="#EF4444"/>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         );
       }}
@@ -1239,27 +1374,36 @@ export default function FinanceScreen() {
 
       {/* ── Edit Tx Modal ── */}
       <Modal visible={editingTx !== null} animationType="slide" presentationStyle="pageSheet">
-        <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={{flex:1}}>
+        <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={{flex:1, backgroundColor: colors.background}}>
           <View style={dynamicStyles.modalHeader}>
-            <TouchableOpacity onPress={()=>setEditingTx(null)}><Text style={{fontSize:16, color:'#64748B'}}>Cancel</Text></TouchableOpacity>
-            <Text style={{fontSize:18, fontWeight:'700'}}>Edit Transaction</Text>
-            <TouchableOpacity onPress={handleUpdateTx}><Text style={{fontSize:16, fontWeight:'700', color:'#3B82F6'}}>Save</Text></TouchableOpacity>
+            <TouchableOpacity onPress={()=>setEditingTx(null)}><Text style={{fontSize:16, color: colors.textSecondary}}>Cancel</Text></TouchableOpacity>
+            <Text style={{fontSize:18, fontWeight:'700', color: colors.text}}>Edit Transaction</Text>
+            <TouchableOpacity onPress={handleUpdateTx}><Text style={{fontSize:16, fontWeight:'700', color: uiColors.transactions}}>Save</Text></TouchableOpacity>
           </View>
-          <ScrollView style={{padding:20}}>
-            <View style={dynamicStyles.segmentBlock}>
-              <TouchableOpacity style={[dynamicStyles.segmentBtn, txEType==='income' && {backgroundColor:'#10B981'}]} onPress={()=>setTxEType('income')}>
-                <Text style={[dynamicStyles.segmentText, txEType==='income' && {color:'#FFF'}]}>Income</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[dynamicStyles.segmentBtn, txEType==='expense' && {backgroundColor:'#EF4444'}]} onPress={()=>setTxEType('expense')}>
-                <Text style={[dynamicStyles.segmentText, txEType==='expense' && {color:'#FFF'}]}>Expense</Text>
+          <ScrollView contentContainerStyle={{padding:20, paddingBottom: 40}}>
+            <View style={dynamicStyles.txEditCard}>
+              <Text style={dynamicStyles.selectorLabel}>Transaction Type</Text>
+              <View style={[dynamicStyles.segmentBlock, { marginBottom: 14 }]}>
+                <TouchableOpacity style={[dynamicStyles.segmentBtn, txEType==='income' && {backgroundColor:'#10B981'}]} onPress={()=>setTxEType('income')}>
+                  <Text style={[dynamicStyles.segmentText, txEType==='income' && {color:'#FFF'}]}>Income</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[dynamicStyles.segmentBtn, txEType==='expense' && {backgroundColor:'#EF4444'}]} onPress={()=>setTxEType('expense')}>
+                  <Text style={[dynamicStyles.segmentText, txEType==='expense' && {color:'#FFF'}]}>Expense</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={dynamicStyles.selectorLabel}>Amount</Text>
+              <TextInput style={dynamicStyles.input} placeholder="Amount" keyboardType="numeric" value={txEAmount} onChangeText={setTxEAmount} placeholderTextColor={colors.textSecondary} />
+              <Text style={dynamicStyles.selectorLabel}>Category</Text>
+              <TextInput style={dynamicStyles.input} placeholder="Category" value={txECategory} onChangeText={setTxECategory} placeholderTextColor={colors.textSecondary} />
+              <Text style={dynamicStyles.selectorLabel}>Note</Text>
+              <TextInput style={dynamicStyles.input} placeholder="Note (Optional)" value={txENote} onChangeText={setTxENote} placeholderTextColor={colors.textSecondary} />
+              <Text style={dynamicStyles.selectorLabel}>Date</Text>
+              <TouchableOpacity style={dynamicStyles.txDateButton} onPress={()=>setShowDatePicker('txEDate')}>
+                <Ionicons name="calendar-outline" size={16} color={uiColors.transactions} />
+                <Text style={{color: colors.text, fontWeight: '600'}}>{txEDate}</Text>
               </TouchableOpacity>
             </View>
-            <TextInput style={dynamicStyles.input} placeholder="Amount" keyboardType="numeric" value={txEAmount} onChangeText={setTxEAmount} placeholderTextColor={colors.textSecondary} />
-            <TextInput style={dynamicStyles.input} placeholder="Category" value={txECategory} onChangeText={setTxECategory} placeholderTextColor={colors.textSecondary} />
-            <TextInput style={dynamicStyles.input} placeholder="Note (Optional)" value={txENote} onChangeText={setTxENote} placeholderTextColor={colors.textSecondary} />
-            <TouchableOpacity style={dynamicStyles.input} onPress={()=>setShowDatePicker('txEDate')}>
-              <Text style={{color: colors.text}}>{txEDate}</Text>
-            </TouchableOpacity>
           </ScrollView>
         </KeyboardAvoidingView>
       </Modal>
