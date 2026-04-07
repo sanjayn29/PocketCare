@@ -11,29 +11,32 @@ import { getScheduleEvents } from '@/lib/schedule-service'
 import { getStreakData } from '@/lib/streak-service'
 import { getTasks } from '@/lib/tasks-service'
 import {
-    ALL_WIDGETS,
-    WidgetConfig,
-    WidgetId,
-    getWidgetConfig,
-    saveWidgetConfig,
+  ALL_WIDGETS,
+  WidgetConfig,
+  WidgetId,
+  getWidgetConfig,
+  saveWidgetConfig,
 } from '@/lib/widget-service'
 import { useUser } from '@clerk/expo'
 import { Ionicons } from '@expo/vector-icons'
 import LottieView from 'lottie-react-native'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
-    Animated,
-    Modal,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  Animated,
+  Modal,
+  RefreshControl,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useRouter } from 'expo-router'
 
+// ─── Types ───────────────────────────────────────────────────────────────────
 interface HomeData {
   streak: number
   maxStreak: number
@@ -41,17 +44,21 @@ interface HomeData {
   expenses: number
   pendingTasks: number
   totalTasks: number
+  completedTasks: number
+  highPriorityTasks: number
   activeGoals: { title: string; pct: number; color: string }[]
   nextEvent: { title: string; date: string; time: string } | null
   fitnessToday: { name: string; done: boolean } | null
   placementLatest: { company: string; status: string } | null
-  latestNote: { title: string; content: string } | null
+  placementCounts: { applied: number; interview: number; offer: number }
+  latestNote: { title: string; content: string; created_at: string } | null
   totalGoals: number
   completedGoals: number
+  overdueTasksCount: number
 }
 
-// Animated number hook
-function useAnimatedNumber(target: number, duration = 800) {
+// ─── Animated number hook ────────────────────────────────────────────────────
+function useAnimatedNumber(target: number, duration = 900) {
   const anim = useRef(new Animated.Value(0)).current
   const [display, setDisplay] = useState(0)
   useEffect(() => {
@@ -62,21 +69,74 @@ function useAnimatedNumber(target: number, duration = 800) {
   return display
 }
 
-// Mini bar chart
-const MiniBar = ({ value, max, color, isDark }: { value: number; max: number; color: string; isDark: boolean }) => {
-  const w = useRef(new Animated.Value(0)).current
-  useEffect(() => {
-    Animated.timing(w, { toValue: max > 0 ? (value / max) * 100 : 0, duration: 900, useNativeDriver: false }).start()
-  }, [value, max])
+// ─── Progress ring (simple arc using View) ───────────────────────────────────
+const ProgressRing = ({ pct, color, size = 56 }: { pct: number; color: string; size?: number }) => {
+  const strokeW = 5
   return (
-    <View style={{ height: 7, borderRadius: 4, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)', overflow: 'hidden' }}>
-      <Animated.View style={{ height: 7, borderRadius: 4, backgroundColor: color, width: w.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }) }} />
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{
+        width: size, height: size, borderRadius: size / 2,
+        borderWidth: strokeW, borderColor: color + '25',
+        position: 'absolute',
+      }} />
+      <View style={{
+        width: size, height: size, borderRadius: size / 2,
+        borderWidth: strokeW,
+        borderColor: color,
+        borderTopColor: pct < 25 ? color + '25' : color,
+        borderRightColor: pct < 50 ? color + '25' : color,
+        borderBottomColor: pct < 75 ? color + '25' : color,
+        position: 'absolute',
+        transform: [{ rotate: '-45deg' }],
+      }} />
+      <Text style={{ fontSize: 11, fontWeight: '800', color }}>{pct}%</Text>
     </View>
   )
 }
 
+// ─── Animated bar ────────────────────────────────────────────────────────────
+const MiniBar = ({ value, max, color, isDark, height = 7 }: {
+  value: number; max: number; color: string; isDark: boolean; height?: number
+}) => {
+  const w = useRef(new Animated.Value(0)).current
+  useEffect(() => {
+    Animated.timing(w, { toValue: max > 0 ? (value / max) * 100 : 0, duration: 1000, useNativeDriver: false }).start()
+  }, [value, max])
+  return (
+    <View style={{ height, borderRadius: height / 2, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)', overflow: 'hidden' }}>
+      <Animated.View style={{
+        height, borderRadius: height / 2, backgroundColor: color,
+        width: w.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }),
+      }} />
+    </View>
+  )
+}
+
+// ─── Chip ─────────────────────────────────────────────────────────────────────
+const Chip = ({ icon, label, color }: { icon: string; label: string; color: string }) => (
+  <View style={{
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    borderRadius: 8, paddingVertical: 4, paddingHorizontal: 8,
+    backgroundColor: color + '18', borderWidth: 1, borderColor: color + '35',
+    alignSelf: 'flex-start',
+  }}>
+    <Ionicons name={icon as any} size={11} color={color} />
+    <Text style={{ fontSize: 11, fontWeight: '700', color }}>{label}</Text>
+  </View>
+)
+
+// ─── Stat block ───────────────────────────────────────────────────────────────
+const StatBlock = ({ label, value, color, small }: { label: string; value: string; color: string; small?: boolean }) => (
+  <View style={{ alignItems: 'center', flex: 1 }}>
+    <Text style={{ fontSize: small ? 16 : 22, fontWeight: '900', color, letterSpacing: -0.5 }}>{value}</Text>
+    <Text style={{ fontSize: 10, color: '#9CA3AF', fontWeight: '600', marginTop: 2, textAlign: 'center' }}>{label}</Text>
+  </View>
+)
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const { user } = useUser()
+  const router = useRouter()
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const colors = getColors(isDark)
@@ -85,20 +145,24 @@ export default function HomeScreen() {
 
   const [data, setData] = useState<HomeData>({
     streak: 0, maxStreak: 0, income: 0, expenses: 0,
-    pendingTasks: 0, totalTasks: 0, activeGoals: [],
-    nextEvent: null, fitnessToday: null, placementLatest: null, latestNote: null,
-    totalGoals: 0, completedGoals: 0,
+    pendingTasks: 0, totalTasks: 0, completedTasks: 0, highPriorityTasks: 0,
+    activeGoals: [], nextEvent: null, fitnessToday: null,
+    placementLatest: null, placementCounts: { applied: 0, interview: 0, offer: 0 },
+    latestNote: null, totalGoals: 0, completedGoals: 0, overdueTasksCount: 0,
   })
   const [widgets, setWidgets] = useState<WidgetConfig[]>([])
   const [showPicker, setShowPicker] = useState(false)
   const [editMode, setEditMode] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const pickerSlide = useRef(new Animated.Value(700)).current
   const pickerFade = useRef(new Animated.Value(0)).current
 
-  // Animated numbers
-  const animStreak = useAnimatedNumber(data.streak)
+  // Card entrance animations
+  const cardAnims = useRef(Array.from({ length: 12 }, () => new Animated.Value(0))).current
+
   const animIncome = useAnimatedNumber(data.income)
   const animExpenses = useAnimatedNumber(data.expenses)
+  const animStreak = useAnimatedNumber(data.streak)
   const animTasks = useAnimatedNumber(data.pendingTasks)
 
   useEffect(() => {
@@ -110,6 +174,13 @@ export default function HomeScreen() {
   }, [user, email])
 
   useEffect(() => { getWidgetConfig().then(setWidgets) }, [])
+
+  const runCardAnimations = () => {
+    cardAnims.forEach(a => a.setValue(0))
+    Animated.stagger(70, cardAnims.map(a =>
+      Animated.spring(a, { toValue: 1, useNativeDriver: true, tension: 80, friction: 10 })
+    )).start()
+  }
 
   const loadData = useCallback(async () => {
     if (!email) return
@@ -123,7 +194,13 @@ export default function HomeScreen() {
 
       const income = (finData.transactions || []).filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
       const expenses = (finData.transactions || []).filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
-      const pendingTasks = tasks.filter(t => t.status === 'pending' && t.due_date === today).length
+
+      const todayTasks = tasks.filter(t => t.due_date === today)
+      const pendingTasks = todayTasks.filter(t => t.status === 'pending').length
+      const completedTasks = todayTasks.filter(t => t.status !== 'pending').length
+      const highPriorityTasks = todayTasks.filter(t => t.priority === 'high' && t.status === 'pending').length
+      const overdueTasksCount = tasks.filter(t => t.due_date < today && t.status === 'pending').length
+
       const goalColors = ['#8B5CF6', '#3B82F6', '#EC4899', '#F97316']
       const activeGoals = goals.filter(g => g.status === 'active').slice(0, 3)
         .map((g, i) => ({ title: g.title, pct: Math.min(100, Math.round((g.current_value / Math.max(g.target_value, 1)) * 100)), color: goalColors[i % goalColors.length] }))
@@ -134,22 +211,35 @@ export default function HomeScreen() {
       const todayFitness = healthData.fitness.find(f => f.start_date <= today && f.end_date >= today)
       const fitnessToday = todayFitness ? { name: todayFitness.name, done: todayFitness.completed_dates.includes(today) } : null
 
-      const latestP = placements.sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
-      const placementLatest = latestP ? { company: latestP.company_name, status: latestP.status } : null
+      const sortedP = [...(placements || [])].sort((a, b) => b.created_at.localeCompare(a.created_at))
+      const placementLatest = sortedP[0] ? { company: sortedP[0].company_name, status: sortedP[0].status } : null
+      const placementCounts = {
+        applied: placements.filter(p => p.status === 'applied').length,
+        interview: placements.filter(p => p.status === 'interview').length,
+        offer: placements.filter(p => p.status === 'offer').length,
+      }
 
       const sortedNotes = [...(notes || [])].sort((a, b) => b.created_at.localeCompare(a.created_at))
-      const latestNote = sortedNotes[0] ? { title: sortedNotes[0].title, content: sortedNotes[0].content?.slice(0, 80) || '' } : null
+      const latestNote = sortedNotes[0]
+        ? { title: sortedNotes[0].title, content: sortedNotes[0].content?.slice(0, 100) || '', created_at: sortedNotes[0].created_at }
+        : null
 
       setData({
         streak: streakData.currentStreak, maxStreak: streakData.maxStreak,
-        income, expenses, pendingTasks, totalTasks: tasks.filter(t => t.due_date === today).length,
-        activeGoals, nextEvent, fitnessToday, placementLatest, latestNote,
-        totalGoals: goals.length, completedGoals: goals.filter(g => g.status === 'achieved').length,
+        income, expenses, pendingTasks, totalTasks: todayTasks.length,
+        completedTasks, highPriorityTasks, overdueTasksCount,
+        activeGoals, nextEvent, fitnessToday, placementLatest, placementCounts,
+        latestNote, totalGoals: goals.length,
+        completedGoals: goals.filter(g => g.status === 'achieved').length,
       })
+      runCardAnimations()
     } catch (e) { console.error(e) }
+    finally { setRefreshing(false) }
   }, [email])
 
   useEffect(() => { if (email) loadData() }, [email, loadData])
+
+  const onRefresh = () => { setRefreshing(true); loadData() }
 
   const openPicker = () => {
     setShowPicker(true)
@@ -176,219 +266,376 @@ export default function HomeScreen() {
     setWidgets(updated); saveWidgetConfig(updated)
   }
 
+  const getEventDaysLeft = (dateStr: string) => {
+    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const target = new Date(dateStr); target.setHours(0, 0, 0, 0)
+    return Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  }
+
+  const formatCurrency = (n: number) => n >= 1000 ? `₹${(n / 1000).toFixed(1)}k` : `₹${n.toLocaleString()}`
+
   const s = getStyles(colors, isDark)
 
-  // ── Widget content renderer ─────────────────────────────────────────────────
+  // ── Widget Routes ──────────────────────────────────────────────────────────
+  const widgetRoutes: Partial<Record<WidgetId, string>> = {
+    finance_summary: '/(tabs)/finance',
+    tasks_today: '/(tabs)/tasks',
+    goals_progress: '/(tabs)/goals',
+    next_event: '/(tabs)/schedule',
+    fitness_today: '/(tabs)/health',
+    placement_status: '/(tabs)/placement',
+    notes_quick: '/(tabs)/notes',
+    ai_tip: '/(tabs)/ai',
+    streak: '/(tabs)/profile',
+    greeting: '/(tabs)/profile',
+  }
+
+  // ── Widget Bodies ─────────────────────────────────────────────────────────
   const renderWidget = (id: WidgetId, color: string) => {
+    const net = data.income - data.expenses
+
     switch (id) {
 
+      // ── GREETING ─────────────────────────────────────────────────────────
       case 'greeting':
+        const initials = (user?.firstName?.[0] || 'U').toUpperCase()
+        const hour = new Date().getHours()
+        const timeLabel = hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : hour < 21 ? 'Evening' : 'Night'
         return (
           <View>
-            <Text style={s.wHeadline} numberOfLines={2}>{greeting.message}</Text>
-            <View style={[s.wDividerH, { backgroundColor: color + '40', marginVertical: 10 }]} />
-            <Text style={s.wBodyText} numberOfLines={2}>{greeting.motivational}</Text>
-            <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
-              <View style={[s.chip, { backgroundColor: color + '20', borderColor: color + '40' }]}>
-                <Ionicons name="time-outline" size={11} color={color} />
-                <Text style={[s.chipText, { color }]}>{new Date().toLocaleDateString('en-IN', { weekday: 'long' })}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View style={{
+                width: 48, height: 48, borderRadius: 24, backgroundColor: color + '25',
+                borderWidth: 2, borderColor: color + '50', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Text style={{ fontSize: 20, fontWeight: '900', color }}>{initials}</Text>
               </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 18, fontWeight: '800', color: colors.text, letterSpacing: -0.3 }} numberOfLines={1}>
+                  {greeting.message}
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                  {greeting.motivational}
+                </Text>
+              </View>
+              <Text style={{ fontSize: 28 }}>{greeting.emoji}</Text>
             </View>
-          </View>
-        )
 
-      case 'streak':
-        return (
-          <View>
-            <View style={s.wStatRow}>
-              <View style={s.wStatBlock}>
-                <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 2 }}>
-                  <Text style={[s.wBigNum, { color }]}>{animStreak}</Text>
-                  <Text style={[s.wUnit, { color }]}>days</Text>
-                </View>
-                <Text style={s.wStatLabel}>Current Streak</Text>
-              </View>
-              <View style={[s.wVertDiv, { backgroundColor: color + '30' }]} />
-              <View style={s.wStatBlock}>
-                <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 2 }}>
-                  <Text style={[s.wBigNum, { color: colors.text }]}>{data.maxStreak}</Text>
-                  <Text style={s.wUnit}>days</Text>
-                </View>
-                <Text style={s.wStatLabel}>Best Streak</Text>
-              </View>
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 14 }}>
+              <Chip icon="time-outline" label={timeLabel} color={color} />
+              <Chip icon="calendar-outline" label={new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })} color={color} />
             </View>
-            <View style={{ marginTop: 10 }}>
-              <MiniBar value={data.streak} max={Math.max(data.maxStreak, 1)} color={color} isDark={isDark} />
-              <Text style={[s.wCaption, { marginTop: 5 }]}>{data.streak > 0 ? `${Math.round((data.streak / Math.max(data.maxStreak, 1)) * 100)}% of your best` : 'Start your streak today!'}</Text>
-            </View>
-          </View>
-        )
 
-      case 'finance_summary':
-        const net = data.income - data.expenses
-        return (
-          <View>
-            <View style={s.wStatRow}>
-              <View style={s.wStatBlock}>
-                <Text style={[s.wBigNum, { color: '#22C55E', fontSize: 20 }]}>₹{animIncome.toLocaleString()}</Text>
-                <Text style={s.wStatLabel}>Income</Text>
-              </View>
-              <View style={[s.wVertDiv, { backgroundColor: '#ffffff20' }]} />
-              <View style={s.wStatBlock}>
-                <Text style={[s.wBigNum, { color: '#EF4444', fontSize: 20 }]}>₹{animExpenses.toLocaleString()}</Text>
-                <Text style={s.wStatLabel}>Expense</Text>
-              </View>
-            </View>
-            <View style={[s.wDividerH, { backgroundColor: color + '30', marginVertical: 10 }]} />
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={s.wBodyText}>Net Balance</Text>
-              <View style={[s.chip, { backgroundColor: (net >= 0 ? '#22C55E' : '#EF4444') + '20', borderColor: (net >= 0 ? '#22C55E' : '#EF4444') + '40' }]}>
-                <Ionicons name={net >= 0 ? 'trending-up' : 'trending-down'} size={12} color={net >= 0 ? '#22C55E' : '#EF4444'} />
-                <Text style={[s.chipText, { color: net >= 0 ? '#22C55E' : '#EF4444', fontWeight: '800' }]}>₹{Math.abs(net).toLocaleString()}</Text>
-              </View>
-            </View>
-            <MiniBar value={data.expenses} max={Math.max(data.income, 1)} color="#EF4444" isDark={isDark} />
-            <Text style={[s.wCaption, { marginTop: 4 }]}>
-              {data.income > 0 ? `${Math.round((data.expenses / data.income) * 100)}% spent of income` : 'No income tracked'}
-            </Text>
-          </View>
-        )
-
-      case 'tasks_today':
-        const done = data.totalTasks - data.pendingTasks
-        return (
-          <View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <View>
-                <Text style={[s.wBigNum, { color }]}>{animTasks}</Text>
-                <Text style={s.wStatLabel}>Tasks due today</Text>
-              </View>
-              <View style={{ alignItems: 'center' }}>
-                <Text style={[s.wBigNum, { color: '#22C55E', fontSize: 20 }]}>{done}</Text>
-                <Text style={s.wStatLabel}>Done</Text>
-              </View>
-            </View>
-            <View style={{ marginTop: 10 }}>
-              <MiniBar value={done} max={Math.max(data.totalTasks, 1)} color="#22C55E" isDark={isDark} />
-              <Text style={[s.wCaption, { marginTop: 5 }]}>
-                {data.totalTasks > 0 ? `${done}/${data.totalTasks} completed` : 'No tasks due today'}
+            <View style={{ marginTop: 14, padding: 10, borderRadius: 12, backgroundColor: color + '12', borderWidth: 1, borderColor: color + '25' }}>
+              <Text style={{ fontSize: 12, color: colors.textSecondary, fontStyle: 'italic', textAlign: 'center' }}>
+                "{greeting.motivational}"
               </Text>
             </View>
           </View>
         )
 
-      case 'goals_progress':
-        return data.activeGoals.length === 0 ? (
-          <View style={{ alignItems: 'center', paddingVertical: 8 }}>
-            <Ionicons name="trophy-outline" size={28} color={colors.border} />
-            <Text style={[s.wBodyText, { marginTop: 6, textAlign: 'center' }]}>No active goals</Text>
-          </View>
-        ) : (
-          <View style={{ gap: 12 }}>
-            {data.activeGoals.map((g, i) => (
-              <View key={i}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <Text style={s.wBodyText} numberOfLines={1}>{g.title}</Text>
-                  <Text style={[s.wCaption, { fontWeight: '700', color: g.color }]}>{g.pct}%</Text>
+      // ── STREAK ──────────────────────────────────────────────────────────
+      case 'streak':
+        const streakPct = data.maxStreak > 0 ? Math.round((data.streak / data.maxStreak) * 100) : 0
+        const milestones = [7, 14, 30, 60, 100]
+        const nextMilestone = milestones.find(m => m > data.streak) || 100
+        const daysToMilestone = nextMilestone - data.streak
+        return (
+          <View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+              <ProgressRing pct={streakPct} color={color} size={64} />
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 3 }}>
+                  <Text style={{ fontSize: 36, fontWeight: '900', color, letterSpacing: -2 }}>{animStreak}</Text>
+                  <Text style={{ fontSize: 14, color: colors.textSecondary, marginBottom: 6, fontWeight: '700' }}>days</Text>
                 </View>
-                <MiniBar value={g.pct} max={100} color={g.color} isDark={isDark} />
+                <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>Current Streak</Text>
               </View>
-            ))}
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              <View style={[s.chip, { backgroundColor: color + '20', borderColor: color + '40' }]}>
-                <Ionicons name="checkmark-circle" size={11} color={color} />
-                <Text style={[s.chipText, { color }]}>{data.completedGoals} achieved</Text>
+              <View style={{ alignItems: 'center' }}>
+                <Text style={{ fontSize: 22, fontWeight: '900', color: colors.text }}>{data.maxStreak}</Text>
+                <Text style={{ fontSize: 10, color: colors.textSecondary, fontWeight: '600' }}>Best</Text>
               </View>
-              <View style={[s.chip, { backgroundColor: color + '20', borderColor: color + '40' }]}>
-                <Ionicons name="ellipse-outline" size={11} color={color} />
-                <Text style={[s.chipText, { color }]}>{data.totalGoals} total</Text>
-              </View>
+            </View>
+
+            <MiniBar value={data.streak} max={Math.max(data.maxStreak, 1)} color={color} isDark={isDark} height={8} />
+
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+              <Chip icon="flame" label={`${data.streak} day${data.streak !== 1 ? 's' : ''} strong`} color={color} />
+              <Chip icon="flag-outline" label={`${daysToMilestone}d to ${nextMilestone}`} color="#9CA3AF" />
             </View>
           </View>
         )
 
+      // ── FINANCE ─────────────────────────────────────────────────────────
+      case 'finance_summary':
+        const savingsRate = data.income > 0 ? Math.max(0, Math.round(((data.income - data.expenses) / data.income) * 100)) : 0
+        const spentPct = data.income > 0 ? Math.min(100, Math.round((data.expenses / data.income) * 100)) : 0
+        return (
+          <View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+              <ProgressRing pct={spentPct} color={spentPct > 80 ? '#EF4444' : color} size={60} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>Net Balance</Text>
+                <Text style={{ fontSize: 26, fontWeight: '900', color: net >= 0 ? '#22C55E' : '#EF4444', letterSpacing: -1 }}>
+                  {net >= 0 ? '+' : ''}{formatCurrency(Math.abs(net))}
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
+                  {savingsRate}% savings rate
+                </Text>
+              </View>
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 1, marginBottom: 10 }}>
+              <View style={{ flex: 1, alignItems: 'center', padding: 10, backgroundColor: '#22C55E12', borderRadius: 10, borderWidth: 1, borderColor: '#22C55E25' }}>
+                <Text style={{ fontSize: 15, fontWeight: '900', color: '#22C55E' }}>{formatCurrency(animIncome)}</Text>
+                <Text style={{ fontSize: 10, color: colors.textSecondary, marginTop: 2, fontWeight: '600' }}>Income</Text>
+              </View>
+              <View style={{ width: 8 }} />
+              <View style={{ flex: 1, alignItems: 'center', padding: 10, backgroundColor: '#EF444412', borderRadius: 10, borderWidth: 1, borderColor: '#EF444425' }}>
+                <Text style={{ fontSize: 15, fontWeight: '900', color: '#EF4444' }}>{formatCurrency(animExpenses)}</Text>
+                <Text style={{ fontSize: 10, color: colors.textSecondary, marginTop: 2, fontWeight: '600' }}>Expenses</Text>
+              </View>
+            </View>
+
+            <MiniBar value={data.expenses} max={Math.max(data.income, 1)} color={spentPct > 80 ? '#EF4444' : color} isDark={isDark} height={6} />
+            <Text style={{ fontSize: 10, color: colors.textSecondary, marginTop: 5, fontWeight: '500' }}>
+              {spentPct}% spent of total income
+            </Text>
+          </View>
+        )
+
+      // ── TASKS ──────────────────────────────────────────────────────────
+      case 'tasks_today':
+        const taskDone = data.totalTasks - data.pendingTasks
+        const taskPct = data.totalTasks > 0 ? Math.round((taskDone / data.totalTasks) * 100) : 0
+        return (
+          <View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+              <ProgressRing pct={taskPct} color={taskPct === 100 ? '#22C55E' : color} size={60} />
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 3 }}>
+                  <Text style={{ fontSize: 30, fontWeight: '900', color: taskPct === 100 ? '#22C55E' : color, letterSpacing: -1 }}>{animTasks}</Text>
+                  <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 4 }}>pending</Text>
+                </View>
+                <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '600' }}>
+                  {taskDone} of {data.totalTasks} done today
+                </Text>
+              </View>
+            </View>
+
+            <MiniBar value={taskDone} max={Math.max(data.totalTasks, 1)} color={taskPct === 100 ? '#22C55E' : color} isDark={isDark} height={8} />
+
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 10 }}>
+              {data.highPriorityTasks > 0 && (
+                <Chip icon="alert-circle" label={`${data.highPriorityTasks} high priority`} color="#EF4444" />
+              )}
+              {data.overdueTasksCount > 0 && (
+                <Chip icon="time" label={`${data.overdueTasksCount} overdue`} color="#F97316" />
+              )}
+              {data.highPriorityTasks === 0 && data.overdueTasksCount === 0 && (
+                <Chip icon={taskPct === 100 ? 'checkmark-circle' : 'checkmark-circle-outline'} label={taskPct === 100 ? 'All done!' : 'On track'} color={color} />
+              )}
+            </View>
+          </View>
+        )
+
+      // ── GOALS ──────────────────────────────────────────────────────────
+      case 'goals_progress':
+        return (
+          <View>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <View>
+                <Text style={{ fontSize: 22, fontWeight: '900', color, letterSpacing: -0.5 }}>{data.activeGoals.length}</Text>
+                <Text style={{ fontSize: 10, color: colors.textSecondary, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 }}>Active Goals</Text>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <View style={{ alignItems: 'center', padding: 8, backgroundColor: '#22C55E12', borderRadius: 10, minWidth: 44 }}>
+                  <Text style={{ fontSize: 16, fontWeight: '900', color: '#22C55E' }}>{data.completedGoals}</Text>
+                  <Text style={{ fontSize: 9, color: colors.textSecondary, fontWeight: '600' }}>Done</Text>
+                </View>
+                <View style={{ alignItems: 'center', padding: 8, backgroundColor: color + '15', borderRadius: 10, minWidth: 44 }}>
+                  <Text style={{ fontSize: 16, fontWeight: '900', color }}>{data.totalGoals}</Text>
+                  <Text style={{ fontSize: 9, color: colors.textSecondary, fontWeight: '600' }}>Total</Text>
+                </View>
+              </View>
+            </View>
+
+            {data.activeGoals.length > 0 ? (
+              <View style={{ gap: 10 }}>
+                {data.activeGoals.map((g, i) => (
+                  <View key={i}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text, flex: 1 }} numberOfLines={1}>{g.title}</Text>
+                      <Text style={{ fontSize: 12, fontWeight: '800', color: g.color, marginLeft: 8 }}>{g.pct}%</Text>
+                    </View>
+                    <MiniBar value={g.pct} max={100} color={g.color} isDark={isDark} height={6} />
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <View style={{ alignItems: 'center', paddingVertical: 10 }}>
+                <Ionicons name="trophy-outline" size={28} color={colors.border} />
+                <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 6 }}>No active goals</Text>
+              </View>
+            )}
+          </View>
+        )
+
+      // ── NEXT EVENT ────────────────────────────────────────────────────
       case 'next_event':
-        return data.nextEvent ? (
-          <View>
-            <Text style={s.wHeadline} numberOfLines={1}>{data.nextEvent.title}</Text>
-            <View style={{ flexDirection: 'row', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-              <View style={[s.chip, { backgroundColor: color + '20', borderColor: color + '40' }]}>
-                <Ionicons name="calendar-outline" size={11} color={color} />
-                <Text style={[s.chipText, { color }]}>{data.nextEvent.date}</Text>
-              </View>
-              <View style={[s.chip, { backgroundColor: color + '20', borderColor: color + '40' }]}>
-                <Ionicons name="time-outline" size={11} color={color} />
-                <Text style={[s.chipText, { color }]}>{data.nextEvent.time}</Text>
-              </View>
+        if (!data.nextEvent) return (
+          <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+            <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: color + '18', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+              <Ionicons name="calendar-outline" size={24} color={color} />
             </View>
+            <Text style={{ fontSize: 14, color: colors.textSecondary }}>No upcoming events</Text>
+            <Text style={{ fontSize: 12, color: colors.textSecondary, opacity: 0.7, marginTop: 2 }}>Tap to add one</Text>
           </View>
-        ) : (
-          <View style={{ alignItems: 'center', paddingVertical: 8 }}>
-            <Ionicons name="calendar-outline" size={28} color={colors.border} />
-            <Text style={[s.wBodyText, { marginTop: 6 }]}>No upcoming events</Text>
+        )
+        const daysLeft = getEventDaysLeft(data.nextEvent.date)
+        const urgencyColor = daysLeft === 0 ? '#EF4444' : daysLeft <= 2 ? '#F97316' : color
+        return (
+          <View>
+            <Text style={{ fontSize: 16, fontWeight: '800', color: colors.text, letterSpacing: -0.2, marginBottom: 10 }} numberOfLines={2}>
+              {data.nextEvent.title}
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+              <Chip icon="calendar-outline" label={data.nextEvent.date} color={color} />
+              <Chip icon="time-outline" label={data.nextEvent.time || 'TBD'} color={color} />
+            </View>
+            <View style={{ marginTop: 12, padding: 10, borderRadius: 10, backgroundColor: urgencyColor + '12', borderWidth: 1, borderColor: urgencyColor + '30', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Ionicons name={daysLeft === 0 ? 'alert-circle' : 'hourglass-outline'} size={16} color={urgencyColor} />
+              <Text style={{ fontSize: 13, fontWeight: '800', color: urgencyColor }}>
+                {daysLeft === 0 ? 'Today!' : daysLeft === 1 ? 'Tomorrow' : `${daysLeft} days away`}
+              </Text>
+            </View>
           </View>
         )
 
+      // ── FITNESS ───────────────────────────────────────────────────────
       case 'fitness_today':
-        return data.fitnessToday ? (
+        if (!data.fitnessToday) return (
+          <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+            <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: color + '18', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+              <Ionicons name="barbell-outline" size={24} color={color} />
+            </View>
+            <Text style={{ fontSize: 14, color: colors.textSecondary }}>Rest day — no plan</Text>
+            <Text style={{ fontSize: 12, color: colors.textSecondary, opacity: 0.7, marginTop: 2 }}>Add a fitness plan</Text>
+          </View>
+        )
+        return (
           <View>
-            <Text style={s.wHeadline} numberOfLines={1}>{data.fitnessToday.name}</Text>
-            <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-              <View style={[s.chip, { backgroundColor: (data.fitnessToday.done ? '#22C55E' : color) + '20', borderColor: (data.fitnessToday.done ? '#22C55E' : color) + '40' }]}>
-                <Ionicons name={data.fitnessToday.done ? 'checkmark-circle' : 'ellipse-outline'} size={11} color={data.fitnessToday.done ? '#22C55E' : color} />
-                <Text style={[s.chipText, { color: data.fitnessToday.done ? '#22C55E' : color }]}>{data.fitnessToday.done ? 'Completed' : 'Pending'}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+              <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: color + '18', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="barbell-outline" size={24} color={color} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 16, fontWeight: '800', color: colors.text }} numberOfLines={1}>
+                  {data.fitnessToday.name}
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>Today's Plan</Text>
+              </View>
+            </View>
+            <View style={{
+              padding: 12, borderRadius: 12,
+              backgroundColor: (data.fitnessToday.done ? '#22C55E' : color) + '15',
+              borderWidth: 1.5, borderColor: (data.fitnessToday.done ? '#22C55E' : color) + '40',
+              flexDirection: 'row', alignItems: 'center', gap: 10,
+            }}>
+              <Ionicons
+                name={data.fitnessToday.done ? 'checkmark-circle' : 'radio-button-off-outline'}
+                size={22}
+                color={data.fitnessToday.done ? '#22C55E' : color}
+              />
+              <View>
+                <Text style={{ fontSize: 14, fontWeight: '800', color: data.fitnessToday.done ? '#22C55E' : color }}>
+                  {data.fitnessToday.done ? '✓ Completed Today!' : 'Mark as Done'}
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 1 }}>
+                  Tap Health to track
+                </Text>
               </View>
             </View>
           </View>
-        ) : (
-          <View style={{ alignItems: 'center', paddingVertical: 8 }}>
-            <Ionicons name="bed-outline" size={28} color={colors.border} />
-            <Text style={[s.wBodyText, { marginTop: 6 }]}>Rest day — no plan</Text>
-          </View>
         )
 
+      // ── PLACEMENT ────────────────────────────────────────────────────
       case 'placement_status':
         const statusColors: Record<string, string> = { offer: '#22C55E', applied: '#3B82F6', interview: '#F97316', rejected: '#EF4444' }
-        const sc = statusColors[data.placementLatest?.status || ''] || color
-        return data.placementLatest ? (
+        return (
           <View>
-            <Text style={s.wHeadline} numberOfLines={1}>{data.placementLatest.company}</Text>
-            <View style={{ marginTop: 8 }}>
-              <View style={[s.chip, { backgroundColor: sc + '20', borderColor: sc + '40' }]}>
-                <Ionicons name="briefcase-outline" size={11} color={sc} />
-                <Text style={[s.chipText, { color: sc, fontWeight: '700' }]}>{data.placementLatest.status.toUpperCase()}</Text>
+            <View style={{ flexDirection: 'row', gap: 6, marginBottom: 12 }}>
+              <StatBlock label="Applied" value={String(data.placementCounts.applied)} color="#3B82F6" />
+              <View style={{ width: 1, backgroundColor: colors.border }} />
+              <StatBlock label="Interviews" value={String(data.placementCounts.interview)} color="#F97316" />
+              <View style={{ width: 1, backgroundColor: colors.border }} />
+              <StatBlock label="Offers" value={String(data.placementCounts.offer)} color="#22C55E" />
+            </View>
+
+            {data.placementLatest ? (
+              <View style={{ padding: 12, borderRadius: 12, backgroundColor: (statusColors[data.placementLatest.status] || color) + '12', borderWidth: 1, borderColor: (statusColors[data.placementLatest.status] || color) + '30' }}>
+                <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '600', marginBottom: 4 }}>LATEST</Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 14, fontWeight: '800', color: colors.text }} numberOfLines={1}>{data.placementLatest.company}</Text>
+                  <Chip icon="briefcase-outline" label={data.placementLatest.status.toUpperCase()} color={statusColors[data.placementLatest.status] || color} />
+                </View>
+              </View>
+            ) : (
+              <View style={{ alignItems: 'center', paddingVertical: 8 }}>
+                <Text style={{ fontSize: 13, color: colors.textSecondary }}>No placements tracked yet</Text>
+              </View>
+            )}
+          </View>
+        )
+
+      // ── NOTES ────────────────────────────────────────────────────────
+      case 'notes_quick':
+        if (!data.latestNote) return (
+          <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+            <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: color + '18', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+              <Ionicons name="document-text-outline" size={24} color={color} />
+            </View>
+            <Text style={{ fontSize: 14, color: colors.textSecondary }}>No notes yet</Text>
+            <Text style={{ fontSize: 12, color: colors.textSecondary, opacity: 0.7, marginTop: 2 }}>Tap to add your first note</Text>
+          </View>
+        )
+        return (
+          <View>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
+              <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: color + '18', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="document-text" size={18} color={color} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 14, fontWeight: '800', color: colors.text }} numberOfLines={1}>{data.latestNote.title}</Text>
+                <Text style={{ fontSize: 10, color: colors.textSecondary, marginTop: 1 }}>
+                  {new Date(data.latestNote.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                </Text>
               </View>
             </View>
-          </View>
-        ) : (
-          <View style={{ alignItems: 'center', paddingVertical: 8 }}>
-            <Ionicons name="business-outline" size={28} color={colors.border} />
-            <Text style={[s.wBodyText, { marginTop: 6 }]}>No placements tracked</Text>
-          </View>
-        )
-
-      case 'notes_quick':
-        return data.latestNote ? (
-          <View>
-            <Text style={[s.wBodyText, { fontWeight: '700', color: colors.text }]} numberOfLines={1}>{data.latestNote.title}</Text>
-            <View style={[s.wDividerH, { backgroundColor: color + '30', marginVertical: 8 }]} />
-            <Text style={s.wBodyText} numberOfLines={3}>{data.latestNote.content}</Text>
-          </View>
-        ) : (
-          <View style={{ alignItems: 'center', paddingVertical: 8 }}>
-            <Ionicons name="document-text-outline" size={28} color={colors.border} />
-            <Text style={[s.wBodyText, { marginTop: 6 }]}>No notes yet</Text>
+            <View style={{ padding: 10, borderRadius: 10, backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border }}>
+              <Text style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 18 }} numberOfLines={3}>
+                {data.latestNote.content || 'No content'}
+              </Text>
+            </View>
           </View>
         )
 
+      // ── AI TIP ───────────────────────────────────────────────────────
       case 'ai_tip':
         return (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={s.wHeadline}>Ask anything</Text>
-              <Text style={s.wBodyText}>Get AI insights about your finances, health, goals & more.</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+            <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: color + '60' }}>
+              <LottieView source={require('../../assets/animations/AI.json')} autoPlay loop style={{ width: 44, height: 44 }} />
             </View>
-            <LottieView source={require('../../assets/animations/Loader.json')} autoPlay loop style={{ width: 48, height: 48 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: colors.text, marginBottom: 4 }}>Ask Pocket AI</Text>
+              <Text style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 18 }}>
+                Get insights about your finances, health, goals & more.
+              </Text>
+              <View style={{ marginTop: 8 }}>
+                <Chip icon="sparkles" label="Tap to chat" color={color} />
+              </View>
+            </View>
           </View>
         )
 
@@ -403,7 +650,7 @@ export default function HomeScreen() {
       {/* ── Header ── */}
       <View style={s.header}>
         <View style={{ flex: 1 }}>
-          <Text style={s.headerTitle} numberOfLines={1} adjustsFontSizeToFit>PocketCare</Text>
+          <Text style={s.headerTitle}>PocketCare</Text>
           <Text style={s.headerSub}>
             {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' })}
           </Text>
@@ -430,58 +677,87 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* ── Widget grid ── */}
-      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+      {/* ── Widget Grid ── */}
+      <ScrollView
+        contentContainerStyle={s.scroll}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D4AF37" colors={['#D4AF37']} />}
+      >
         {enabledWidgets.map((w, idx) => {
           const meta = ALL_WIDGETS.find(a => a.id === w.id)!
+          const anim = cardAnims[idx] || new Animated.Value(1)
+          const route = widgetRoutes[w.id]
+
           return (
-            <View key={w.id} style={s.card}>
-              {/* Card header row */}
+            <Animated.View
+              key={w.id}
+              style={[s.card, {
+                opacity: anim,
+                transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) }],
+              }]}
+            >
+              {/* Card header */}
               <View style={s.cardHeader}>
                 <View style={[s.cardIcon, { backgroundColor: meta.color + '22' }]}>
-                  <Ionicons name={meta.iconName as any} size={18} color={meta.color} />
+                  <Ionicons name={meta.iconName as any} size={16} color={meta.color} />
                 </View>
                 <Text style={[s.cardLabel, { color: meta.color }]}>{meta.title.toUpperCase()}</Text>
+                <View style={{ flex: 1 }} />
+                {!editMode && route && (
+                  <TouchableOpacity
+                    onPress={() => router.push(route as any)}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: meta.color + '12' }}
+                  >
+                    <Text style={{ fontSize: 10, color: meta.color, fontWeight: '700' }}>Open</Text>
+                    <Ionicons name="chevron-forward" size={11} color={meta.color} />
+                  </TouchableOpacity>
+                )}
                 {editMode && (
                   <View style={s.editRow}>
                     <TouchableOpacity style={s.orderBtn} onPress={() => moveWidget(idx, Math.max(0, idx - 1))} disabled={idx === 0}>
-                      <Ionicons name="chevron-up" size={15} color={idx === 0 ? colors.border : colors.textSecondary} />
+                      <Ionicons name="chevron-up" size={14} color={idx === 0 ? colors.border : colors.textSecondary} />
                     </TouchableOpacity>
                     <TouchableOpacity style={s.orderBtn} onPress={() => moveWidget(idx, Math.min(enabledWidgets.length - 1, idx + 1))} disabled={idx === enabledWidgets.length - 1}>
-                      <Ionicons name="chevron-down" size={15} color={idx === enabledWidgets.length - 1 ? colors.border : colors.textSecondary} />
+                      <Ionicons name="chevron-down" size={14} color={idx === enabledWidgets.length - 1 ? colors.border : colors.textSecondary} />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => toggleWidget(w.id)}>
-                      <Ionicons name="close-circle" size={19} color="#EF4444" />
+                      <Ionicons name="close-circle" size={18} color="#EF4444" />
                     </TouchableOpacity>
                   </View>
                 )}
               </View>
 
-              {/* Accent */}
+              {/* Color accent line */}
               <View style={[s.accent, { backgroundColor: meta.color }]} />
 
-              {/* Body */}
-              <View style={s.cardBody}>
+              {/* Body — tappable to open feature */}
+              <TouchableOpacity
+                style={s.cardBody}
+                onPress={() => route && !editMode ? router.push(route as any) : undefined}
+                activeOpacity={route && !editMode ? 0.75 : 1}
+              >
                 {renderWidget(w.id, meta.color)}
-              </View>
-            </View>
+              </TouchableOpacity>
+            </Animated.View>
           )
         })}
 
         {enabledWidgets.length === 0 && (
           <View style={s.empty}>
             <Ionicons name="grid-outline" size={52} color={colors.border} />
-            <Text style={s.emptyTitle}>No widgets</Text>
-            <Text style={s.emptySub}>Tap the grid icon to add widgets</Text>
+            <Text style={s.emptyTitle}>No Widgets</Text>
+            <Text style={s.emptySub}>Customize your dashboard</Text>
             <TouchableOpacity style={[s.emptyBtn, { backgroundColor: '#D4AF37' }]} onPress={openPicker}>
               <Ionicons name="add" size={16} color="#fff" />
               <Text style={s.emptyBtnText}>Add Widgets</Text>
             </TouchableOpacity>
           </View>
         )}
+
+        <View style={{ height: 110 }} />
       </ScrollView>
 
-      {/* ── Widget Picker ── */}
+      {/* ── Widget Picker Modal ── */}
       <Modal visible={showPicker} transparent animationType="none">
         <Animated.View style={[s.backdrop, { opacity: pickerFade }]}>
           <TouchableWithoutFeedback onPress={closePicker}><View style={{ flex: 1 }} /></TouchableWithoutFeedback>
@@ -490,8 +766,8 @@ export default function HomeScreen() {
           <View style={s.handle} />
           <View style={s.sheetHeader}>
             <View>
-              <Text style={s.sheetTitle}>Customize Widgets</Text>
-              <Text style={s.sheetSub}>Choose what appears on your home</Text>
+              <Text style={s.sheetTitle}>Customize Dashboard</Text>
+              <Text style={s.sheetSub}>Toggle widgets on or off</Text>
             </View>
             <TouchableOpacity style={s.sheetClose} onPress={closePicker}>
               <Ionicons name="close" size={17} color={isDark ? '#000' : '#fff'} />
@@ -501,7 +777,12 @@ export default function HomeScreen() {
             {ALL_WIDGETS.map(meta => {
               const enabled = widgets.find(w => w.id === meta.id)?.enabled ?? false
               return (
-                <TouchableOpacity key={meta.id} style={[s.pickerRow, enabled && { backgroundColor: meta.color + '12', borderColor: meta.color + '40' }]} onPress={() => toggleWidget(meta.id)} activeOpacity={0.8}>
+                <TouchableOpacity
+                  key={meta.id}
+                  style={[s.pickerRow, enabled && { backgroundColor: meta.color + '12', borderColor: meta.color + '40' }]}
+                  onPress={() => toggleWidget(meta.id)}
+                  activeOpacity={0.8}
+                >
                   <View style={[s.pickerIcon, { backgroundColor: meta.color + '22' }]}>
                     <Ionicons name={meta.iconName as any} size={20} color={meta.color} />
                   </View>
@@ -509,7 +790,6 @@ export default function HomeScreen() {
                     <Text style={s.pickerItemTitle}>{meta.title}</Text>
                     <Text style={s.pickerItemSub}>{meta.subtitle}</Text>
                   </View>
-                  {/* Custom toggle */}
                   <View style={[s.toggle, enabled && { backgroundColor: meta.color }]}>
                     <View style={[s.toggleThumb, enabled && s.toggleThumbOn]} />
                   </View>
@@ -524,6 +804,7 @@ export default function HomeScreen() {
   )
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   header: {
@@ -533,14 +814,13 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     borderBottomColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
     backgroundColor: colors.background,
   },
-  headerTitle: { fontSize: 28, fontFamily: 'MomoSignature', color: '#D4AF37', letterSpacing: -0.8 },
-  headerSub: { fontSize: 15, fontFamily: 'RobotoSlab', color: colors.textSecondary, marginTop: 4, fontWeight: '600' },
+  headerTitle: { fontSize: 26, fontFamily: 'MomoSignature', color: '#D4AF37', letterSpacing: -0.5 },
+  headerSub: { fontSize: 13, color: colors.textSecondary, marginTop: 3, fontWeight: '600' },
   headerActions: { flexDirection: 'row', gap: 8 },
   hBtn: {
-    width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
+    width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center',
     backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)',
-    borderWidth: 1,
-    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+    borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
   },
   editBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
@@ -549,8 +829,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: 'rgba(212,175,55,0.2)',
   },
   editBannerText: { fontSize: 12, color: '#D4AF37', fontWeight: '600' },
-  scroll: { paddingHorizontal: 14, paddingTop: 14, paddingBottom: 120, gap: 14 },
-  // Card
+  scroll: { paddingHorizontal: 14, paddingTop: 14, gap: 14 },
   card: {
     backgroundColor: colors.card,
     borderRadius: 20,
@@ -558,45 +837,29 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     borderColor: colors.border,
     overflow: 'hidden',
     shadowColor: isDark ? '#000' : '#888',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.08,
-    shadowRadius: 10,
+    shadowRadius: 12,
     elevation: 3,
   },
   cardHeader: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingHorizontal: 14, paddingTop: 12, paddingBottom: 6,
   },
-  cardIcon: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  cardLabel: { flex: 1, fontSize: 11, fontWeight: '800', letterSpacing: 1 },
+  cardIcon: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  cardLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1.2 },
   editRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  orderBtn: { width: 26, height: 26, borderRadius: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' },
-  accent: { height: 2, marginHorizontal: 14, borderRadius: 1, opacity: 0.5, marginBottom: 10 },
-  cardBody: { paddingHorizontal: 14, paddingBottom: 14 },
-  // Widget atoms
-  wHeadline: { fontSize: 17, fontWeight: '700', color: colors.text, letterSpacing: -0.2 },
-  wBodyText: { fontSize: 13, color: colors.textSecondary, lineHeight: 19 },
-  wBigNum: { fontSize: 30, fontWeight: '900', color: colors.text, letterSpacing: -1 },
-  wUnit: { fontSize: 13, color: colors.textSecondary, marginBottom: 4, fontWeight: '600' },
-  wStatRow: { flexDirection: 'row', alignItems: 'center' },
-  wStatBlock: { flex: 1, alignItems: 'center' },
-  wStatLabel: { fontSize: 11, color: colors.textSecondary, fontWeight: '600', marginTop: 3, textTransform: 'uppercase', letterSpacing: 0.5 },
-  wVertDiv: { width: 1, height: 44, marginHorizontal: 8 },
-  wDividerH: { height: 1 },
-  wCaption: { fontSize: 11, color: colors.textSecondary, fontWeight: '500' },
-  chip: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    borderRadius: 8, paddingVertical: 4, paddingHorizontal: 8,
-    borderWidth: 1, alignSelf: 'flex-start',
+  orderBtn: {
+    width: 24, height: 24, borderRadius: 6, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
   },
-  chipText: { fontSize: 11, fontWeight: '600' },
-  // Empty
+  accent: { height: 2, marginHorizontal: 14, borderRadius: 1, opacity: 0.45, marginBottom: 12 },
+  cardBody: { paddingHorizontal: 14, paddingBottom: 16 },
   empty: { alignItems: 'center', paddingVertical: 70, gap: 10 },
   emptyTitle: { fontSize: 20, fontWeight: '800', color: colors.text },
   emptySub: { fontSize: 14, color: colors.textSecondary },
   emptyBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 24, marginTop: 8 },
   emptyBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  // Picker
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
   sheet: {
     position: 'absolute', bottom: 0, left: 0, right: 0, height: '78%',
@@ -606,11 +869,15 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     borderTopWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
     shadowColor: '#000', shadowOffset: { width: 0, height: -6 }, shadowOpacity: 0.2, shadowRadius: 16, elevation: 20,
   },
-  handle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.14)', marginTop: 10, marginBottom: 14 },
+  handle: {
+    alignSelf: 'center', width: 40, height: 4, borderRadius: 2,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.14)',
+    marginTop: 10, marginBottom: 14,
+  },
   sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   sheetTitle: { fontSize: 18, fontWeight: '800', color: colors.text },
   sheetSub: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
-  sheetClose: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#D4AF37', alignItems: 'center', justifyContent: 'center' },
+  sheetClose: { width: 32, height: 32, borderRadius: 10, backgroundColor: '#D4AF37', alignItems: 'center', justifyContent: 'center' },
   pickerRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingVertical: 12, paddingHorizontal: 12,
@@ -621,7 +888,14 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   pickerIcon: { width: 44, height: 44, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   pickerItemTitle: { fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: 2 },
   pickerItemSub: { fontSize: 12, color: colors.textSecondary },
-  toggle: { width: 44, height: 24, borderRadius: 12, backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)', justifyContent: 'center', paddingHorizontal: 2 },
-  toggleThumb: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#fff', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 2 },
+  toggle: {
+    width: 44, height: 24, borderRadius: 12,
+    backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
+    justifyContent: 'center', paddingHorizontal: 2,
+  },
+  toggleThumb: {
+    width: 20, height: 20, borderRadius: 10, backgroundColor: '#fff',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 2, elevation: 2,
+  },
   toggleThumbOn: { alignSelf: 'flex-end' },
 })

@@ -34,16 +34,16 @@ export const ALL_WIDGETS: { id: WidgetId; title: string; subtitle: string; iconN
 const STORAGE_KEY = 'pocketcare_widget_config';
 
 const DEFAULT_WIDGETS: WidgetConfig[] = [
-  { id: 'greeting',        enabled: true,  order: 0 },
-  { id: 'streak',          enabled: true,  order: 1 },
-  { id: 'finance_summary', enabled: true,  order: 2 },
-  { id: 'tasks_today',     enabled: true,  order: 3 },
-  { id: 'goals_progress',  enabled: true,  order: 4 },
-  { id: 'next_event',      enabled: false, order: 5 },
-  { id: 'fitness_today',   enabled: false, order: 6 },
-  { id: 'placement_status',enabled: false, order: 7 },
-  { id: 'notes_quick',     enabled: false, order: 8 },
-  { id: 'ai_tip',          enabled: false, order: 9 },
+  { id: 'greeting',         enabled: true,  order: 0 },
+  { id: 'streak',           enabled: true,  order: 1 },
+  { id: 'finance_summary',  enabled: true,  order: 2 },
+  { id: 'tasks_today',      enabled: true,  order: 3 },
+  { id: 'goals_progress',   enabled: true,  order: 4 },
+  { id: 'next_event',       enabled: true,  order: 5 },
+  { id: 'fitness_today',    enabled: true,  order: 6 },
+  { id: 'placement_status', enabled: false, order: 7 },
+  { id: 'notes_quick',      enabled: true,  order: 8 },
+  { id: 'ai_tip',           enabled: true,  order: 9 },
 ];
 
 export async function getWidgetConfig(): Promise<WidgetConfig[]> {
