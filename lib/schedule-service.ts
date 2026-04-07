@@ -35,6 +35,50 @@ export async function getScheduleEvents(userEmail: string): Promise<ScheduleEven
   }
 }
 
+function isPastDate(dateStr: string): boolean {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const eventDate = new Date(`${dateStr}T00:00:00`);
+  eventDate.setHours(0, 0, 0, 0);
+  return eventDate.getTime() < today.getTime();
+}
+
+export async function autoCompletePastScheduleEvents(userEmail: string): Promise<ScheduleEvent[]> {
+  try {
+    const userDocRef = doc(db, 'schedules', userEmail);
+    const userDoc = await getDoc(userDocRef);
+
+    if (!userDoc.exists()) {
+      return [];
+    }
+
+    const events: ScheduleEvent[] = userDoc.data()?.events || [];
+    let hasChanges = false;
+    const now = new Date().toISOString();
+
+    const normalizedEvents = events.map((event) => {
+      if (event.status === 'Upcoming' && isPastDate(event.date)) {
+        hasChanges = true;
+        return {
+          ...event,
+          status: 'Completed' as const,
+          updatedAt: now,
+        };
+      }
+      return event;
+    });
+
+    if (hasChanges) {
+      await updateDoc(userDocRef, { events: normalizedEvents });
+    }
+
+    return normalizedEvents;
+  } catch (error) {
+    console.error('Error auto-completing past schedule events:', error);
+    throw error;
+  }
+}
+
 export async function addScheduleEvent(
   userEmail: string,
   title: string,

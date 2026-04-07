@@ -3,6 +3,7 @@ import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import {
     addScheduleEvent,
+    autoCompletePastScheduleEvents,
     deleteScheduleEvent,
     getScheduleEvents,
     ScheduleEvent,
@@ -123,7 +124,7 @@ export default function ScheduleScreen() {
   const loadEvents = async () => {
     try {
       if (email) {
-        const fetchedEvents = await getScheduleEvents(email);
+        const fetchedEvents = await autoCompletePastScheduleEvents(email);
         setEvents(fetchedEvents);
       }
     } catch (error: unknown) {
