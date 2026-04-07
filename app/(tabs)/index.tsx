@@ -49,8 +49,16 @@ interface HomeData {
   activeGoals: { title: string; pct: number; color: string }[]
   nextEvent: { title: string; date: string; time: string } | null
   fitnessToday: { name: string; done: boolean } | null
-  placementLatest: { company: string; status: string } | null
-  placementCounts: { applied: number; interview: number; offer: number }
+  placementLatest: {
+    company: string
+    status: string
+    date: string
+    studied: boolean
+    company_status?: string
+    roundsTotal: number
+    roundsCleared: number
+  } | null
+  placementCounts: { applied: number; interview: number; offer: number; rejected: number; total: number }
   latestNote: { title: string; content: string; created_at: string } | null
   totalGoals: number
   completedGoals: number
@@ -147,7 +155,8 @@ export default function HomeScreen() {
     streak: 0, maxStreak: 0, income: 0, expenses: 0,
     pendingTasks: 0, totalTasks: 0, completedTasks: 0, highPriorityTasks: 0,
     activeGoals: [], nextEvent: null, fitnessToday: null,
-    placementLatest: null, placementCounts: { applied: 0, interview: 0, offer: 0 },
+    placementLatest: null,
+    placementCounts: { applied: 0, interview: 0, offer: 0, rejected: 0, total: 0 },
     latestNote: null, totalGoals: 0, completedGoals: 0, overdueTasksCount: 0,
   })
   const [widgets, setWidgets] = useState<WidgetConfig[]>([])
@@ -212,11 +221,24 @@ export default function HomeScreen() {
       const fitnessToday = todayFitness ? { name: todayFitness.name, done: todayFitness.completed_dates.includes(today) } : null
 
       const sortedP = [...(placements || [])].sort((a, b) => b.created_at.localeCompare(a.created_at))
-      const placementLatest = sortedP[0] ? { company: sortedP[0].company_name, status: sortedP[0].status } : null
+      const latestP = sortedP[0]
+      const placementLatest = latestP
+        ? {
+            company: latestP.company_name,
+            status: latestP.status,
+            date: latestP.date || '',
+            studied: latestP.studied || false,
+            company_status: latestP.company_status,
+            roundsTotal: latestP.rounds?.length || 0,
+            roundsCleared: latestP.rounds?.filter(r => r.result === 'success').length || 0,
+          }
+        : null
       const placementCounts = {
-        applied: placements.filter(p => p.status === 'applied').length,
+        applied:   placements.filter(p => p.status === 'applied').length,
         interview: placements.filter(p => p.status === 'interview').length,
-        offer: placements.filter(p => p.status === 'offer').length,
+        offer:     placements.filter(p => p.status === 'offer').length,
+        rejected:  placements.filter(p => p.status === 'rejected').length,
+        total:     placements.length,
       }
 
       const sortedNotes = [...(notes || [])].sort((a, b) => b.created_at.localeCompare(a.created_at))
@@ -561,28 +583,90 @@ export default function HomeScreen() {
 
       // ── PLACEMENT ────────────────────────────────────────────────────
       case 'placement_status':
-        const statusColors: Record<string, string> = { offer: '#22C55E', applied: '#3B82F6', interview: '#F97316', rejected: '#EF4444' }
+        const pStatusColors: Record<string, string> = {
+          offer: '#22C55E', applied: '#D4AF37', interview: '#F97316', rejected: '#EF4444'
+        }
+        const pStatusIcons: Record<string, string> = {
+          offer: 'trophy', applied: 'paper-plane', interview: 'mic', rejected: 'close-circle'
+        }
+        const pCompanyStatusColors: Record<string, string> = {
+          present: '#D4AF37', completed: '#22C55E', upcoming: '#F97316'
+        }
+        const pCompanyStatusLabels: Record<string, string> = {
+          present: 'Ongoing', completed: 'Completed', upcoming: 'Upcoming'
+        }
+        // Empty state
+        if (data.placementCounts.total === 0) return (
+          <View style={{ alignItems: 'center', paddingVertical: 12 }}>
+            <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: color + '18', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+              <Ionicons name="business-outline" size={24} color={color} />
+            </View>
+            <Text style={{ fontSize: 14, color: colors.textSecondary }}>No applications tracked</Text>
+            <Text style={{ fontSize: 12, color: colors.textSecondary, opacity: 0.7, marginTop: 2 }}>Tap to add your first one</Text>
+          </View>
+        )
         return (
           <View>
+            {/* Pipeline row */}
             <View style={{ flexDirection: 'row', gap: 6, marginBottom: 12 }}>
-              <StatBlock label="Applied" value={String(data.placementCounts.applied)} color="#3B82F6" />
-              <View style={{ width: 1, backgroundColor: colors.border }} />
-              <StatBlock label="Interviews" value={String(data.placementCounts.interview)} color="#F97316" />
-              <View style={{ width: 1, backgroundColor: colors.border }} />
-              <StatBlock label="Offers" value={String(data.placementCounts.offer)} color="#22C55E" />
+              {[
+                { label: 'Applied', count: data.placementCounts.applied, c: '#D4AF37' },
+                { label: 'Interview', count: data.placementCounts.interview, c: '#F97316' },
+                { label: 'Offer', count: data.placementCounts.offer, c: '#22C55E' },
+                { label: 'Rejected', count: data.placementCounts.rejected, c: '#EF4444' },
+              ].map((item, i) => (
+                <View key={i} style={{ flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 10, backgroundColor: item.c + '12', borderWidth: 1, borderColor: item.c + '30' }}>
+                  <Text style={{ fontSize: 17, fontWeight: '900', color: item.c }}>{item.count}</Text>
+                  <Text style={{ fontSize: 9, color: colors.textSecondary, fontWeight: '700', marginTop: 2, textAlign: 'center' }}>{item.label}</Text>
+                </View>
+              ))}
             </View>
 
-            {data.placementLatest ? (
-              <View style={{ padding: 12, borderRadius: 12, backgroundColor: (statusColors[data.placementLatest.status] || color) + '12', borderWidth: 1, borderColor: (statusColors[data.placementLatest.status] || color) + '30' }}>
-                <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '600', marginBottom: 4 }}>LATEST</Text>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={{ fontSize: 14, fontWeight: '800', color: colors.text }} numberOfLines={1}>{data.placementLatest.company}</Text>
-                  <Chip icon="briefcase-outline" label={data.placementLatest.status.toUpperCase()} color={statusColors[data.placementLatest.status] || color} />
+            {/* Latest company card */}
+            {data.placementLatest && (
+              <View style={{ borderRadius: 14, borderWidth: 1.5, borderColor: (pStatusColors[data.placementLatest.status] || color) + '45', overflow: 'hidden' }}>
+                {/* Card top: company name + status badge */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, paddingBottom: 8 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>Latest</Text>
+                    <Text style={{ fontSize: 15, fontWeight: '800', color: colors.text }} numberOfLines={1}>{data.placementLatest.company}</Text>
+                    {data.placementLatest.date ? (
+                      <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>{data.placementLatest.date}</Text>
+                    ) : null}
+                  </View>
+                  <View style={{ alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 12, backgroundColor: (pStatusColors[data.placementLatest.status] || color) + '18' }}>
+                    <Ionicons name={(pStatusIcons[data.placementLatest.status] || 'briefcase') as any} size={20} color={pStatusColors[data.placementLatest.status] || color} />
+                    <Text style={{ fontSize: 8, fontWeight: '800', color: pStatusColors[data.placementLatest.status] || color, marginTop: 2 }}>
+                      {data.placementLatest.status.toUpperCase()}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            ) : (
-              <View style={{ alignItems: 'center', paddingVertical: 8 }}>
-                <Text style={{ fontSize: 13, color: colors.textSecondary }}>No placements tracked yet</Text>
+
+                {/* Divider */}
+                <View style={{ height: 1, backgroundColor: colors.border, marginHorizontal: 12 }} />
+
+                {/* Meta row: rounds + studied + company_status */}
+                <View style={{ flexDirection: 'row', gap: 6, padding: 10, flexWrap: 'wrap' }}>
+                  {data.placementLatest.roundsTotal > 0 && (
+                    <Chip
+                      icon="layers-outline"
+                      label={`${data.placementLatest.roundsCleared}/${data.placementLatest.roundsTotal} Rounds`}
+                      color={color}
+                    />
+                  )}
+                  <Chip
+                    icon={data.placementLatest.studied ? 'checkmark-circle' : 'close-circle-outline'}
+                    label={data.placementLatest.studied ? 'Prepared' : 'Not Studied'}
+                    color={data.placementLatest.studied ? '#22C55E' : '#9CA3AF'}
+                  />
+                  {data.placementLatest.company_status && (
+                    <Chip
+                      icon="business-outline"
+                      label={pCompanyStatusLabels[data.placementLatest.company_status] || data.placementLatest.company_status}
+                      color={pCompanyStatusColors[data.placementLatest.company_status] || color}
+                    />
+                  )}
+                </View>
               </View>
             )}
           </View>
