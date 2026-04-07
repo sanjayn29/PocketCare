@@ -1,10 +1,10 @@
+import { getColors } from '@/constants/styles';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { Animated, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { getColors } from '@/constants/styles';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Modal, PanResponder, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AnimatedTabButton } from './AnimatedTabButton';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);

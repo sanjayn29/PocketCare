@@ -11,16 +11,16 @@ import { useRouter } from 'expo-router'
 import LottieView from 'lottie-react-native'
 import React, { useEffect, useRef, useState } from 'react'
 import {
-  Animated,
-  Dimensions,
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    Animated,
+    Dimensions,
+    FlatList,
+    KeyboardAvoidingView,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -289,7 +289,7 @@ export default function AIScreen() {
     messagesContent: {
       paddingHorizontal: 16,
       paddingTop: 16,
-      paddingBottom: 16,
+      paddingBottom: 100,
       flexGrow: 1,
     },
     messageContainer: {
@@ -391,7 +391,7 @@ export default function AIScreen() {
       lineHeight: 22,
     },
     inputWrapper: {
-      paddingBottom: Platform.OS === 'ios' ? 10 : 0,
+      paddingBottom: Platform.OS === 'ios' ? 100 : 90,
       borderTopWidth: 1,
       borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
       backgroundColor: 'transparent',
@@ -401,6 +401,7 @@ export default function AIScreen() {
       paddingHorizontal: 16,
       paddingVertical: 12,
       alignItems: 'center',
+      marginBottom: Platform.OS === 'ios' ? 80 : 70,
     },
     inputInnerContainer: {
       flex: 1,

@@ -1,10 +1,10 @@
 import { useAuth } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
-import { Redirect, Tabs } from 'expo-router';
 import { BlurView } from 'expo-blur';
+import { Redirect, Tabs } from 'expo-router';
 import LottieView from 'lottie-react-native';
 import React from 'react';
-import { View, Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 
 import { AnimatedTabButton } from '@/components/AnimatedTabButton';
 import FloatingActionButton from '@/components/FloatingActionButton';
@@ -101,7 +101,6 @@ export default function TabLayout() {
           name="ai"
           options={{
             title: 'Pocket AI',
-            tabBarStyle: { display: 'none' },
             tabBarIcon: ({ color, focused }) => (
               <View style={{ 
                 width: 40, 
