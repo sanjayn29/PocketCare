@@ -2,7 +2,8 @@ name: Scheduled Push Notifications
 
 on:
   schedule:
-    - cron: "30 13 * * *" # 7:00 PM IST daily (GitHub cron uses UTC)
+    - cron: "30 13 * * *" # 7:00 PM IST daily-checkin (GitHub cron uses UTC)
+    - cron: "3 19 * * *" # 12:33 AM IST goal-deadline-reminder (GitHub cron uses UTC)
   workflow_dispatch:
     inputs:
       mode:
@@ -22,7 +23,7 @@ jobs:
       FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
       FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
       EXPO_PUSH_ACCESS_TOKEN: ${{ secrets.EXPO_PUSH_ACCESS_TOKEN }}
-      MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'all' }}
+      MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (github.event.schedule == '3 19 * * *' && 'goals' || 'daily') }}
 
     steps:
       - name: Checkout
