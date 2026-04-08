@@ -453,15 +453,17 @@ export default function HealthScreen() {
 
   // Edit Modals Shared Builder
   const renderEditModal = (visible: boolean, onClose: () => void, onSave: () => void, titleHeader: string, themeColor: string) => (
-      <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-        <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={{flex:1, backgroundColor: colors.background}}>
-          <View style={dynamicStyles.modalHeader}>
-            <TouchableOpacity onPress={onClose}><Text style={{fontSize:16, color: colors.textSecondary}}>Cancel</Text></TouchableOpacity>
-            <Text style={{fontSize:18, fontWeight:'700', color: colors.text}}>{titleHeader}</Text>
-            <TouchableOpacity onPress={onSave}><Text style={{fontSize:16, fontWeight:'700', color: themeColor}}>Save</Text></TouchableOpacity>
-          </View>
-          <ScrollView contentContainerStyle={{padding:20, paddingBottom: 40}}>
-            <View style={dynamicStyles.editFormCard}>
+      <Modal visible={visible} animationType="slide" transparent statusBarTranslucent onRequestClose={onClose}>
+        <View style={dynamicStyles.modalOverlay}>
+          <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={dynamicStyles.modalSheetWrap}>
+            <View style={dynamicStyles.modalContainer}>
+              <View style={dynamicStyles.modalHeader}>
+                <TouchableOpacity onPress={onClose}><Text style={{fontSize:16, color: colors.textSecondary}}>Cancel</Text></TouchableOpacity>
+                <Text style={{fontSize:18, fontWeight:'700', color: colors.text}}>{titleHeader}</Text>
+                <TouchableOpacity onPress={onSave}><Text style={{fontSize:16, fontWeight:'700', color: themeColor}}>Save</Text></TouchableOpacity>
+              </View>
+              <ScrollView style={dynamicStyles.modalBody} contentContainerStyle={{paddingBottom: 40}}>
+                <View style={dynamicStyles.editFormCard}>
               <Text style={[dynamicStyles.selectorLabel, { color: themeColor }]}>Details</Text>
               <TextInput style={dynamicStyles.titleInput} placeholder="Topic / Name" placeholderTextColor={isDark ? '#FFFFFF' : '#A0AEC0'} value={editTopic} onChangeText={setEditTopic} autoFocus />
               <TextInput style={dynamicStyles.input} placeholder="Description (Optional)" placeholderTextColor={isDark ? '#FFFFFF' : '#A0AEC0'} value={editDesc} onChangeText={setEditDesc} />
@@ -483,9 +485,11 @@ export default function HealthScreen() {
                     </TouchableOpacity>
                 </View>
               </View>
+                </View>
+              </ScrollView>
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+          </KeyboardAvoidingView>
+        </View>
       </Modal>
   );
 
@@ -731,7 +735,24 @@ export default function HealthScreen() {
     progressBar: { height: 12, backgroundColor: colors.border, borderRadius: 6, overflow: 'hidden', marginBottom: 16 },
     progressFill: { height: '100%', borderRadius: 6 },
 
-    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderColor: colors.border },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(15, 23, 42, 0.45)',
+      justifyContent: 'flex-end',
+    },
+    modalSheetWrap: {
+      width: '100%',
+      maxHeight: '92%',
+    },
+    modalContainer: {
+      backgroundColor: colors.background,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      overflow: 'hidden',
+      maxHeight: '100%',
+    },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderColor: colors.border },
+    modalBody: { paddingHorizontal: 20, paddingTop: 16 },
   });
 
   return (
@@ -796,4 +817,3 @@ export default function HealthScreen() {
     </SafeAreaView>
   );
 }
-

@@ -713,28 +713,35 @@ export default function ScheduleScreen() {
       <Modal
         visible={showCreateModal}
         animationType="slide"
-        presentationStyle="pageSheet"
+        transparent
+        statusBarTranslucent
         onRequestClose={() => setShowCreateModal(false)}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.container}
-        >
-          <View style={[styles.modalHeader, { paddingTop: Math.max(insets.top + 8, 20) }]}>
-            <TouchableOpacity onPress={() => setShowCreateModal(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>New Meeting</Text>
-            <TouchableOpacity onPress={handleSaveEvent} disabled={isSaving}>
-              {isSaving ? (
-                <ActivityIndicator size="small" color={activeTab === 'Current' ? '#3B82F6' : '#10B981'} />
-              ) : (
-                <Text style={[styles.saveText, { color: activeTab === 'Current' ? '#3B82F6' : '#10B981' }]}>Save</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+        <View style={styles.modalOverlay}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.modalSheetWrap}
+          >
+            <View style={styles.modalSheet}>
+              <View style={styles.modalHeader}>
+                <TouchableOpacity onPress={() => setShowCreateModal(false)}>
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <Text style={styles.modalTitle}>New Meeting</Text>
+                <TouchableOpacity onPress={handleSaveEvent} disabled={isSaving}>
+                  {isSaving ? (
+                    <ActivityIndicator size="small" color={activeTab === 'Current' ? '#3B82F6' : '#10B981'} />
+                  ) : (
+                    <Text style={[styles.saveText, { color: activeTab === 'Current' ? '#3B82F6' : '#10B981' }]}>Save</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
 
-          <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled">
+              <ScrollView
+                style={styles.modalBody}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 24, 28) }}
+              >
             <TextInput
               style={styles.input}
               placeholder="Meeting Title"
@@ -827,35 +834,44 @@ export default function ScheduleScreen() {
               />
               <Text style={styles.reminderText}>Remind me</Text>
             </TouchableOpacity>
-          </ScrollView>
-        </KeyboardAvoidingView>
+              </ScrollView>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
       </Modal>
 
       <Modal
         visible={showEditModal}
         animationType="slide"
-        presentationStyle="pageSheet"
+        transparent
+        statusBarTranslucent
         onRequestClose={() => setShowEditModal(false)}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.container}
-        >
-          <View style={[styles.modalHeader, { paddingTop: Math.max(insets.top + 8, 20) }]}>
-            <TouchableOpacity onPress={() => setShowEditModal(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>Edit Meeting</Text>
-            <TouchableOpacity onPress={handleSaveEdit} disabled={isEditSaving}>
-              {isEditSaving ? (
-                <ActivityIndicator size="small" color={activeTab === 'Current' ? '#3B82F6' : '#10B981'} />
-              ) : (
-                <Text style={[styles.saveText, { color: activeTab === 'Current' ? '#3B82F6' : '#10B981' }]}>Save</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+        <View style={styles.modalOverlay}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.modalSheetWrap}
+          >
+            <View style={styles.modalSheet}>
+              <View style={styles.modalHeader}>
+                <TouchableOpacity onPress={() => setShowEditModal(false)}>
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <Text style={styles.modalTitle}>Edit Meeting</Text>
+                <TouchableOpacity onPress={handleSaveEdit} disabled={isEditSaving}>
+                  {isEditSaving ? (
+                    <ActivityIndicator size="small" color={activeTab === 'Current' ? '#3B82F6' : '#10B981'} />
+                  ) : (
+                    <Text style={[styles.saveText, { color: activeTab === 'Current' ? '#3B82F6' : '#10B981' }]}>Save</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
 
-          <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled">
+              <ScrollView
+                style={styles.modalBody}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 24, 28) }}
+              >
             <TextInput
               style={styles.input}
               placeholder="Meeting Title"
@@ -947,8 +963,10 @@ export default function ScheduleScreen() {
               />
               <Text style={styles.reminderText}>Remind me</Text>
             </TouchableOpacity>
-          </ScrollView>
-        </KeyboardAvoidingView>
+              </ScrollView>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
       </Modal>
 
       </View>
@@ -1175,12 +1193,28 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   emptyWrap: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
   emptyText: { fontSize: 14, color: colors.textSecondary, marginTop: 12, textAlign: 'center' },
 
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    justifyContent: 'flex-end',
+  },
+  modalSheetWrap: {
+    width: '100%',
+    maxHeight: '92%',
+  },
+  modalSheet: {
+    backgroundColor: colors.background,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: 'hidden',
+    maxHeight: '100%',
+  },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,

@@ -430,9 +430,24 @@ export default function GoalsScreen() {
     cancelBtnText: { color: colors.textSecondary, fontWeight: '600', fontSize: 14 },
     saveBtn: { backgroundColor: colors.primary, paddingVertical: 10, paddingHorizontal: 24, borderRadius: 20, justifyContent: 'center', shadowColor: colors.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 2 },
     saveBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
-    modalContainer: { flex: 1, backgroundColor: colors.card },
-    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderColor: colors.border },
-    modalBody: { padding: 20, flex: 1 },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(15, 23, 42, 0.45)',
+      justifyContent: 'flex-end',
+    },
+    modalSheetWrap: {
+      width: '100%',
+      maxHeight: '92%',
+    },
+    modalContainer: {
+      backgroundColor: colors.card,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      overflow: 'hidden',
+      maxHeight: '100%',
+    },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderColor: colors.border },
+    modalBody: { paddingHorizontal: 20, paddingTop: 16 },
     modalTitle: { fontSize: 20, fontWeight: '700', color: colors.text, fontFamily: 'Roboto Slab' },
     cancelText: { fontSize: 16, color: colors.textSecondary, fontWeight: '600' },
     saveHeaderBtnText: { fontSize: 15, fontWeight: '700', color: colors.primary },
@@ -861,17 +876,19 @@ export default function GoalsScreen() {
       </KeyboardAvoidingView>
 
       {/* Edit Goal / Task Modal */}
-      <Modal visible={modalVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setModalVisible(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={dynamicStyles.modalContainer}>
-          <View style={dynamicStyles.modalHeader}>
-            <TouchableOpacity onPress={() => setModalVisible(false)}><Text style={dynamicStyles.cancelText}>Cancel</Text></TouchableOpacity>
-            <Text style={dynamicStyles.modalTitle}>Manage Goal</Text>
-            <TouchableOpacity onPress={handleSaveEdit} disabled={isSavingEdit}>
-              {isSavingEdit ? <ActivityIndicator size="small" color={colors.primary} /> : <Text style={dynamicStyles.saveHeaderBtnText}>Save</Text>}
-            </TouchableOpacity>
-          </View>
-          
-          <ScrollView style={dynamicStyles.modalBody} keyboardShouldPersistTaps="handled">
+      <Modal visible={modalVisible} animationType="slide" transparent statusBarTranslucent onRequestClose={() => setModalVisible(false)}>
+        <View style={dynamicStyles.modalOverlay}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={dynamicStyles.modalSheetWrap}>
+            <View style={dynamicStyles.modalContainer}>
+              <View style={dynamicStyles.modalHeader}>
+                <TouchableOpacity onPress={() => setModalVisible(false)}><Text style={dynamicStyles.cancelText}>Cancel</Text></TouchableOpacity>
+                <Text style={dynamicStyles.modalTitle}>Manage Goal</Text>
+                <TouchableOpacity onPress={handleSaveEdit} disabled={isSavingEdit}>
+                  {isSavingEdit ? <ActivityIndicator size="small" color={colors.primary} /> : <Text style={dynamicStyles.saveHeaderBtnText}>Save</Text>}
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView style={dynamicStyles.modalBody} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40 }}>
             <TextInput style={dynamicStyles.titleInput} placeholder="Goal Title" value={editTitle} onChangeText={setEditTitle} />
             <TextInput style={dynamicStyles.contentInput} placeholder="Description" multiline textAlignVertical="top" value={editDesc} onChangeText={setEditDesc} />
 
@@ -958,9 +975,11 @@ export default function GoalsScreen() {
               <Text style={dynamicStyles.dateInputText}>{editDeadline ? `Deadline: ${editDeadline}` : 'Select Deadline'}</Text>
             </TouchableOpacity>
             {showEditDatePicker && <DateTimePicker value={editDeadline ? new Date(editDeadline) : new Date()} mode="date" display="default" onChange={handleEditDateChange} />}
-            
-          </ScrollView>
-        </KeyboardAvoidingView>
+
+              </ScrollView>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
       </Modal>
 
     </SafeAreaView>

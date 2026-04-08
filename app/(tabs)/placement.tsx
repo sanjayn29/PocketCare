@@ -887,21 +887,23 @@ export default function PlacementScreen() {
       )}
 
       {/* ── Edit Modal ─────────────────────────────────────────────────────── */}
-      <Modal visible={modalVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setModalVisible(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>Edit Application</Text>
-            <TouchableOpacity onPress={handleSaveEdit} disabled={isSavingEdit}>
-              {isSavingEdit
-                ? <ActivityIndicator size="small" color={colors.primary} />
-                : <Text style={styles.saveHeaderText}>Save</Text>}
-            </TouchableOpacity>
-          </View>
+      <Modal visible={modalVisible} animationType="slide" transparent statusBarTranslucent onRequestClose={() => setModalVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalSheetWrap}>
+            <View style={styles.modalContainer}>
+              <View style={styles.modalHeader}>
+                <TouchableOpacity onPress={() => setModalVisible(false)}>
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <Text style={styles.modalTitle}>Edit Application</Text>
+                <TouchableOpacity onPress={handleSaveEdit} disabled={isSavingEdit}>
+                  {isSavingEdit
+                    ? <ActivityIndicator size="small" color={colors.primary} />
+                    : <Text style={styles.saveHeaderText}>Save</Text>}
+                </TouchableOpacity>
+              </View>
 
-          <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled">
+              <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40 }}>
             <TextInput style={styles.titleInput} placeholder="Company Name" value={editCompany} onChangeText={setEditCompany} />
             <DatePickerInput value={editDate} onChange={setEditDate} colors={colors} styles={styles} />
 
@@ -954,8 +956,10 @@ export default function PlacementScreen() {
                 <Text style={styles.addRoundBtnText}>Add Interview Round</Text>
               </TouchableOpacity>
             )}
-          </ScrollView>
-        </KeyboardAvoidingView>
+              </ScrollView>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
       </Modal>
 
 
@@ -1200,11 +1204,25 @@ const getStyles = (colors: any, isDark: boolean, activeTab: 'placements' | 'comp
   roundDesc: { fontSize: 13, color: colors.textSecondary, marginBottom: 8, marginLeft: 14 },
 
   // ── Modal ───────────────────────────────────────────────────────────────────
-  modalContainer: { flex: 1, backgroundColor: colors.background },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderColor: colors.border },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    justifyContent: 'flex-end',
+  },
+  modalSheetWrap: {
+    width: '100%',
+    maxHeight: '92%',
+  },
+  modalContainer: {
+    backgroundColor: colors.background,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: 'hidden',
+    maxHeight: '100%',
+  },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderColor: colors.border },
   modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
   cancelText: { fontSize: 16, color: colors.textSecondary },
   saveHeaderText: { fontSize: 16, fontWeight: '700', color: '#D4AF37' },
-  modalBody: { padding: 20, flex: 1 },
+  modalBody: { paddingHorizontal: 20, paddingTop: 16 },
 });
-

@@ -442,15 +442,29 @@ export default function NotesScreen() {
       fontWeight: '600',
     },
     // Modal styles (Edit)
-    modalContainer: {
+    modalOverlay: {
       flex: 1,
+      backgroundColor: 'rgba(15, 23, 42, 0.45)',
+      justifyContent: 'flex-end',
+    },
+    modalSheetWrap: {
+      width: '100%',
+      maxHeight: '92%',
+    },
+    modalContainer: {
+      height: '88%',
       backgroundColor: colors.card,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      overflow: 'hidden',
     },
     modalHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      padding: 20,
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 16,
       borderBottomWidth: 1,
       borderColor: colors.border,
     },
@@ -782,44 +796,49 @@ export default function NotesScreen() {
       <Modal
         visible={modalVisible}
         animationType="slide"
-        presentationStyle="pageSheet"
+        transparent
+        statusBarTranslucent
         onRequestClose={() => setModalVisible(false)}
       >
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={dynamicStyles.modalContainer}
-        >
-          <View style={dynamicStyles.modalHeader}>
-            <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Text style={dynamicStyles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-            <Text style={dynamicStyles.modalTitle}>Edit Note</Text>
-            <TouchableOpacity onPress={handleSaveEdit} disabled={isSavingEdit}>
-              {isSavingEdit ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : (
-                <Text style={dynamicStyles.saveHeaderBtnText}>Save</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+        <View style={dynamicStyles.modalOverlay}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={dynamicStyles.modalSheetWrap}
+          >
+            <View style={dynamicStyles.modalContainer}>
+              <View style={dynamicStyles.modalHeader}>
+                <TouchableOpacity onPress={() => setModalVisible(false)}>
+                  <Text style={dynamicStyles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <Text style={dynamicStyles.modalTitle}>Edit Note</Text>
+                <TouchableOpacity onPress={handleSaveEdit} disabled={isSavingEdit}>
+                  {isSavingEdit ? (
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  ) : (
+                    <Text style={dynamicStyles.saveHeaderBtnText}>Save</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
 
-          <TextInput
-            style={dynamicStyles.titleInput}
-            placeholder="Title"
-            placeholderTextColor={colors.textSecondary}
-            value={editTitle}
-            onChangeText={setEditTitle}
-          />
-          <TextInput
-            style={dynamicStyles.contentInput}
-            placeholder="Write your note here..."
-            placeholderTextColor={colors.textSecondary}
-            multiline
-            textAlignVertical="top"
-            value={editContent}
-            onChangeText={setEditContent}
-          />
-        </KeyboardAvoidingView>
+              <TextInput
+                style={dynamicStyles.titleInput}
+                placeholder="Title"
+                placeholderTextColor={colors.textSecondary}
+                value={editTitle}
+                onChangeText={setEditTitle}
+              />
+              <TextInput
+                style={dynamicStyles.contentInput}
+                placeholder="Write your note here..."
+                placeholderTextColor={colors.textSecondary}
+                multiline
+                textAlignVertical="top"
+                value={editContent}
+                onChangeText={setEditContent}
+              />
+            </View>
+          </KeyboardAvoidingView>
+        </View>
       </Modal>
 
 

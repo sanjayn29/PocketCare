@@ -360,7 +360,24 @@ export default function FinanceScreen() {
     },
     saveBtnText: { color: '#FFFFFF', fontWeight: '700', fontSize: 16 },
 
-    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderColor: colors.border },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(15, 23, 42, 0.45)',
+      justifyContent: 'flex-end',
+    },
+    modalSheetWrap: {
+      width: '100%',
+      maxHeight: '92%',
+    },
+    modalContainer: {
+      backgroundColor: colors.background,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      overflow: 'hidden',
+      maxHeight: '100%',
+    },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderColor: colors.border },
+    modalBody: { paddingHorizontal: 20, paddingTop: 16 },
   });
 
   const [loading, setLoading] = useState(true);
@@ -1373,15 +1390,17 @@ export default function FinanceScreen() {
       </Modal>
 
       {/* ── Edit Tx Modal ── */}
-      <Modal visible={editingTx !== null} animationType="slide" presentationStyle="pageSheet">
-        <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={{flex:1, backgroundColor: colors.background}}>
-          <View style={dynamicStyles.modalHeader}>
-            <TouchableOpacity onPress={()=>setEditingTx(null)}><Text style={{fontSize:16, color: colors.textSecondary}}>Cancel</Text></TouchableOpacity>
-            <Text style={{fontSize:18, fontWeight:'700', color: colors.text}}>Edit Transaction</Text>
-            <TouchableOpacity onPress={handleUpdateTx}><Text style={{fontSize:16, fontWeight:'700', color: uiColors.transactions}}>Save</Text></TouchableOpacity>
-          </View>
-          <ScrollView contentContainerStyle={{padding:20, paddingBottom: 40}}>
-            <View style={dynamicStyles.txEditCard}>
+      <Modal visible={editingTx !== null} animationType="slide" transparent statusBarTranslucent onRequestClose={() => setEditingTx(null)}>
+        <View style={dynamicStyles.modalOverlay}>
+          <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={dynamicStyles.modalSheetWrap}>
+            <View style={dynamicStyles.modalContainer}>
+              <View style={dynamicStyles.modalHeader}>
+                <TouchableOpacity onPress={()=>setEditingTx(null)}><Text style={{fontSize:16, color: colors.textSecondary}}>Cancel</Text></TouchableOpacity>
+                <Text style={{fontSize:18, fontWeight:'700', color: colors.text}}>Edit Transaction</Text>
+                <TouchableOpacity onPress={handleUpdateTx}><Text style={{fontSize:16, fontWeight:'700', color: uiColors.transactions}}>Save</Text></TouchableOpacity>
+              </View>
+              <ScrollView style={dynamicStyles.modalBody} contentContainerStyle={{paddingBottom: 40}}>
+                <View style={dynamicStyles.txEditCard}>
               <Text style={dynamicStyles.selectorLabel}>Transaction Type</Text>
               <View style={[dynamicStyles.segmentBlock, { marginBottom: 14 }]}>
                 <TouchableOpacity style={[dynamicStyles.segmentBtn, txEType==='income' && {backgroundColor:'#10B981'}]} onPress={()=>setTxEType('income')}>
@@ -1403,20 +1422,24 @@ export default function FinanceScreen() {
                 <Ionicons name="calendar-outline" size={16} color={uiColors.transactions} />
                 <Text style={{color: colors.text, fontWeight: '600'}}>{txEDate}</Text>
               </TouchableOpacity>
+                </View>
+              </ScrollView>
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+          </KeyboardAvoidingView>
+        </View>
       </Modal>
 
       {/* ── Edit Debt Modal ── */}
-      <Modal visible={editingDebt !== null} animationType="slide" presentationStyle="pageSheet">
-        <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={{flex:1}}>
-          <View style={dynamicStyles.modalHeader}>
-            <TouchableOpacity onPress={()=>setEditingDebt(null)}><Text style={{fontSize:16, color:'#64748B'}}>Cancel</Text></TouchableOpacity>
-            <Text style={{fontSize:18, fontWeight:'700'}}>Edit Debt</Text>
-            <TouchableOpacity onPress={handleUpdateDebtProps}><Text style={{fontSize:16, fontWeight:'700', color:'#3B82F6'}}>Save</Text></TouchableOpacity>
-          </View>
-          <ScrollView style={{padding:20}}>
+      <Modal visible={editingDebt !== null} animationType="slide" transparent statusBarTranslucent onRequestClose={() => setEditingDebt(null)}>
+        <View style={dynamicStyles.modalOverlay}>
+          <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={dynamicStyles.modalSheetWrap}>
+            <View style={dynamicStyles.modalContainer}>
+              <View style={dynamicStyles.modalHeader}>
+                <TouchableOpacity onPress={()=>setEditingDebt(null)}><Text style={{fontSize:16, color: colors.textSecondary}}>Cancel</Text></TouchableOpacity>
+                <Text style={{fontSize:18, fontWeight:'700', color: colors.text}}>Edit Debt</Text>
+                <TouchableOpacity onPress={handleUpdateDebtProps}><Text style={{fontSize:16, fontWeight:'700', color:'#3B82F6'}}>Save</Text></TouchableOpacity>
+              </View>
+              <ScrollView style={dynamicStyles.modalBody} contentContainerStyle={{paddingBottom: 40}}>
             <TextInput style={dynamicStyles.titleInput} placeholder="To Whom" value={debtETo} onChangeText={setDebtETo} />
             <TextInput style={dynamicStyles.input} placeholder="Amount" keyboardType="numeric" value={debtEAmount} onChangeText={setDebtEAmount} />
             <TextInput style={dynamicStyles.input} placeholder="Description" value={debtEDesc} onChangeText={setDebtEDesc} />
@@ -1442,24 +1465,30 @@ export default function FinanceScreen() {
             <TouchableOpacity style={dynamicStyles.input} onPress={()=>setShowDatePicker('debtEDue')}>
               <Text style={{color: debtEDueDate ? '#334155' : '#94A3B8'}}>{debtEDueDate || 'Select Due Date'}</Text>
             </TouchableOpacity>
-          </ScrollView>
-        </KeyboardAvoidingView>
+              </ScrollView>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
       </Modal>
 
       {/* ── Edit Goal Modal ── */}
-      <Modal visible={editingGoal !== null} animationType="slide" presentationStyle="pageSheet">
-        <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={{flex:1}}>
-          <View style={dynamicStyles.modalHeader}>
-            <TouchableOpacity onPress={()=>setEditingGoal(null)}><Text style={{fontSize:16, color:'#64748B'}}>Cancel</Text></TouchableOpacity>
-            <Text style={{fontSize:18, fontWeight:'700'}}>Edit Goal</Text>
-            <TouchableOpacity onPress={handleUpdateGoalProps}><Text style={{fontSize:16, fontWeight:'700', color:uiColors.goals}}>Save</Text></TouchableOpacity>
-          </View>
-          <ScrollView style={{padding:20}}>
+      <Modal visible={editingGoal !== null} animationType="slide" transparent statusBarTranslucent onRequestClose={() => setEditingGoal(null)}>
+        <View style={dynamicStyles.modalOverlay}>
+          <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={dynamicStyles.modalSheetWrap}>
+            <View style={dynamicStyles.modalContainer}>
+              <View style={dynamicStyles.modalHeader}>
+                <TouchableOpacity onPress={()=>setEditingGoal(null)}><Text style={{fontSize:16, color: colors.textSecondary}}>Cancel</Text></TouchableOpacity>
+                <Text style={{fontSize:18, fontWeight:'700', color: colors.text}}>Edit Goal</Text>
+                <TouchableOpacity onPress={handleUpdateGoalProps}><Text style={{fontSize:16, fontWeight:'700', color:uiColors.goals}}>Save</Text></TouchableOpacity>
+              </View>
+              <ScrollView style={dynamicStyles.modalBody} contentContainerStyle={{paddingBottom: 40}}>
             <TextInput style={dynamicStyles.titleInput} placeholder="Goal Title" value={goalETitle} onChangeText={setGoalETitle} placeholderTextColor={colors.textSecondary} />
             <TextInput style={dynamicStyles.input} placeholder="Target Amount" keyboardType="numeric" value={goalETarget} onChangeText={setGoalETarget} placeholderTextColor={colors.textSecondary} />
             <TextInput style={dynamicStyles.input} placeholder="Description" value={goalEDesc} onChangeText={setGoalEDesc} placeholderTextColor={colors.textSecondary} />
-          </ScrollView>
-        </KeyboardAvoidingView>
+              </ScrollView>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
       </Modal>
     </SafeAreaView>
   );

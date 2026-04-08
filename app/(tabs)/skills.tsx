@@ -289,12 +289,27 @@ export default function SkillsScreen() {
     previewText: { fontSize: 13, color: colors.text, fontWeight: '500' },
     previewDone: { color: colors.textSecondary, textDecorationLine: 'line-through' },
     moreText: { fontSize: 12, color: colors.textSecondary, marginTop: 4 },
-    modalContainer: { flex: 1, backgroundColor: colors.card },
-    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: colors.border },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(15, 23, 42, 0.45)',
+      justifyContent: 'flex-end',
+    },
+    modalSheetWrap: {
+      width: '100%',
+      maxHeight: '92%',
+    },
+    modalContainer: {
+      backgroundColor: colors.card,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      overflow: 'hidden',
+      maxHeight: '100%',
+    },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: colors.border },
     modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
     cancelText: { fontSize: 16, color: colors.textSecondary },
     saveHeaderText: { fontSize: 16, fontWeight: '700', color: colors.primary },
-    modalBody: { padding: 20, flex: 1 },
+    modalBody: { paddingHorizontal: 20, paddingTop: 16 },
     titleInput: { fontSize: 22, fontWeight: '700', color: colors.text, marginBottom: 18, borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 8 },
   });
 
@@ -507,17 +522,19 @@ export default function SkillsScreen() {
         )}
 
       {/* ── Edit Modal ── */}
-      <Modal visible={modalVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setModalVisible(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={dynamicStyles.modalContainer}>
-          <View style={dynamicStyles.modalHeader}>
-            <TouchableOpacity onPress={() => setModalVisible(false)}><Text style={dynamicStyles.cancelText}>Cancel</Text></TouchableOpacity>
-            <Text style={dynamicStyles.modalTitle}>Edit Skill</Text>
-            <TouchableOpacity onPress={handleSaveEdit} disabled={isSavingEdit}>
-              {isSavingEdit ? <ActivityIndicator size="small" color={colors.primary} /> : <Text style={dynamicStyles.saveHeaderText}>Save</Text>}
-            </TouchableOpacity>
-          </View>
+      <Modal visible={modalVisible} animationType="slide" transparent statusBarTranslucent onRequestClose={() => setModalVisible(false)}>
+        <View style={dynamicStyles.modalOverlay}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={dynamicStyles.modalSheetWrap}>
+            <View style={dynamicStyles.modalContainer}>
+              <View style={dynamicStyles.modalHeader}>
+                <TouchableOpacity onPress={() => setModalVisible(false)}><Text style={dynamicStyles.cancelText}>Cancel</Text></TouchableOpacity>
+                <Text style={dynamicStyles.modalTitle}>Edit Skill</Text>
+                <TouchableOpacity onPress={handleSaveEdit} disabled={isSavingEdit}>
+                  {isSavingEdit ? <ActivityIndicator size="small" color={colors.primary} /> : <Text style={dynamicStyles.saveHeaderText}>Save</Text>}
+                </TouchableOpacity>
+              </View>
 
-          <ScrollView style={dynamicStyles.modalBody} keyboardShouldPersistTaps="handled">
+              <ScrollView style={dynamicStyles.modalBody} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 40 }}>
             <TextInput
               style={dynamicStyles.titleInput}
               placeholder="Skill Name"
@@ -585,8 +602,10 @@ export default function SkillsScreen() {
                 <Ionicons name="add" size={20} color={colors.text} />
               </TouchableOpacity>
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+              </ScrollView>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
       </Modal>
 
 
