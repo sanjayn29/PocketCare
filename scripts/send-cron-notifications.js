@@ -1,12 +1,12 @@
 const admin = require('firebase-admin');
 
 const MODE = process.argv[2];
-const VALID_MODES = new Set(['daily', 'goals', 'tasks', 'deadlines', 'all']);
+const VALID_MODES = new Set(['daily', 'goals', 'tasks', 'placements', 'deadlines', 'all']);
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 const IST_TIMEZONE = 'Asia/Kolkata';
 
 if (!MODE || !VALID_MODES.has(MODE)) {
-  console.error('Usage: node scripts/send-cron-notifications.js <daily|goals|tasks|deadlines|all>');
+  console.error('Usage: node scripts/send-cron-notifications.js <daily|goals|tasks|placements|deadlines|all>');
   process.exit(1);
 }
 
@@ -183,6 +183,45 @@ async function buildTaskDeadlineMessages(db) {
   return messages;
 }
 
+async function buildPlacementDriveMessages(db) {
+  const today = getTodayInIST();
+  const placementDocs = await db.collection('Placements').get();
+  const messages = [];
+
+  for (const doc of placementDocs.docs) {
+    const data = doc.data() || {};
+    const placements = Array.isArray(data.placements) ? data.placements : [];
+    if (placements.length === 0) continue;
+
+    const pushToken = await getUserPushToken(db, doc.id);
+    if (!pushToken) continue;
+
+    for (const placement of placements) {
+      const placementDate = typeof placement.date === 'string' ? placement.date.trim() : '';
+      const companyName = typeof placement.company_name === 'string' ? placement.company_name.trim() : '';
+      const isRejected = placement.status === 'rejected';
+      const isCompletedCompany = placement.company_status === 'completed';
+      if (!placementDate || isRejected || isCompletedCompany) continue;
+      if (placementDate !== today) continue;
+
+      messages.push({
+        to: pushToken,
+        sound: 'default',
+        title: `Placement Drive Today: ${companyName || 'Company'}`,
+        body: 'Today you have a placement drive. All the best, prepare well.',
+        data: {
+          type: 'placement-drive-reminder',
+          email: doc.id,
+          placementId: placement.id || '',
+          placementDate,
+        },
+      });
+    }
+  }
+
+  return messages;
+}
+
 function chunkArray(items, size) {
   const chunks = [];
   for (let i = 0; i < items.length; i += size) {
@@ -268,12 +307,18 @@ async function main() {
     messages = messages.concat(taskMessages);
   }
 
+  if (MODE === 'placements' || MODE === 'all') {
+    const placementMessages = await buildPlacementDriveMessages(db);
+    messages = messages.concat(placementMessages);
+  }
+
   if (MODE === 'deadlines') {
-    const [goalMessages, taskMessages] = await Promise.all([
+    const [goalMessages, taskMessages, placementMessages] = await Promise.all([
       buildGoalDeadlineMessages(db),
       buildTaskDeadlineMessages(db),
+      buildPlacementDriveMessages(db),
     ]);
-    messages = messages.concat(goalMessages, taskMessages);
+    messages = messages.concat(goalMessages, taskMessages, placementMessages);
   }
 
   if (messages.length === 0) {
