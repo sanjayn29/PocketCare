@@ -2,7 +2,7 @@ name: Scheduled Push Notifications
 
 on:
   schedule:
-    - cron: "58 17 * * *" # 11:28 PM IST daily
+    - cron: "5 18 * * *" # 11:35 PM IST daily
   workflow_dispatch:
     inputs:
       mode:
