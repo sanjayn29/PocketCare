@@ -70,6 +70,7 @@ Thumbs.db
 # Certificates / keys
 # ===============================
 *.pem
+*-firebase-adminsdk-*.json
 
 # ===============================
 # Example / temp folders
