@@ -1,5 +1,4 @@
 import Constants from 'expo-constants'
-import * as Device from 'expo-device'
 
 let isHandlerConfigured = false
 
@@ -35,46 +34,43 @@ export async function configureNotificationHandler() {
   isHandlerConfigured = true
 }
 
+import * as Notifications from "expo-notifications"
+import { Platform } from "react-native"
+
 export async function registerForPushNotificationsAsync() {
-  if (isExpoGo()) {
-    console.log('Expo Go does not support Android remote push notifications. Build a dev client to test push tokens.')
-    return
+  
+  // 🔹 Android notification channel (must be created first)
+  if (Platform.OS === "android") {
+    await Notifications.setNotificationChannelAsync("default", {
+      name: "default",
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: "#06B6D4",
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    });
   }
 
-  if (!Device.isDevice) {
-    alert('Use a real device for notifications')
-    return
+  // 🔹 Request permission
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
+
+  if (existingStatus !== "granted") {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
   }
 
-  const Notifications = await getNotificationsModule()
-
-  const { status: existingStatus } = await Notifications.getPermissionsAsync()
-  let finalStatus = existingStatus
-
-  if (existingStatus !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync()
-    finalStatus = status
+  if (finalStatus !== "granted") {
+    console.log("Push notification permission not granted");
+    return;
   }
 
-  if (finalStatus !== 'granted') {
-    alert('Permission not granted!')
-    return
-  }
+  // 🔹 Get Expo push token
+  const token = (
+    await Notifications.getExpoPushTokenAsync({
+      projectId: "9515599a-1ebe-494e-96d0-6624f71c6210",
+    })
+  ).data;
 
-  const projectId =
-    Constants.expoConfig?.extra?.eas?.projectId ||
-    Constants.easConfig?.projectId ||
-    process.env.EXPO_PUBLIC_EAS_PROJECT_ID
-
-  if (!projectId) {
-    console.warn('No EAS projectId found. Set expo.extra.eas.projectId in app.json or EXPO_PUBLIC_EAS_PROJECT_ID in .env.')
-    return
-  }
-
-  const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data
-
-  console.log('Push Token:', token)
-
-  return token
+  return token;
 }
 
