@@ -269,20 +269,21 @@ export default function ScheduleScreen() {
 
   const handleOpenEditModal = (event: ScheduleEvent) => {
     setEditingEvent(event);
-    setEditTitle(event.title);
-    setEditPurpose(event.purpose);
-    setEditStartTime(event.startTime);
-    setEditEndTime(event.endTime);
+    setEditTitle(event.title || '');
+    setEditPurpose(event.purpose || '');
+    setEditStartTime(event.startTime || '09:00');
+    setEditEndTime(event.endTime || '10:00');
     setEditLocation(event.location || '');
-    setEditPriority(event.priority);
-    setEditStatus(event.status);
-    setEditReminder(event.reminder);
+    setEditPriority(event.priority || 'Medium');
+    setEditStatus(event.status || 'Upcoming');
+    setEditReminder(event.reminder ?? true);
     setShowEditModal(true);
   };
 
   const handleSaveEdit = async () => {
     if (!editingEvent) return;
-    if (!editTitle.trim()) {
+    const finalTitle = editTitle || '';
+    if (!finalTitle.trim()) {
       Alert.alert('Error', 'Event title is required.');
       return;
     }
@@ -290,9 +291,9 @@ export default function ScheduleScreen() {
     try {
       setIsEditSaving(true);
       if (email) {
-        const updatedTitle = editTitle.trim();
-        const updatedPurpose = editPurpose.trim();
-        const updatedLocation = editLocation.trim();
+        const updatedTitle = finalTitle.trim();
+        const updatedPurpose = editPurpose ? editPurpose.trim() : '';
+        const updatedLocation = editLocation ? editLocation.trim() : '';
 
         await updateScheduleEvent(
           email,
@@ -512,9 +513,14 @@ export default function ScheduleScreen() {
               {item.title}
             </Text>
           </View>
-          <TouchableOpacity onPress={() => handleDeleteEvent(item.id)} hitSlop={10}>
-            <Ionicons name="trash-outline" size={18} color={colors.danger} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <TouchableOpacity onPress={() => handleOpenEditModal(item)} hitSlop={10}>
+              <Ionicons name="pencil-outline" size={18} color={colors.primary || '#3B82F6'} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleDeleteEvent(item.id)} hitSlop={10}>
+              <Ionicons name="trash-outline" size={18} color={colors.danger} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {item.purpose && <Text style={styles.eventPurpose} numberOfLines={2}>{item.purpose}</Text>}
@@ -1201,6 +1207,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   modalSheetWrap: {
     width: '100%',
     maxHeight: '92%',
+    flexShrink: 1,
   },
   modalSheet: {
     backgroundColor: colors.background,
@@ -1208,6 +1215,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     borderTopRightRadius: 24,
     overflow: 'hidden',
     maxHeight: '100%',
+    flexShrink: 1,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1222,7 +1230,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   cancelText: { fontSize: 16, color: colors.textSecondary, fontWeight: '600' },
   modalTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
   saveText: { fontSize: 16, fontWeight: '700' },
-  modalBody: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
+  modalBody: { flexShrink: 1, paddingHorizontal: 16, paddingTop: 16 },
 
   input: {
     backgroundColor: colors.background,
