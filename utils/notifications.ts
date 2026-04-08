@@ -96,9 +96,26 @@ export async function sendWelcomeNotification(firstName?: string | null): Promis
       title,
       body: 'Track yourself daily and become a better version of yourself.',
       sound: 'default',
+      ...(Platform.OS === 'android' ? { channelId: ANDROID_CHANNEL_ID } : {}),
       data: { type: 'welcome' },
     },
     trigger: null,
   })
   return true
+}
+
+export async function clearRemovedReminders(email?: string): Promise<void> {
+  const normalizedEmail = email?.toLowerCase()
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync()
+
+  for (const request of scheduled) {
+    const data = request.content.data as { type?: string; email?: string } | undefined
+    const isRemovedType =
+      data?.type === 'daily-progress-reminder' || data?.type === 'goal-deadline-reminder'
+    if (!isRemovedType) continue
+
+    if (!normalizedEmail || !data?.email || data.email === normalizedEmail) {
+      await Notifications.cancelScheduledNotificationAsync(request.identifier)
+    }
+  }
 }

@@ -2,6 +2,7 @@ import { ThemeProvider } from '@/context/ThemeContext'
 import { savePushTokenToFirestore } from '@/lib/save-user'
 import { recordVisit } from '@/lib/streak-service'
 import {
+  clearRemovedReminders,
   configureNotificationHandler,
   registerForPushNotificationsAsync,
   sendWelcomeNotification,
@@ -43,6 +44,7 @@ function RootLayoutContent() {
     async function registerAndSaveToken() {
       if (!email) return
       try {
+        await clearRemovedReminders(email)
         const token = await registerForPushNotificationsAsync()
         if (token) {
           await savePushTokenToFirestore(email, token)
