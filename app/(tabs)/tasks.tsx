@@ -482,17 +482,24 @@ export default function TasksScreen() {
   const [showEditDatePicker, setShowEditDatePicker] = useState(false);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
+  const toLocalDateString = (date: Date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
   const handleDateChange = (event: any, selectedDate?: Date) => {
     if (Platform.OS === 'android') setShowDatePicker(false);
     if (selectedDate) {
-      setNewDueDate(selectedDate.toISOString().split('T')[0]);
+      setNewDueDate(toLocalDateString(selectedDate));
     }
   };
 
   const handleEditDateChange = (event: any, selectedDate?: Date) => {
     if (Platform.OS === 'android') setShowEditDatePicker(false);
     if (selectedDate) {
-      setEditDueDate(selectedDate.toISOString().split('T')[0]);
+      setEditDueDate(toLocalDateString(selectedDate));
     }
   };
 
@@ -808,7 +815,7 @@ export default function TasksScreen() {
     </View>
   );
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = toLocalDateString(new Date());
   const filteredTasks = tasks.filter(task => {
     const hasDueDate = !!task.due_date && isValidDateOnlyString(task.due_date);
     const isOverdue = hasDueDate && task.status !== 'completed' && task.due_date < todayStr;

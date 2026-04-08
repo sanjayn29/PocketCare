@@ -211,7 +211,7 @@ export default function ScheduleScreen() {
         );
 
         if (newReminder && newStatus === 'Upcoming') {
-          await scheduleScheduleEventReminder({
+          const isScheduled = await scheduleScheduleEventReminder({
             eventId,
             email,
             title: newTitle.trim(),
@@ -219,6 +219,12 @@ export default function ScheduleScreen() {
             date: selectedDate,
             startTime: newStartTime,
           });
+          if (!isScheduled) {
+            Alert.alert(
+              'Reminder Not Scheduled',
+              'Reminder could not be set. Please check notification permission and selected time.'
+            );
+          }
         } else {
           await cancelScheduleEventReminder(eventId);
         }
@@ -303,7 +309,7 @@ export default function ScheduleScreen() {
         );
 
         if (editReminder && editStatus === 'Upcoming') {
-          await scheduleScheduleEventReminder({
+          const isScheduled = await scheduleScheduleEventReminder({
             eventId: editingEvent.id,
             email,
             title: updatedTitle,
@@ -311,6 +317,12 @@ export default function ScheduleScreen() {
             date: editingEvent.date,
             startTime: editStartTime,
           });
+          if (!isScheduled) {
+            Alert.alert(
+              'Reminder Not Scheduled',
+              'Reminder could not be set. Please check notification permission and selected time.'
+            );
+          }
         } else {
           await cancelScheduleEventReminder(editingEvent.id);
         }

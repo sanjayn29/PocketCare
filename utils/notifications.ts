@@ -169,16 +169,28 @@ export async function sendWelcomeNotification(firstName?: string | null): Promis
 export async function clearRemovedReminders(email?: string): Promise<void> {
   const normalizedEmail = email?.toLowerCase()
   const scheduled = await Notifications.getAllScheduledNotificationsAsync()
+  const reminderIds = await getScheduleReminderIds()
+  let hasReminderIdsChanges = false
 
   for (const request of scheduled) {
-    const data = request.content.data as { type?: string; email?: string } | undefined
+    const data = request.content.data as { type?: string; email?: string; eventId?: string } | undefined
     const isRemovedType =
-      data?.type === 'daily-progress-reminder' || data?.type === 'goal-deadline-reminder'
+      data?.type === 'daily-progress-reminder' ||
+      data?.type === 'goal-deadline-reminder' ||
+      data?.type === 'schedule-event-reminder'
     if (!isRemovedType) continue
 
     if (!normalizedEmail || !data?.email || data.email === normalizedEmail) {
       await Notifications.cancelScheduledNotificationAsync(request.identifier)
+      if (data?.type === 'schedule-event-reminder' && data?.eventId && reminderIds[data.eventId]) {
+        delete reminderIds[data.eventId]
+        hasReminderIdsChanges = true
+      }
     }
+  }
+
+  if (hasReminderIdsChanges) {
+    await setScheduleReminderIds(reminderIds)
   }
 }
 

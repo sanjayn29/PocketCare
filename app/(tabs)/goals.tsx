@@ -62,11 +62,18 @@ export default function GoalsScreen() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const toLocalDateString = (date: Date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
   
   type TimeFilter = 'All' | 'Month' | 'Year' | 'Custom';
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('All');
-  const [customStart, setCustomStart] = useState(new Date(Date.now() - 7*24*60*60*1000).toISOString().split('T')[0]);
-  const [customEnd, setCustomEnd] = useState(new Date().toISOString().split('T')[0]);
+  const [customStart, setCustomStart] = useState(toLocalDateString(new Date(Date.now() - 7*24*60*60*1000)));
+  const [customEnd, setCustomEnd] = useState(toLocalDateString(new Date()));
   const [showDatePicker, setShowDatePickerState] = useState<'customStart' | 'customEnd' | null>(null);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<GoalCategory | null>(null);
   const [selectedPriorityFilter, setSelectedPriorityFilter] = useState<GoalPriority | null>(null);
@@ -115,11 +122,11 @@ export default function GoalsScreen() {
   // Date Handlers
   const handleDateChange = (event: any, selectedDate?: Date) => {
     if (Platform.OS === 'android') setShowCreationDatePicker(false);
-    if (selectedDate) setNewDeadline(selectedDate.toISOString().split('T')[0]);
+    if (selectedDate) setNewDeadline(toLocalDateString(selectedDate));
   };
   const handleEditDateChange = (event: any, selectedDate?: Date) => {
     if (Platform.OS === 'android') setShowEditDatePicker(false);
-    if (selectedDate) setEditDeadline(selectedDate.toISOString().split('T')[0]);
+    if (selectedDate) setEditDeadline(toLocalDateString(selectedDate));
   };
 
   useEffect(() => {
@@ -729,7 +736,7 @@ export default function GoalsScreen() {
             onChange={(event, selectedDate) => {
               if (Platform.OS === 'android') setShowDatePickerState(null);
               if (selectedDate) {
-                const dateStr = selectedDate.toISOString().split('T')[0];
+                const dateStr = toLocalDateString(selectedDate);
                 if (showDatePicker === 'customStart') setCustomStart(dateStr);
                 else if (showDatePicker === 'customEnd') setCustomEnd(dateStr);
               }
