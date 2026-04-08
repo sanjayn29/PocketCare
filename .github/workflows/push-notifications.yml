@@ -8,9 +8,10 @@ on:
       mode:
         description: "Which notification mode to run"
         required: true
-        default: "daily"
+        default: "all"
         type: choice
         options:
+          - all
           - daily
           - goals
 
@@ -21,7 +22,7 @@ jobs:
       FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
       FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
       EXPO_PUSH_ACCESS_TOKEN: ${{ secrets.EXPO_PUSH_ACCESS_TOKEN }}
-      MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'daily' }}
+      MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'all' }}
 
     steps:
       - name: Checkout

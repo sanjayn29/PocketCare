@@ -1,11 +1,12 @@
 const admin = require('firebase-admin');
 
 const MODE = process.argv[2];
+const VALID_MODES = new Set(['daily', 'goals', 'all']);
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 const IST_TIMEZONE = 'Asia/Kolkata';
 
-if (!MODE || (MODE !== 'daily' && MODE !== 'goals')) {
-  console.error('Usage: node scripts/send-cron-notifications.js <daily|goals>');
+if (!MODE || !VALID_MODES.has(MODE)) {
+  console.error('Usage: node scripts/send-cron-notifications.js <daily|goals|all>');
   process.exit(1);
 }
 
@@ -119,6 +120,7 @@ async function buildGoalDeadlineMessages(db) {
 
     for (const goal of goals) {
       const deadline = typeof goal.deadline === 'string' ? goal.deadline.trim() : '';
+      const goalTitle = typeof goal.title === 'string' ? goal.title.trim() : '';
       const isAchieved = goal.status === 'achieved';
       if (!deadline || isAchieved) continue;
       if (deadline !== today) continue;
@@ -126,10 +128,10 @@ async function buildGoalDeadlineMessages(db) {
       messages.push({
         to: pushToken,
         sound: 'default',
-        title: `Goal Deadline: ${goal.title || 'Goal'}`,
-        body: 'Your goal deadline is here. Review your progress and plan the next action.',
+        title: `Deadline Today: ${goalTitle || 'Goal'}`,
+        body: `Today is your deadline for "${goalTitle || 'this project'}".`,
         data: {
-          type: 'goal-deadline',
+          type: 'goal-deadline-reminder',
           email: doc.id,
           goalId: goal.id || '',
           deadline,
@@ -204,18 +206,21 @@ async function sendExpoMessages(messages) {
 
 async function main() {
   const db = initializeFirebase();
-  const users = await fetchUsersWithPushTokens(db);
+  let messages = [];
+  let users = [];
 
-  if (users.length === 0) {
-    console.log('No users with valid push tokens found.');
-    return;
+  if (MODE === 'daily' || MODE === 'all') {
+    users = await fetchUsersWithPushTokens(db);
+    if (users.length === 0) {
+      console.log('No users with valid push tokens found for daily mode.');
+    } else {
+      messages = messages.concat(buildDailyMessages(users));
+    }
   }
 
-  let messages = [];
-  if (MODE === 'daily') {
-    messages = buildDailyMessages(users);
-  } else {
-    messages = await buildGoalDeadlineMessages(db);
+  if (MODE === 'goals' || MODE === 'all') {
+    const goalMessages = await buildGoalDeadlineMessages(db);
+    messages = messages.concat(goalMessages);
   }
 
   if (messages.length === 0) {
