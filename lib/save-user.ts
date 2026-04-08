@@ -1,4 +1,4 @@
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from '../firebaseConfig'
 
 type UserData = {
@@ -41,5 +41,23 @@ export async function saveUserToFirestore(userData: UserData) {
     }
   } catch (error) {
     console.error('Error saving user to Firestore:', error)
+  }
+}
+
+export async function savePushTokenToFirestore(email: string, pushToken: string) {
+  try {
+    const userRef = doc(db, 'UDB', email)
+    await setDoc(
+      userRef,
+      {
+        email,
+        pushToken,
+        pushTokenUpdatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    )
+    console.log('Push token saved to Firestore:', email)
+  } catch (error) {
+    console.error('Error saving push token to Firestore:', error)
   }
 }

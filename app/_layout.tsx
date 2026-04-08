@@ -1,5 +1,7 @@
 import { ThemeProvider } from '@/context/ThemeContext'
+import { savePushTokenToFirestore } from '@/lib/save-user'
 import { recordVisit } from '@/lib/streak-service'
+import { configureNotificationHandler, registerForPushNotificationsAsync } from '@/utils/notifications'
 import { ClerkProvider, useUser } from '@clerk/expo'
 import { tokenCache } from '@clerk/expo/token-cache'
 import * as Font from 'expo-font'
@@ -21,9 +23,31 @@ function RootLayoutContent() {
   const email = user?.emailAddresses?.[0]?.emailAddress
 
   useEffect(() => {
+    configureNotificationHandler().catch((error) => {
+      console.warn('Notification handler setup skipped:', error)
+    })
+  }, [])
+
+  useEffect(() => {
     if (email) {
       recordVisit(email)
     }
+  }, [email])
+
+  useEffect(() => {
+    async function registerAndSaveToken() {
+      if (!email) return
+      try {
+        const token = await registerForPushNotificationsAsync()
+        if (token) {
+          await savePushTokenToFirestore(email, token)
+        }
+      } catch (error) {
+        console.warn('Push registration skipped:', error)
+      }
+    }
+
+    registerAndSaveToken()
   }, [email])
 
   return (

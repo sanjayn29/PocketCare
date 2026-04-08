@@ -12,6 +12,8 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.pocketcare.app",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -39,17 +41,27 @@
           }
         }
       ],
+      "expo-notifications",
       "@react-native-community/datetimepicker",
       [
         "expo-font",
         {
-          "fonts": ["./assets/Font/MomoSignature-Regular.ttf"]
+          "fonts": [
+            "./assets/Font/MomoSignature-Regular.ttf"
+          ]
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "9515599a-1ebe-494e-96d0-6624f71c6210"
+      }
+    },
+    "owner": "sanjayn29"
   }
 }

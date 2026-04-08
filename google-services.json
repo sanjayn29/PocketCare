@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "744023236008",
+    "project_id": "pocketcare-personalcare",
+    "storage_bucket": "pocketcare-personalcare.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:744023236008:android:7642bc9257f8fe8d5b919d",
+        "android_client_info": {
+          "package_name": "com.pocketcare.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "744023236008-97cgnh8onulbji642k0btfpn3h5l5jns.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBuQScnzYcxfs5an6N5xwpyss_AYxkOv5o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "744023236008-97cgnh8onulbji642k0btfpn3h5l5jns.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
