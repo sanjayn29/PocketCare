@@ -35,7 +35,9 @@
           "android": {
             "packagingOptions": {
               "excludes": [
-                "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+                "META-INF/versions/9/OSGI-INF/MANIFEST.MF",
+                "META-INF/LICENSE.md",
+                "META-INF/NOTICE.md"
               ]
             }
           }
