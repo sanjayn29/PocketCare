@@ -1,7 +1,11 @@
 import { ThemeProvider } from '@/context/ThemeContext'
 import { savePushTokenToFirestore } from '@/lib/save-user'
 import { recordVisit } from '@/lib/streak-service'
-import { configureNotificationHandler, registerForPushNotificationsAsync } from '@/utils/notifications'
+import {
+  configureNotificationHandler,
+  registerForPushNotificationsAsync,
+  sendWelcomeNotification,
+} from '@/utils/notifications'
 import { ClerkProvider, useUser } from '@clerk/expo'
 import { tokenCache } from '@clerk/expo/token-cache'
 import * as Font from 'expo-font'
@@ -21,6 +25,7 @@ if (!publishableKey) {
 function RootLayoutContent() {
   const { user } = useUser()
   const email = user?.emailAddresses?.[0]?.emailAddress
+  const firstName = user?.firstName
 
   useEffect(() => {
     configureNotificationHandler().catch((error) => {
@@ -42,13 +47,14 @@ function RootLayoutContent() {
         if (token) {
           await savePushTokenToFirestore(email, token)
         }
+        await sendWelcomeNotification(firstName)
       } catch (error) {
         console.warn('Push registration skipped:', error)
       }
     }
 
     registerAndSaveToken()
-  }, [email])
+  }, [email, firstName])
 
   return (
     <Stack>

@@ -79,3 +79,26 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
   const { data } = await Notifications.getExpoPushTokenAsync({ projectId })
   return data
 }
+
+export async function sendWelcomeNotification(firstName?: string | null): Promise<boolean> {
+  let { status } = await Notifications.getPermissionsAsync()
+  if (status !== 'granted') {
+    const requested = await Notifications.requestPermissionsAsync()
+    status = requested.status
+  }
+  if (status !== 'granted') return false
+
+  const safeFirstName = firstName?.trim()
+  const title = safeFirstName ? `Welcome to PocketCare, ${safeFirstName}!` : 'Welcome to PocketCare!'
+
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title,
+      body: 'Track yourself daily and become a better version of yourself.',
+      sound: 'default',
+      data: { type: 'welcome' },
+    },
+    trigger: null,
+  })
+  return true
+}
