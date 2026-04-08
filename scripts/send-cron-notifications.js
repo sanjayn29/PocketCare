@@ -14,11 +14,23 @@ function getServiceAccountFromEnv() {
   if (!raw) {
     throw new Error('Missing FIREBASE_SERVICE_ACCOUNT_JSON');
   }
+
+  let serviceAccount;
   try {
-    return JSON.parse(raw);
+    serviceAccount = JSON.parse(raw);
   } catch (error) {
     throw new Error(`Invalid FIREBASE_SERVICE_ACCOUNT_JSON: ${error.message}`);
   }
+
+  if (typeof serviceAccount.private_key === 'string') {
+    // GitHub secrets are often stored with escaped newlines; normalize for PEM parsing.
+    serviceAccount.private_key = serviceAccount.private_key
+      .replace(/\r\n/g, '\n')
+      .replace(/\\n/g, '\n')
+      .trim();
+  }
+
+  return serviceAccount;
 }
 
 function initializeFirebase() {
@@ -138,7 +150,9 @@ function chunkArray(items, size) {
 }
 
 async function sendExpoMessages(messages) {
-  const expoAccessToken = process.env.EXPO_PUSH_ACCESS_TOKEN;
+  const expoAccessToken = typeof process.env.EXPO_PUSH_ACCESS_TOKEN === 'string'
+    ? process.env.EXPO_PUSH_ACCESS_TOKEN.trim()
+    : '';
   const chunks = chunkArray(messages, 100);
   let sent = 0;
   let failed = 0;
@@ -162,6 +176,15 @@ async function sendExpoMessages(messages) {
 
     const result = await response.json();
     if (!response.ok) {
+      if (
+        response.status === 400 &&
+        Array.isArray(result?.errors) &&
+        result.errors.some((error) => error?.code === 'AUTHENTICATION_ERROR')
+      ) {
+        throw new Error(
+          'Expo authentication failed. EXPO_PUSH_ACCESS_TOKEN is invalid/revoked or contains extra whitespace.'
+        );
+      }
       throw new Error(`Expo API error: ${JSON.stringify(result)}`);
     }
 
