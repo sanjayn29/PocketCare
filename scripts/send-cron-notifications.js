@@ -1,12 +1,12 @@
 const admin = require('firebase-admin');
 
 const MODE = process.argv[2];
-const VALID_MODES = new Set(['daily', 'goals', 'all']);
+const VALID_MODES = new Set(['daily', 'goals', 'tasks', 'deadlines', 'all']);
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 const IST_TIMEZONE = 'Asia/Kolkata';
 
 if (!MODE || !VALID_MODES.has(MODE)) {
-  console.error('Usage: node scripts/send-cron-notifications.js <daily|goals|all>');
+  console.error('Usage: node scripts/send-cron-notifications.js <daily|goals|tasks|deadlines|all>');
   process.exit(1);
 }
 
@@ -96,6 +96,12 @@ function buildDailyMessages(users) {
   }));
 }
 
+async function getUserPushToken(db, userId) {
+  const userDoc = await db.collection('UDB').doc(userId).get();
+  const userData = userDoc.exists ? userDoc.data() || {} : {};
+  return isExpoPushToken(userData.pushToken) ? userData.pushToken : null;
+}
+
 async function buildGoalDeadlineMessages(db) {
   const today = getTodayInIST();
   const goalDocs = await db.collection('Goals').get();
@@ -109,11 +115,7 @@ async function buildGoalDeadlineMessages(db) {
     if (isExpoPushToken(data.pushToken)) {
       pushToken = data.pushToken;
     } else {
-      const userDoc = await db.collection('UDB').doc(doc.id).get();
-      const userData = userDoc.exists ? userDoc.data() || {} : {};
-      if (isExpoPushToken(userData.pushToken)) {
-        pushToken = userData.pushToken;
-      }
+      pushToken = await getUserPushToken(db, doc.id);
     }
 
     if (!pushToken) continue;
@@ -135,6 +137,44 @@ async function buildGoalDeadlineMessages(db) {
           email: doc.id,
           goalId: goal.id || '',
           deadline,
+        },
+      });
+    }
+  }
+
+  return messages;
+}
+
+async function buildTaskDeadlineMessages(db) {
+  const today = getTodayInIST();
+  const taskDocs = await db.collection('Tasks').get();
+  const messages = [];
+
+  for (const doc of taskDocs.docs) {
+    const data = doc.data() || {};
+    const tasks = Array.isArray(data.tasks) ? data.tasks : [];
+    if (tasks.length === 0) continue;
+
+    const pushToken = await getUserPushToken(db, doc.id);
+    if (!pushToken) continue;
+
+    for (const task of tasks) {
+      const dueDate = typeof task.due_date === 'string' ? task.due_date.trim() : '';
+      const taskTitle = typeof task.title === 'string' ? task.title.trim() : '';
+      const isCompleted = task.status === 'completed';
+      if (!dueDate || isCompleted) continue;
+      if (dueDate !== today) continue;
+
+      messages.push({
+        to: pushToken,
+        sound: 'default',
+        title: `Task Deadline Today: ${taskTitle || 'Task'}`,
+        body: `Today is the deadline for "${taskTitle || 'this task'}".`,
+        data: {
+          type: 'task-deadline-reminder',
+          email: doc.id,
+          taskId: task.id || '',
+          dueDate,
         },
       });
     }
@@ -221,6 +261,19 @@ async function main() {
   if (MODE === 'goals' || MODE === 'all') {
     const goalMessages = await buildGoalDeadlineMessages(db);
     messages = messages.concat(goalMessages);
+  }
+
+  if (MODE === 'tasks' || MODE === 'all') {
+    const taskMessages = await buildTaskDeadlineMessages(db);
+    messages = messages.concat(taskMessages);
+  }
+
+  if (MODE === 'deadlines') {
+    const [goalMessages, taskMessages] = await Promise.all([
+      buildGoalDeadlineMessages(db),
+      buildTaskDeadlineMessages(db),
+    ]);
+    messages = messages.concat(goalMessages, taskMessages);
   }
 
   if (messages.length === 0) {
