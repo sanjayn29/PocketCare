@@ -9,6 +9,10 @@ import {
     ScheduleEvent,
     updateScheduleEvent,
 } from '@/lib/schedule-service';
+import {
+  cancelScheduleEventReminder,
+  scheduleScheduleEventReminder,
+} from '@/utils/notifications';
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -32,7 +36,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const PRIORITY_CONFIG = (colors: any): Record<'High' | 'Medium' | 'Low', { emoji: string; bg: string; text: string }> => ({
   High: { emoji: '🔴', bg: colors.danger, text: colors.danger },
@@ -53,6 +57,7 @@ export default function ScheduleScreen() {
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress;
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -192,7 +197,7 @@ export default function ScheduleScreen() {
     try {
       setIsSaving(true);
       if (email) {
-        await addScheduleEvent(
+        const eventId = await addScheduleEvent(
           email,
           newTitle.trim(),
           newPurpose.trim(),
@@ -204,6 +209,19 @@ export default function ScheduleScreen() {
           newStatus,
           newReminder
         );
+
+        if (newReminder && newStatus === 'Upcoming') {
+          await scheduleScheduleEventReminder({
+            eventId,
+            email,
+            title: newTitle.trim(),
+            purpose: newPurpose.trim(),
+            date: selectedDate,
+            startTime: newStartTime,
+          });
+        } else {
+          await cancelScheduleEventReminder(eventId);
+        }
 
         const updated = await getScheduleEvents(email);
         setEvents(updated);
@@ -230,6 +248,7 @@ export default function ScheduleScreen() {
           try {
             if (email) {
               await deleteScheduleEvent(email, id);
+              await cancelScheduleEventReminder(id);
               const updated = await getScheduleEvents(email);
               setEvents(updated);
             }
@@ -265,19 +284,36 @@ export default function ScheduleScreen() {
     try {
       setIsEditSaving(true);
       if (email) {
+        const updatedTitle = editTitle.trim();
+        const updatedPurpose = editPurpose.trim();
+        const updatedLocation = editLocation.trim();
+
         await updateScheduleEvent(
           email,
           editingEvent.id,
-          editTitle.trim(),
-          editPurpose.trim(),
+          updatedTitle,
+          updatedPurpose,
           editingEvent.date,
           editStartTime,
           editEndTime,
-          editLocation.trim(),
+          updatedLocation,
           editPriority,
           editStatus,
           editReminder
         );
+
+        if (editReminder && editStatus === 'Upcoming') {
+          await scheduleScheduleEventReminder({
+            eventId: editingEvent.id,
+            email,
+            title: updatedTitle,
+            purpose: updatedPurpose,
+            date: editingEvent.date,
+            startTime: editStartTime,
+          });
+        } else {
+          await cancelScheduleEventReminder(editingEvent.id);
+        }
 
         const updated = await getScheduleEvents(email);
         setEvents(updated);
@@ -672,7 +708,7 @@ export default function ScheduleScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.container}
         >
-          <View style={styles.modalHeader}>
+          <View style={[styles.modalHeader, { paddingTop: Math.max(insets.top + 8, 20) }]}>
             <TouchableOpacity onPress={() => setShowCreateModal(false)}>
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
@@ -793,7 +829,7 @@ export default function ScheduleScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.container}
         >
-          <View style={styles.modalHeader}>
+          <View style={[styles.modalHeader, { paddingTop: Math.max(insets.top + 8, 20) }]}>
             <TouchableOpacity onPress={() => setShowEditModal(false)}>
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
