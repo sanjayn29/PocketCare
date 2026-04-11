@@ -38,13 +38,353 @@ interface TapScore {
 
 const DOWNLOADS_DIRECTORY_URI_KEY = 'downloadsDirectoryUri';
 
+const textValue = (value: unknown): string => {
+  if (value === null || value === undefined) return "-";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  return String(value);
+};
+
+const wrapByChars = (text: string, width: number): string[] => {
+  const clean = textValue(text).replace(/\s+/g, " ").trim();
+  if (!clean) return ["-"];
+
+  const words = clean.split(" ");
+  const lines: string[] = [];
+  let current = "";
+
+  for (const word of words) {
+    if (word.length > width) {
+      if (current) {
+        lines.push(current);
+        current = "";
+      }
+      let i = 0;
+      while (i < word.length) {
+        lines.push(word.slice(i, i + width));
+        i += width;
+      }
+      continue;
+    }
+
+    const next = current ? `${current} ${word}` : word;
+    if (next.length <= width) {
+      current = next;
+    } else {
+      lines.push(current);
+      current = word;
+    }
+  }
+
+  if (current) lines.push(current);
+  return lines.length ? lines : ["-"];
+};
+
+const tableLines = (title: string, columns: Array<{ header: string; width: number }>, rows: string[][]): string[] => {
+  const lines: string[] = [];
+  const separator = `+${columns.map((c) => "-".repeat(c.width + 2)).join("+")}+`;
+  const header = `|${columns
+    .map((c) => ` ${c.header.slice(0, c.width).padEnd(c.width)} `)
+    .join("|")}|`;
+
+  lines.push("");
+  lines.push(title);
+  lines.push(separator);
+  lines.push(header);
+  lines.push(separator);
+
+  for (const row of rows) {
+    const wrappedCells = columns.map((col, idx) => wrapByChars(row[idx] ?? "-", col.width));
+    const maxRowLines = Math.max(...wrappedCells.map((cell) => cell.length));
+
+    for (let lineIndex = 0; lineIndex < maxRowLines; lineIndex += 1) {
+      const line = `|${columns
+        .map((col, colIndex) => {
+          const chunk = wrappedCells[colIndex][lineIndex] ?? "";
+          return ` ${chunk.slice(0, col.width).padEnd(col.width)} `;
+        })
+        .join("|")}|`;
+      lines.push(line);
+    }
+
+    lines.push(separator);
+  }
+
+  if (rows.length === 0) {
+    const emptyRow = `|${columns.map((c) => ` ${"-".padEnd(c.width)} `).join("|")}|`;
+    lines.push(emptyRow);
+    lines.push(separator);
+  }
+
+  return lines;
+};
+
 const createPdfBase64 = async (jsonString: string, email: string): Promise<string> => {
   const pdfDoc = await PDFDocument.create();
   const font = await pdfDoc.embedFont(StandardFonts.Courier);
 
-  const fontSize = 9;
-  const lineHeight = 11;
+  const fontSize = 8;
+  const lineHeight = 10;
   const margin = 36;
+  const parsedData = (() => {
+    try {
+      return JSON.parse(jsonString);
+    } catch {
+      return null;
+    }
+  })();
+
+  const reportLines: string[] = [
+    "PocketCare Data Export",
+    `User: ${email}`,
+    `Generated: ${new Date().toISOString()}`,
+  ];
+
+  if (!parsedData) {
+    reportLines.push("", "Raw Data:");
+    reportLines.push(...jsonString.split("\n"));
+  } else {
+    const finance = parsedData.finance ?? {};
+    const goals = Array.isArray(parsedData.goals) ? parsedData.goals : [];
+    const health = parsedData.health ?? {};
+    const notes = Array.isArray(parsedData.notes) ? parsedData.notes : [];
+    const placement = Array.isArray(parsedData.placement) ? parsedData.placement : [];
+    const schedule = Array.isArray(parsedData.schedule) ? parsedData.schedule : [];
+    const skills = Array.isArray(parsedData.skills) ? parsedData.skills : [];
+    const tasks = Array.isArray(parsedData.tasks) ? parsedData.tasks : [];
+
+    const transactions = Array.isArray(finance.transactions) ? finance.transactions : [];
+    const debts = Array.isArray(finance.debts) ? finance.debts : [];
+    const financeGoals = Array.isArray(finance.goals) ? finance.goals : [];
+    const medical = Array.isArray(health.medical) ? health.medical : [];
+    const foodDiet = Array.isArray(health.food_diet) ? health.food_diet : [];
+    const fitness = Array.isArray(health.fitness) ? health.fitness : [];
+
+    reportLines.push(
+      "",
+      "Summary",
+      `- Finance Transactions: ${transactions.length}`,
+      `- Finance Debts: ${debts.length}`,
+      `- Finance Goals: ${financeGoals.length}`,
+      `- Goals: ${goals.length}`,
+      `- Medical Records: ${medical.length}`,
+      `- Diet Plans: ${foodDiet.length}`,
+      `- Fitness Plans: ${fitness.length}`,
+      `- Notes: ${notes.length}`,
+      `- Placements: ${placement.length}`,
+      `- Schedule Events: ${schedule.length}`,
+      `- Skills: ${skills.length}`,
+      `- Tasks: ${tasks.length}`
+    );
+
+    reportLines.push(
+      ...tableLines(
+        "Finance - Transactions",
+        [
+          { header: "Date", width: 10 },
+          { header: "Type", width: 8 },
+          { header: "Amount", width: 10 },
+          { header: "Category", width: 14 },
+          { header: "Note", width: 24 },
+        ],
+        transactions.map((item: any) => [
+          textValue(item.date),
+          textValue(item.type),
+          textValue(item.amount),
+          textValue(item.category),
+          textValue(item.note),
+        ])
+      ),
+      ...tableLines(
+        "Finance - Debts",
+        [
+          { header: "To", width: 12 },
+          { header: "Amount", width: 10 },
+          { header: "Due Date", width: 10 },
+          { header: "Returned", width: 8 },
+          { header: "Description", width: 20 },
+        ],
+        debts.map((item: any) => [
+          textValue(item.to_whom),
+          textValue(item.amount),
+          textValue(item.due_date),
+          textValue(item.given_back),
+          textValue(item.description),
+        ])
+      ),
+      ...tableLines(
+        "Finance - Goals",
+        [
+          { header: "Title", width: 18 },
+          { header: "Target", width: 10 },
+          { header: "Current", width: 10 },
+          { header: "Description", width: 24 },
+        ],
+        financeGoals.map((item: any) => [
+          textValue(item.title),
+          textValue(item.target_amount),
+          textValue(item.current_amount),
+          textValue(item.description),
+        ])
+      ),
+      ...tableLines(
+        "Goals",
+        [
+          { header: "Title", width: 16 },
+          { header: "Category", width: 10 },
+          { header: "Status", width: 10 },
+          { header: "Priority", width: 10 },
+          { header: "Description", width: 20 },
+        ],
+        goals.map((item: any) => [
+          textValue(item.title),
+          textValue(item.category),
+          textValue(item.status),
+          textValue(item.priority),
+          textValue(item.description),
+        ])
+      ),
+      ...tableLines(
+        "Health - Medical",
+        [
+          { header: "Topic", width: 14 },
+          { header: "Start", width: 10 },
+          { header: "End", width: 10 },
+          { header: "Description", width: 32 },
+        ],
+        medical.map((item: any) => [
+          textValue(item.topic),
+          textValue(item.start_date),
+          textValue(item.end_date),
+          textValue(item.description),
+        ])
+      ),
+      ...tableLines(
+        "Health - Food & Diet",
+        [
+          { header: "Name", width: 16 },
+          { header: "Start", width: 10 },
+          { header: "End", width: 10 },
+          { header: "Description", width: 30 },
+        ],
+        foodDiet.map((item: any) => [
+          textValue(item.name),
+          textValue(item.start_date),
+          textValue(item.end_date),
+          textValue(item.description),
+        ])
+      ),
+      ...tableLines(
+        "Health - Fitness",
+        [
+          { header: "Name", width: 16 },
+          { header: "Start", width: 10 },
+          { header: "End", width: 10 },
+          { header: "Completed Days", width: 16 },
+          { header: "Description", width: 14 },
+        ],
+        fitness.map((item: any) => [
+          textValue(item.name),
+          textValue(item.start_date),
+          textValue(item.end_date),
+          textValue(Array.isArray(item.completed_dates) ? item.completed_dates.length : 0),
+          textValue(item.description),
+        ])
+      ),
+      ...tableLines(
+        "Notes",
+        [
+          { header: "Title", width: 20 },
+          { header: "Created", width: 19 },
+          { header: "Content", width: 34 },
+        ],
+        notes.map((item: any) => [
+          textValue(item.title),
+          textValue(item.created_at),
+          textValue(item.content),
+        ])
+      ),
+      ...tableLines(
+        "Placement",
+        [
+          { header: "Company", width: 14 },
+          { header: "Date", width: 10 },
+          { header: "Status", width: 10 },
+          { header: "Stage", width: 12 },
+          { header: "Studied", width: 8 },
+          { header: "Round Topics", width: 12 },
+        ],
+        placement.map((item: any) => [
+          textValue(item.company_name),
+          textValue(item.date),
+          textValue(item.status),
+          textValue(item.company_status),
+          textValue(item.studied),
+          textValue(
+            Array.isArray(item.rounds)
+              ? item.rounds.map((round: any) => textValue(round.topic)).join(", ")
+              : "-"
+          ),
+        ])
+      ),
+      ...tableLines(
+        "Schedule",
+        [
+          { header: "Title", width: 14 },
+          { header: "Date", width: 10 },
+          { header: "Start", width: 5 },
+          { header: "End", width: 5 },
+          { header: "Status", width: 10 },
+          { header: "Priority", width: 10 },
+          { header: "Purpose", width: 16 },
+        ],
+        schedule.map((item: any) => [
+          textValue(item.title),
+          textValue(item.date),
+          textValue(item.startTime),
+          textValue(item.endTime),
+          textValue(item.status),
+          textValue(item.priority),
+          textValue(item.purpose),
+        ])
+      ),
+      ...tableLines(
+        "Skills",
+        [
+          { header: "Name", width: 16 },
+          { header: "Level", width: 12 },
+          { header: "Progress", width: 10 },
+          { header: "Items", width: 25 },
+        ],
+        skills.map((item: any) => [
+          textValue(item.name),
+          textValue(item.level),
+          textValue(Array.isArray(item.progress) ? item.progress.length : 0),
+          textValue(
+            Array.isArray(item.progress)
+              ? item.progress.map((progress: any) => textValue(progress.title)).join(", ")
+              : "-"
+          ),
+        ])
+      ),
+      ...tableLines(
+        "Tasks",
+        [
+          { header: "Title", width: 18 },
+          { header: "Due Date", width: 10 },
+          { header: "Priority", width: 10 },
+          { header: "Status", width: 10 },
+          { header: "Description", width: 26 },
+        ],
+        tasks.map((item: any) => [
+          textValue(item.title),
+          textValue(item.due_date),
+          textValue(item.priority),
+          textValue(item.status),
+          textValue(item.description),
+        ])
+      )
+    );
+  }
 
   let page = pdfDoc.addPage();
   let { width, height } = page.getSize();
@@ -99,19 +439,7 @@ const createPdfBase64 = async (jsonString: string, email: string): Promise<strin
     return lines;
   };
 
-  const headerLines = [
-    "PocketCare Data Export",
-    `User: ${email}`,
-    `Generated: ${new Date().toISOString()}`,
-    "",
-    "Data:",
-  ];
-
-  for (const line of headerLines) {
-    writeLine(line);
-  }
-
-  for (const rawLine of jsonString.split("\n")) {
+  for (const rawLine of reportLines) {
     const wrapped = wrapByWidth(rawLine);
     for (const line of wrapped) {
       writeLine(line);
