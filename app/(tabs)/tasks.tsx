@@ -10,17 +10,17 @@ import { useFonts } from 'expo-font';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator, Alert,
-    Animated,
-    FlatList,
-    Keyboard,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    StyleSheet, Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator, Alert,
+  Animated,
+  FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet, Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getGoals, Goal, updateGoal } from '../../lib/goals-service';
@@ -1191,7 +1191,3 @@ export default function TasksScreen() {
     </SafeAreaView>
   );
 }
-
-
-
-
