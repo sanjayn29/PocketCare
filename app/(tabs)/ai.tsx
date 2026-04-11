@@ -6,7 +6,6 @@ import { useColorScheme } from '@/hooks/use-color-scheme'
 import { getAIResponse, getProductivityInsight } from '@/lib/ai-service'
 import { useUser } from '@clerk/expo'
 import { Ionicons } from '@expo/vector-icons'
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs'
 import { BlurView } from 'expo-blur'
 import { useFonts } from 'expo-font'
 import { useRouter } from 'expo-router'
@@ -40,7 +39,7 @@ export default function AIScreen() {
   const router = useRouter()
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
-  const tabBarHeight = useBottomTabBarHeight()
+  const TAB_BAR_HEIGHT = 80;
   const colors = getColors(isDark)
   const cardSystem = getCardSystem(colors, isDark)
   const brightGold = '#D4AF37'
@@ -293,7 +292,7 @@ export default function AIScreen() {
     messagesContent: {
       paddingHorizontal: 16,
       paddingTop: 16,
-      paddingBottom: tabBarHeight + 100,
+      paddingBottom: TAB_BAR_HEIGHT + 100,
       flexGrow: 1,
     },
     messageContainer: {
@@ -394,7 +393,7 @@ export default function AIScreen() {
     },
     inputWrapper: {
       paddingBottom: Platform.OS === 'ios' ? 12 : 10,
-      marginBottom: tabBarHeight + (Platform.OS === 'ios' ? 14 : 12),
+      marginBottom: TAB_BAR_HEIGHT + (Platform.OS === 'ios' ? 14 : 12),
       borderTopWidth: 1,
       borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
       backgroundColor: 'transparent',
