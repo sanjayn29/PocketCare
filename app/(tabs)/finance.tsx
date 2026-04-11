@@ -1123,7 +1123,7 @@ export default function FinanceScreen() {
             {!isSynthetic && (
               <View style={dynamicStyles.txActionRail}>
                 <TouchableOpacity onPress={() => openEditTx(item)} style={dynamicStyles.txActionButton}>
-                  <Ionicons name="pencil-outline" size={18} color={colors.primary}/>
+                  <Ionicons name="create-outline" size={18} color="#D4AF37"/>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
@@ -1190,7 +1190,7 @@ export default function FinanceScreen() {
               </View>
               <View style={{flexDirection: 'row', gap: 12, marginTop: 8}}>
                 <TouchableOpacity onPress={()=> openEditDebt(item)}>
-                  <Ionicons name="pencil-outline" size={18} color={colors.textSecondary}/>
+                  <Ionicons name="create-outline" size={18} color="#D4AF37"/>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={()=> {
                   Alert.alert('Delete', 'Delete debt record?', [
@@ -1254,7 +1254,7 @@ export default function FinanceScreen() {
             <View style={{ alignItems: 'flex-end', justifyContent: 'space-between' }}>
               <View style={{ flexDirection: 'row', gap: 12 }}>
                 <TouchableOpacity onPress={() => openEditGoal(item)}>
-                  <Ionicons name="pencil-outline" size={18} color={colors.textSecondary} />
+                  <Ionicons name="create-outline" size={18} color="#D4AF37" />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => {
                   Alert.alert('Delete Goal', `Are you sure you want to delete "${item.title}"?`, [

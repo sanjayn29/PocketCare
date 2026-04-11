@@ -216,7 +216,7 @@ export default function NotesScreen() {
 
         <View style={dynamicStyles.noteActionRail}>
           <TouchableOpacity onPress={() => openEditModal(item)} hitSlop={10} style={dynamicStyles.noteActionButton}>
-            <Ionicons name="pencil-outline" size={18} color={colors.primary} />
+            <Ionicons name="create-outline" size={18} color="#D4AF37" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => handleDelete(item.id)} hitSlop={10} style={dynamicStyles.noteActionButton}>
             <Ionicons name="trash-outline" size={18} color={colors.danger} />

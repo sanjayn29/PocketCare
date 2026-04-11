@@ -699,7 +699,7 @@ export default function PlacementScreen() {
                 <Text style={[styles.statusBadgeText, { color: cfg.color }]}>{cfg.label}</Text>
               </View>
               <TouchableOpacity style={styles.headerActionBtn} onPress={() => openEdit(item)} hitSlop={10}>
-                <Ionicons name="pencil-outline" size={16} color={activeTab === 'placements' ? uiColors.placements : uiColors.companies} />
+                <Ionicons name="create-outline" size={16} color="#D4AF37" />
               </TouchableOpacity>
               <TouchableOpacity style={styles.headerActionBtn} onPress={() => handleDelete(item.id)} hitSlop={10}>
                 <Ionicons name="trash-outline" size={16} color={colors.danger} />

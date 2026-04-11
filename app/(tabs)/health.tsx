@@ -354,7 +354,7 @@ export default function HealthScreen() {
               <Text style={dynamicStyles.healthTitle} numberOfLines={1} onPress={()=> openEditMedical(item)}>{item.topic}</Text>
               <View style={dynamicStyles.healthTopActions}>
                 <TouchableOpacity onPress={()=> openEditMedical(item)} style={dynamicStyles.healthTopActionButton}>
-                  <Ionicons name="pencil-outline" size={17} color={colors.primary}/>
+                  <Ionicons name="create-outline" size={17} color="#D4AF37"/>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={()=> {
                     Alert.alert('Delete', 'Delete medical record?', [
@@ -397,7 +397,7 @@ export default function HealthScreen() {
               <Text style={dynamicStyles.healthTitle} numberOfLines={1} onPress={()=> isDiet ? openEditDiet(item as DietPlan) : openEditFitness(item as FitnessPlan)}>{item.name}</Text>
               <View style={dynamicStyles.healthTopActions}>
                 <TouchableOpacity onPress={()=> isDiet ? openEditDiet(item as DietPlan) : openEditFitness(item as FitnessPlan)} style={dynamicStyles.healthTopActionButton}>
-                  <Ionicons name="pencil-outline" size={17} color={colors.primary}/>
+                  <Ionicons name="create-outline" size={17} color="#D4AF37"/>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={()=> {
                     Alert.alert('Delete', `Delete ${isDiet ? 'diet' : 'fitness'} plan?`, [

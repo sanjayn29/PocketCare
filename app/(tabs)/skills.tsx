@@ -446,7 +446,7 @@ export default function SkillsScreen() {
               </View>
               <View style={dynamicStyles.skillTopActions}>
                 <TouchableOpacity onPress={() => openEditModal(item)} hitSlop={10} style={dynamicStyles.skillTopActionButton}>
-                  <Ionicons name="pencil-outline" size={16} color={colors.primary} />
+                  <Ionicons name="create-outline" size={16} color="#D4AF37" />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => handleDelete(item.id)} hitSlop={10} style={dynamicStyles.skillTopActionButton}>
                   <Ionicons name="trash-outline" size={16} color={colors.danger} />
@@ -582,7 +582,7 @@ export default function SkillsScreen() {
                   {editingTaskId === t.id ? (
                     <TouchableOpacity onPress={saveRenameTask}><Ionicons name="checkmark" size={20} color={colors.primary} /></TouchableOpacity>
                   ) : (
-                    <TouchableOpacity onPress={() => startRenameTask(t)}><Ionicons name="pencil-outline" size={18} color={colors.textSecondary} /></TouchableOpacity>
+                    <TouchableOpacity onPress={() => startRenameTask(t)}><Ionicons name="create-outline" size={18} color="#D4AF37" /></TouchableOpacity>
                   )}
                   <TouchableOpacity onPress={() => removeEditTask(t.id)}><Ionicons name="trash-outline" size={18} color={colors.danger} /></TouchableOpacity>
                 </View>

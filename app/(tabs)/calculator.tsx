@@ -1038,7 +1038,7 @@ export default function CalculatorScreen() {
           </View>
 
           <TouchableOpacity style={dynamicStyles.iconBtn} onPress={() => handleRenameGroup(item)}>
-            <Ionicons name="create-outline" size={18} color={colors.primary} />
+            <Ionicons name="create-outline" size={18} color="#D4AF37" />
           </TouchableOpacity>
 
           <TouchableOpacity
