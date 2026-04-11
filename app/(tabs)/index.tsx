@@ -807,7 +807,7 @@ export default function HomeScreen() {
                       <Ionicons name="chevron-down" size={14} color={idx === enabledWidgets.length - 1 ? colors.border : colors.textSecondary} />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => toggleWidget(w.id)}>
-                      <Ionicons name="close-circle" size={18} color="#EF4444" />
+                      <Ionicons name="trash-outline" size={18} color="#EF4444" />
                     </TouchableOpacity>
                   </View>
                 )}

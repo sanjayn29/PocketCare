@@ -138,7 +138,7 @@ const RoundCard = React.memo(({
         </View>
         {onDelete && (
           <TouchableOpacity onPress={onDelete} style={{ marginLeft: 6 }}>
-            <Ionicons name="trash-outline" size={15} color={colors.danger} />
+            <Ionicons name="trash-outline" size={15} color="#EF4444" />
           </TouchableOpacity>
         )}
       </View>
@@ -702,7 +702,7 @@ export default function PlacementScreen() {
                 <Ionicons name="create-outline" size={16} color="#D4AF37" />
               </TouchableOpacity>
               <TouchableOpacity style={styles.headerActionBtn} onPress={() => handleDelete(item.id)} hitSlop={10}>
-                <Ionicons name="trash-outline" size={16} color={colors.danger} />
+                <Ionicons name="trash-outline" size={16} color="#EF4444" />
               </TouchableOpacity>
             </View>
           </View>

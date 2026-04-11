@@ -1262,7 +1262,7 @@ export default function FinanceScreen() {
                     { text: 'Delete', style: 'destructive', onPress: () => { deleteFinanceGoal(email!, item.id); loadData(); }}
                   ]);
                 }}>
-                  <Ionicons name="trash-outline" size={18} color={uiColors.transactions} />
+                  <Ionicons name="trash-outline" size={18} color="#EF4444" />
                 </TouchableOpacity>
               </View>
 

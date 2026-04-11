@@ -567,7 +567,7 @@ export default function GoalsScreen() {
             <Ionicons name="create-outline" size={20} color="#D4AF37" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => handleDelete(item.id)} hitSlop={10} style={dynamicStyles.actionButton}>
-            <Ionicons name="trash-outline" size={20} color={colors.danger} />
+            <Ionicons name="trash-outline" size={20} color="#EF4444" />
           </TouchableOpacity>
         </View>
       </View>
@@ -621,7 +621,7 @@ export default function GoalsScreen() {
                     ) : (
                       <View style={{ flexDirection: 'row', gap: 12 }}>
                         <TouchableOpacity onPress={() => startEditingNewTask(t)} style={dynamicStyles.subtaskActionBtn}><Ionicons name="create-outline" size={18} color="#D4AF37" /></TouchableOpacity>
-                        <TouchableOpacity onPress={() => removeNewTask(t.id)} style={dynamicStyles.subtaskActionBtn}><Ionicons name="trash-outline" size={18} color="#FF5252" /></TouchableOpacity>
+                        <TouchableOpacity onPress={() => removeNewTask(t.id)} style={dynamicStyles.subtaskActionBtn}><Ionicons name="trash-outline" size={18} color="#EF4444" /></TouchableOpacity>
                       </View>
                     )}
                  </View>
@@ -934,7 +934,7 @@ export default function GoalsScreen() {
                       ) : (
                         <View style={{ flexDirection: 'row', gap: 12 }}>
                           <TouchableOpacity onPress={() => startEditingTask(t)} style={dynamicStyles.subtaskActionBtn}><Ionicons name="create-outline" size={18} color="#D4AF37" /></TouchableOpacity>
-                          <TouchableOpacity onPress={() => removeTask(t.id)} style={dynamicStyles.subtaskActionBtn}><Ionicons name="trash-outline" size={18} color="#FF5252" /></TouchableOpacity>
+                          <TouchableOpacity onPress={() => removeTask(t.id)} style={dynamicStyles.subtaskActionBtn}><Ionicons name="trash-outline" size={18} color="#EF4444" /></TouchableOpacity>
                         </View>
                       )}
                    </View>

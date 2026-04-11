@@ -391,7 +391,7 @@ export default function SkillsScreen() {
               <Ionicons name="ellipse-outline" size={20} color={colors.textSecondary} />
               <Text style={dynamicStyles.taskRowText}>{t.title}</Text>
               <TouchableOpacity onPress={() => removeNewTask(t.id)}>
-                <Ionicons name="close-circle" size={18} color={colors.danger} />
+                <Ionicons name="trash-outline" size={18} color="#EF4444" />
               </TouchableOpacity>
             </View>
           ))}
@@ -449,7 +449,7 @@ export default function SkillsScreen() {
                   <Ionicons name="create-outline" size={16} color="#D4AF37" />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => handleDelete(item.id)} hitSlop={10} style={dynamicStyles.skillTopActionButton}>
-                  <Ionicons name="trash-outline" size={16} color={colors.danger} />
+                  <Ionicons name="trash-outline" size={16} color="#EF4444" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -584,7 +584,7 @@ export default function SkillsScreen() {
                   ) : (
                     <TouchableOpacity onPress={() => startRenameTask(t)}><Ionicons name="create-outline" size={18} color="#D4AF37" /></TouchableOpacity>
                   )}
-                  <TouchableOpacity onPress={() => removeEditTask(t.id)}><Ionicons name="trash-outline" size={18} color={colors.danger} /></TouchableOpacity>
+                  <TouchableOpacity onPress={() => removeEditTask(t.id)}><Ionicons name="trash-outline" size={18} color="#EF4444" /></TouchableOpacity>
                 </View>
               </View>
             ))}

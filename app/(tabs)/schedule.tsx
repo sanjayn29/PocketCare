@@ -494,7 +494,7 @@ export default function ScheduleScreen() {
               <Ionicons name="create-outline" size={18} color="#D4AF37" />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => handleDeleteEvent(item.id)} hitSlop={10} style={styles.scheduleActionButton}>
-              <Ionicons name="trash-outline" size={18} color={colors.danger} />
+              <Ionicons name="trash-outline" size={18} color="#EF4444" />
             </TouchableOpacity>
           </View>
         </View>
@@ -518,7 +518,7 @@ export default function ScheduleScreen() {
               <Ionicons name="create-outline" size={18} color="#D4AF37" />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => handleDeleteEvent(item.id)} hitSlop={10}>
-              <Ionicons name="trash-outline" size={18} color={colors.danger} />
+              <Ionicons name="trash-outline" size={18} color="#EF4444" />
             </TouchableOpacity>
           </View>
         </View>

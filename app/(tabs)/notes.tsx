@@ -219,7 +219,7 @@ export default function NotesScreen() {
             <Ionicons name="create-outline" size={18} color="#D4AF37" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => handleDelete(item.id)} hitSlop={10} style={dynamicStyles.noteActionButton}>
-            <Ionicons name="trash-outline" size={18} color={colors.danger} />
+            <Ionicons name="trash-outline" size={18} color="#EF4444" />
           </TouchableOpacity>
         </View>
       </View>

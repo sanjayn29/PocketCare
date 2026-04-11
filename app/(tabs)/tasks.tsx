@@ -784,7 +784,7 @@ export default function TasksScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity style={[dynamicStyles.deleteArea]} onPress={() => handleDelete(item.id)} hitSlop={10}>
-          <Ionicons name="trash-outline" size={20} color={item.isGoalTask ? colors.border : colors.danger} />
+          <Ionicons name="trash-outline" size={20} color="#EF4444" />
         </TouchableOpacity>
       </View>
     );

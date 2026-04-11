@@ -1045,7 +1045,7 @@ export default function CalculatorScreen() {
             style={dynamicStyles.iconBtn}
             onPress={() => isBasicCalc ? handleDeleteBasicGroup(item) : handleDeleteGroup(item)}
           >
-            <Ionicons name="trash-outline" size={18} color={colors.danger} />
+            <Ionicons name="trash-outline" size={18} color="#EF4444" />
           </TouchableOpacity>
         </View>
 
@@ -1075,7 +1075,7 @@ export default function CalculatorScreen() {
             </View>
 
             <TouchableOpacity onPress={() => handleDeleteEntry(item.id, entry)}>
-              <Ionicons name="close-circle" size={20} color={colors.danger} />
+              <Ionicons name="trash-outline" size={20} color="#EF4444" />
             </TouchableOpacity>
           </View>
         ))}
