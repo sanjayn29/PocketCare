@@ -134,6 +134,9 @@ const createPdfBase64 = async (jsonString: string, email: string): Promise<strin
   })();
 
   const reportLines: string[] = [
+    "Developed by Sanjay N",
+    "Contact: www.sanjayn.me",
+    "",
     "PocketCare Data Export",
     `User: ${email}`,
     `Generated: ${new Date().toISOString()}`,
