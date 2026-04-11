@@ -476,6 +476,26 @@ export default function AIScreen() {
               </View>
             </View>
           </View>
+          
+          <Animated.ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false} 
+            contentContainerStyle={{ marginTop: 18, gap: 8, paddingBottom: 4 }}
+          >
+            <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textSecondary, alignSelf: 'center', marginRight: 4 }}>Access:</Text>
+            {['✅ Tasks', '🎯 Goals', '❤️ Health Stats'].map(item => (
+              <View key={item} style={{
+                backgroundColor: isDark ? 'rgba(212, 175, 55, 0.15)' : 'rgba(212, 175, 55, 0.12)',
+                paddingHorizontal: 12, paddingVertical: 6,
+                borderRadius: 20, borderWidth: 1,
+                borderColor: isDark ? 'rgba(212, 175, 55, 0.5)' : '#D4AF37'
+              }}>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: isDark ? '#E8C96A' : '#B8860B' }}>
+                  {item}
+                </Text>
+              </View>
+            ))}
+          </Animated.ScrollView>
         </View>
 
         <FlatList
