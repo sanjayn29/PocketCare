@@ -890,7 +890,7 @@ export default function PlacementScreen() {
       {/* ── Edit Modal ─────────────────────────────────────────────────────── */}
       <Modal visible={modalVisible} animationType="slide" transparent statusBarTranslucent onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalSheetWrap}>
+          <KeyboardAvoidingView behavior="padding" style={styles.modalSheetWrap}>
             <View style={styles.modalContainer}>
               <View style={styles.modalHeader}>
                 <TouchableOpacity onPress={() => setModalVisible(false)}>

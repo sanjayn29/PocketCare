@@ -1126,7 +1126,7 @@ export default function TasksScreen() {
           onRequestClose={() => setModalVisible(false)}
         >
           <KeyboardAvoidingView 
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior="padding"
             style={[dynamicStyles.modalContainer]}
           >
             <View style={[dynamicStyles.modalHeader]}>

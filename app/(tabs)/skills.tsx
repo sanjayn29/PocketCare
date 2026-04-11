@@ -526,7 +526,7 @@ export default function SkillsScreen() {
       {/* ── Edit Modal ── */}
       <Modal visible={modalVisible} animationType="slide" transparent statusBarTranslucent onRequestClose={() => setModalVisible(false)}>
         <View style={dynamicStyles.modalOverlay}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={dynamicStyles.modalSheetWrap}>
+          <KeyboardAvoidingView behavior="padding" style={dynamicStyles.modalSheetWrap}>
             <View style={dynamicStyles.modalContainer}>
               <View style={dynamicStyles.modalHeader}>
                 <TouchableOpacity onPress={() => setModalVisible(false)}><Text style={dynamicStyles.cancelText}>Cancel</Text></TouchableOpacity>

@@ -1357,7 +1357,7 @@ export default function FinanceScreen() {
       {/* ── Edit Tx Modal ── */}
       <Modal visible={editingTx !== null} animationType="slide" transparent statusBarTranslucent onRequestClose={() => setEditingTx(null)}>
         <View style={dynamicStyles.modalOverlay}>
-          <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={dynamicStyles.modalSheetWrap}>
+          <KeyboardAvoidingView behavior="padding" style={dynamicStyles.modalSheetWrap}>
             <View style={dynamicStyles.modalContainer}>
               <View style={dynamicStyles.modalHeader}>
                 <TouchableOpacity onPress={()=>setEditingTx(null)}><Text style={{fontSize:16, color: colors.textSecondary}}>Cancel</Text></TouchableOpacity>
@@ -1397,7 +1397,7 @@ export default function FinanceScreen() {
       {/* ── Edit Debt Modal ── */}
       <Modal visible={editingDebt !== null} animationType="slide" transparent statusBarTranslucent onRequestClose={() => setEditingDebt(null)}>
         <View style={dynamicStyles.modalOverlay}>
-          <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={dynamicStyles.modalSheetWrap}>
+          <KeyboardAvoidingView behavior="padding" style={dynamicStyles.modalSheetWrap}>
             <View style={dynamicStyles.modalContainer}>
               <View style={dynamicStyles.modalHeader}>
                 <TouchableOpacity onPress={()=>setEditingDebt(null)}><Text style={{fontSize:16, color: colors.textSecondary}}>Cancel</Text></TouchableOpacity>
@@ -1439,7 +1439,7 @@ export default function FinanceScreen() {
       {/* ── Edit Goal Modal ── */}
       <Modal visible={editingGoal !== null} animationType="slide" transparent statusBarTranslucent onRequestClose={() => setEditingGoal(null)}>
         <View style={dynamicStyles.modalOverlay}>
-          <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={dynamicStyles.modalSheetWrap}>
+          <KeyboardAvoidingView behavior="padding" style={dynamicStyles.modalSheetWrap}>
             <View style={dynamicStyles.modalContainer}>
               <View style={dynamicStyles.modalHeader}>
                 <TouchableOpacity onPress={()=>setEditingGoal(null)}><Text style={{fontSize:16, color: colors.textSecondary}}>Cancel</Text></TouchableOpacity>

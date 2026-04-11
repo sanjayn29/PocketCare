@@ -726,7 +726,7 @@ export default function ScheduleScreen() {
       >
         <View style={styles.modalOverlay}>
           <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior="padding"
             style={styles.modalSheetWrap}
           >
             <View style={styles.modalSheet}>
@@ -856,7 +856,7 @@ export default function ScheduleScreen() {
       >
         <View style={styles.modalOverlay}>
           <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior="padding"
             style={styles.modalSheetWrap}
           >
             <View style={styles.modalSheet}>

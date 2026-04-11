@@ -764,7 +764,7 @@ export default function NotesScreen() {
       >
         <View style={dynamicStyles.modalOverlay}>
           <KeyboardAvoidingView 
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior="padding"
             style={dynamicStyles.modalSheetWrap}
           >
             <View style={dynamicStyles.modalContainer}>

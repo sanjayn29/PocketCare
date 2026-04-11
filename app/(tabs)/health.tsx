@@ -457,7 +457,7 @@ export default function HealthScreen() {
   const renderEditModal = (visible: boolean, onClose: () => void, onSave: () => void, titleHeader: string, themeColor: string) => (
       <Modal visible={visible} animationType="slide" transparent statusBarTranslucent onRequestClose={onClose}>
         <View style={dynamicStyles.modalOverlay}>
-          <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={dynamicStyles.modalSheetWrap}>
+          <KeyboardAvoidingView behavior="padding" style={dynamicStyles.modalSheetWrap}>
             <View style={dynamicStyles.modalContainer}>
               <View style={dynamicStyles.modalHeader}>
                 <TouchableOpacity onPress={onClose}><Text style={{fontSize:16, color: colors.textSecondary}}>Cancel</Text></TouchableOpacity>
