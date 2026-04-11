@@ -1328,8 +1328,8 @@ export default function FinanceScreen() {
       {/* ── Goal Add/Take Money Modal ── */}
       <Modal visible={showGoalUpdateModal} animationType="fade" transparent={true}>
         <View style={{flex:1, backgroundColor:'rgba(0,0,0,0.5)', justifyContent:'center', padding:20}}>
-          <View style={{backgroundColor:'#FFF', borderRadius:16, padding:20}}>
-            <Text style={{fontSize:18, fontWeight:'700', marginBottom:16, textAlign:'center'}}>Update {selectedGoal?.title}</Text>
+          <View style={{backgroundColor: colors.card, borderRadius:20, padding:24, borderWidth: 1, borderColor: colors.border}}>
+            <Text style={{fontSize:20, fontWeight:'800', marginBottom:16, textAlign:'center', color: colors.text}}>Update {selectedGoal?.title}</Text>
             
             <View style={dynamicStyles.segmentBlock}>
               <TouchableOpacity style={[dynamicStyles.segmentBtn, goalUpdateType==='add' && {backgroundColor:'#10B981'}]} onPress={()=>setGoalUpdateType('add')}>
@@ -1340,13 +1340,13 @@ export default function FinanceScreen() {
               </TouchableOpacity>
             </View>
 
-            <TextInput style={dynamicStyles.input} placeholder="Amount" keyboardType="numeric" value={goalUpdateAmount} onChangeText={setGoalUpdateAmount} autoFocus />
+            <TextInput style={dynamicStyles.input} placeholderTextColor={colors.textSecondary} placeholder="Amount" keyboardType="numeric" value={goalUpdateAmount} onChangeText={setGoalUpdateAmount} autoFocus />
             
-            <View style={{flexDirection:'row', gap:10, marginTop:10}}>
-              <TouchableOpacity style={{flex:1, padding:12, backgroundColor:'#F1F5F9', borderRadius:10, alignItems:'center'}} onPress={()=>setShowGoalUpdateModal(false)}>
-                <Text style={{fontWeight:'700', color:'#64748B'}}>Cancel</Text>
+            <View style={{flexDirection:'row', gap:12, marginTop:16}}>
+              <TouchableOpacity style={{flex:1, padding:14, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#F1F5F9', borderRadius:14, alignItems:'center'}} onPress={()=>setShowGoalUpdateModal(false)}>
+                <Text style={{fontWeight:'700', color: colors.textSecondary}}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={{flex:1, padding:12, backgroundColor:'#3B82F6', borderRadius:10, alignItems:'center'}} onPress={handleUpdateGoalAmount}>
+              <TouchableOpacity style={{flex:1, padding:14, backgroundColor: uiColors.goals, borderRadius:14, alignItems:'center'}} onPress={handleUpdateGoalAmount}>
                 <Text style={{fontWeight:'700', color:'#FFF'}}>Update</Text>
               </TouchableOpacity>
             </View>
