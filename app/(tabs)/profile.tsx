@@ -4,17 +4,20 @@ import { getCardSystem } from "@/constants/card-system";
 import { getColors } from "@/constants/styles";
 import { useTheme } from "@/context/ThemeContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { createDownloadFile, downloadAllUserData } from "@/lib/download-service";
 import { getMemoryGameScore, getTapGameScore } from "@/lib/games-service";
 import { getStreakData } from "@/lib/streak-service";
 import { useAuth, useUser } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from "expo-blur";
+import * as FileSystem from 'expo-file-system/legacy';
 import { useFonts } from "expo-font";
 import { useRouter } from "expo-router";
 import LottieView from "lottie-react-native";
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View, Switch } from "react-native";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ActivityIndicator, Alert, Image, Linking, Platform, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 let LocalAuthentication: any = null;
@@ -32,6 +35,93 @@ interface MemoryScore {
 interface TapScore {
   bestScore: number;
 }
+
+const DOWNLOADS_DIRECTORY_URI_KEY = 'downloadsDirectoryUri';
+
+const createPdfBase64 = async (jsonString: string, email: string): Promise<string> => {
+  const pdfDoc = await PDFDocument.create();
+  const font = await pdfDoc.embedFont(StandardFonts.Courier);
+
+  const fontSize = 9;
+  const lineHeight = 11;
+  const margin = 36;
+
+  let page = pdfDoc.addPage();
+  let { width, height } = page.getSize();
+  const maxWidth = width - margin * 2;
+  let y = height - margin;
+
+  const writeLine = (line: string) => {
+    if (y < margin) {
+      page = pdfDoc.addPage();
+      ({ width, height } = page.getSize());
+      y = height - margin;
+    }
+
+    page.drawText(line, {
+      x: margin,
+      y,
+      size: fontSize,
+      font,
+      color: rgb(0, 0, 0),
+    });
+
+    y -= lineHeight;
+  };
+
+  const wrapByWidth = (input: string): string[] => {
+    if (!input) {
+      return [""];
+    }
+
+    const lines: string[] = [];
+    let current = "";
+
+    for (const char of input) {
+      const next = current + char;
+      if (font.widthOfTextAtSize(next, fontSize) <= maxWidth) {
+        current = next;
+      } else {
+        if (current.length > 0) {
+          lines.push(current);
+          current = char;
+        } else {
+          lines.push(char);
+          current = "";
+        }
+      }
+    }
+
+    if (current.length > 0) {
+      lines.push(current);
+    }
+
+    return lines;
+  };
+
+  const headerLines = [
+    "PocketCare Data Export",
+    `User: ${email}`,
+    `Generated: ${new Date().toISOString()}`,
+    "",
+    "Data:",
+  ];
+
+  for (const line of headerLines) {
+    writeLine(line);
+  }
+
+  for (const rawLine of jsonString.split("\n")) {
+    const wrapped = wrapByWidth(rawLine);
+    for (const line of wrapped) {
+      writeLine(line);
+    }
+  }
+
+  return pdfDoc.saveAsBase64();
+};
+
+const isDownloadsDirectoryUri = (uri: string) => /download/i.test(decodeURIComponent(uri));
 
 const ProfileScreen: React.FC = () => {
   const { signOut } = useAuth();
@@ -55,6 +145,7 @@ const ProfileScreen: React.FC = () => {
   const [currentStreak, setCurrentStreak] = useState(0);
   const [maxStreak, setMaxStreak] = useState(0);
   const [appLockEnabled, setAppLockEnabled] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     AsyncStorage.getItem('appLockEnabled').then(val => {
@@ -135,6 +226,91 @@ const ProfileScreen: React.FC = () => {
       await signOut();
     } catch {
       Alert.alert("Logout Error", "Failed to logout");
+    }
+  };
+
+  const handleDownloadData = async () => {
+    if (!email) {
+      Alert.alert("Error", "Email not available");
+      return;
+    }
+
+    setIsDownloading(true);
+    try {
+      console.log('🔍 Downloading data for user:', email);
+      
+      // Fetch all user data
+      const userData = await downloadAllUserData(email);
+      
+      console.log('📊 Downloaded user data:', userData);
+      
+      if (!userData) {
+        Alert.alert("Export Failed", "Unable to export your data. Please try again.");
+        return;
+      }
+
+      // Create JSON string
+      const jsonString = await createDownloadFile(userData);
+      
+      console.log('📝 JSON string length:', jsonString.length);
+      console.log('📝 JSON preview:', jsonString.substring(0, 200));
+      
+      // Generate PDF from the exported JSON
+      const pdfFileName = `PocketCare-${new Date().toISOString().split('T')[0]}.pdf`;
+      const pdfBase64 = await createPdfBase64(jsonString, email);
+
+      if (Platform.OS === 'android') {
+        let directoryUri = await AsyncStorage.getItem(DOWNLOADS_DIRECTORY_URI_KEY);
+
+        if (directoryUri && !isDownloadsDirectoryUri(directoryUri)) {
+          directoryUri = null;
+          await AsyncStorage.removeItem(DOWNLOADS_DIRECTORY_URI_KEY);
+        }
+
+        if (!directoryUri) {
+          Alert.alert("Select Downloads Folder", "Select your phone's Downloads folder once. Next downloads will save there automatically.");
+          const permission = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+          if (!permission.granted) {
+            Alert.alert("Permission Required", "Please allow folder access and select your Downloads folder.");
+            return;
+          }
+
+          if (!isDownloadsDirectoryUri(permission.directoryUri)) {
+            Alert.alert("Wrong Folder", "Please select the Downloads folder to continue.");
+            return;
+          }
+
+          directoryUri = permission.directoryUri;
+          await AsyncStorage.setItem(DOWNLOADS_DIRECTORY_URI_KEY, directoryUri);
+        }
+
+        const outputUri = await FileSystem.StorageAccessFramework.createFileAsync(
+          directoryUri,
+          pdfFileName,
+          'application/pdf'
+        );
+
+        await FileSystem.writeAsStringAsync(outputUri, pdfBase64, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        console.log('📋 PDF downloaded to:', outputUri);
+        Alert.alert("✅ Download Complete", `PDF saved as:\n\n${pdfFileName}\n\nCheck your Downloads folder.`);
+      } else {
+        const localPath = `${FileSystem.documentDirectory}${pdfFileName}`;
+
+        await FileSystem.writeAsStringAsync(localPath, pdfBase64, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        console.log('📋 PDF downloaded to:', localPath);
+        Alert.alert("✅ Download Complete", `PDF saved as:\n\n${pdfFileName}`);
+      }
+    } catch (error) {
+      console.error("Download error:", error);
+      Alert.alert("Export Error", "Failed to export your data. Please try again.");
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -423,6 +599,31 @@ const ProfileScreen: React.FC = () => {
       marginTop: 6,
       marginBottom: 6,
     },
+    downloadButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "#3B82F6",
+      borderRadius: 16,
+      paddingVertical: 11,
+      paddingHorizontal: 18,
+      marginBottom: 12,
+      borderWidth: 1.5,
+      borderColor: "#1E40AF",
+      shadowColor: "#3B82F6",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.35,
+      shadowRadius: 10,
+      elevation: 5,
+      gap: 8,
+    },
+    downloadLabel: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: "#FFFFFF",
+      letterSpacing: 0.4,
+      fontFamily: "Roboto Slab",
+    },
     logoutFullButton: {
       flexDirection: "row",
       alignItems: "center",
@@ -695,6 +896,25 @@ const ProfileScreen: React.FC = () => {
               <Text style={dynamicStyles.gameButtonSubtitle}>Tap as fast as you can</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={dynamicStyles.gameButtonArrow} />
+          </TouchableOpacity>
+        </View>
+
+        {/* ── Download Data ── */}
+        <View style={dynamicStyles.logoutSection}>
+          <TouchableOpacity
+            style={[dynamicStyles.downloadButton, isDownloading && { opacity: 0.7 }]}
+            onPress={handleDownloadData}
+            activeOpacity={0.82}
+            disabled={isDownloading}
+          >
+            {isDownloading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Ionicons name="download" size={20} color="#FFFFFF" />
+            )}
+            <Text style={dynamicStyles.downloadLabel}>
+              {isDownloading ? "Downloading PDF..." : "Download Data (PDF)"}
+            </Text>
           </TouchableOpacity>
         </View>
 
