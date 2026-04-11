@@ -3,12 +3,12 @@ import { getCardSystem } from '@/constants/card-system';
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import {
-    addScheduleEvent,
-    autoCompletePastScheduleEvents,
-    deleteScheduleEvent,
-    getScheduleEvents,
-    ScheduleEvent,
-    updateScheduleEvent,
+  addScheduleEvent,
+  autoCompletePastScheduleEvents,
+  deleteScheduleEvent,
+  getScheduleEvents,
+  ScheduleEvent,
+  updateScheduleEvent,
 } from '@/lib/schedule-service';
 import {
   cancelScheduleEventReminder,
@@ -22,20 +22,20 @@ import { useFonts } from 'expo-font';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Animated,
-    FlatList,
-    Keyboard,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Animated,
+  FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 

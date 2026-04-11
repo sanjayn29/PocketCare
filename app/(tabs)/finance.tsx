@@ -9,34 +9,34 @@ import { useFonts } from 'expo-font';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-    ActivityIndicator, Alert,
-    Animated,
-    Dimensions,
-    FlatList,
-    Keyboard,
-    KeyboardAvoidingView,
-    Modal, Platform, ScrollView,
-    StyleSheet,
-    Switch, Text,
-    TextInput, TouchableOpacity, View
+  ActivityIndicator, Alert,
+  Animated,
+  Dimensions,
+  FlatList,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal, Platform, ScrollView,
+  StyleSheet,
+  Switch, Text,
+  TextInput, TouchableOpacity, View
 } from 'react-native';
 import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-    addDebt,
-    addFinanceGoal,
-    addTransaction,
-    Debt,
-    DebtInterestType,
-    deleteDebt,
-    deleteFinanceGoal,
-    deleteTransaction,
-    FinanceGoal, getFinanceData,
-    Transaction,
-    TransactionType,
-    updateDebt,
-    updateFinanceGoal,
-    updateTransaction
+  addDebt,
+  addFinanceGoal,
+  addTransaction,
+  Debt,
+  DebtInterestType,
+  deleteDebt,
+  deleteFinanceGoal,
+  deleteTransaction,
+  FinanceGoal, getFinanceData,
+  Transaction,
+  TransactionType,
+  updateDebt,
+  updateFinanceGoal,
+  updateTransaction
 } from '../../lib/finance-service';
 
 const screenWidth = Dimensions.get('window').width;
@@ -1458,7 +1458,6 @@ export default function FinanceScreen() {
     </SafeAreaView>
   );
 }
-
 
 
 

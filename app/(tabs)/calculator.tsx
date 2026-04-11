@@ -1675,4 +1675,3 @@ export default function CalculatorScreen() {
   );
 }
 
-
