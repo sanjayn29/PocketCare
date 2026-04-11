@@ -199,6 +199,9 @@ export default function TasksScreen() {
       alignItems: 'center',
       gap: 4,
       flexWrap: 'wrap',
+      flexShrink: 1,
+      minWidth: 0,
+      maxWidth: '100%',
     },
     overdueBadge: {
       marginLeft: 6,
@@ -214,13 +217,35 @@ export default function TasksScreen() {
       fontSize: 10,
       fontWeight: '800',
     },
+    metaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+      marginTop: 4,
+      gap: 8,
+    },
     dueDateText: {
       fontSize: 12,
       color: colors.textSecondary,
       fontWeight: '500',
+      flexShrink: 1,
     },
     dueDateTextCompleted: {
       color: colors.textSecondary,
+    },
+    goalTaskPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 10,
+      backgroundColor: isDark ? 'rgba(212, 175, 55, 0.12)' : 'rgba(212, 175, 55, 0.1)',
+    },
+    goalTaskPillText: {
+      fontSize: 10,
+      fontWeight: '700',
+      color: colors.primary,
     },
     priorityBadge: {
       paddingHorizontal: 8,
@@ -759,28 +784,28 @@ export default function TasksScreen() {
             </Text>
           ) : null}
           
-          <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4}}>
+          <View style={dynamicStyles.metaRow}>
              {item.due_date ? (
-               <View style={[dynamicStyles.dueDateRow]}>
-                 <Ionicons name="calendar-outline" size={14} color={isCompleted ? "#94A3B8" : "#64748B"} />
-                 <Text style={[dynamicStyles.dueDateText, isCompleted && dynamicStyles.dueDateTextCompleted]}>
-                   Due: {item.due_date}
-                 </Text>
-                 {isOverdue && (
-                   <View style={[dynamicStyles.overdueBadge]}>
-                     <Text style={[dynamicStyles.overdueBadgeText]}>DUE DATE ENDED</Text>
-                   </View>
-                 )}
-               </View>
-             ) : <View/>}
-
-             {item.isGoalTask && (
-                <View style={{flexDirection: 'row', alignItems: 'center', gap: 4}}>
-                   <Ionicons name="flag" size={12} color={isCompleted ? colors.textSecondary : colors.primary} />
-                   <Text style={{fontSize: 10, fontWeight: '700', color: isCompleted ? colors.textSecondary : colors.primary}}>GOAL TASK</Text>
+               <View style={dynamicStyles.dueDateRow}>
+                  <Ionicons name="calendar-outline" size={14} color={isCompleted ? "#94A3B8" : "#64748B"} />
+                  <Text style={[dynamicStyles.dueDateText, isCompleted && dynamicStyles.dueDateTextCompleted]}>
+                    Due: {item.due_date}
+                  </Text>
+                  {isOverdue && (
+                    <View style={[dynamicStyles.overdueBadge]}>
+                      <Text style={[dynamicStyles.overdueBadgeText]}>DUE DATE ENDED</Text>
+                    </View>
+                  )}
                 </View>
-             )}
-          </View>
+              ) : null}
+
+              {item.isGoalTask && (
+                 <View style={dynamicStyles.goalTaskPill}>
+                    <Ionicons name="flag" size={12} color={isCompleted ? colors.textSecondary : colors.primary} />
+                    <Text style={[dynamicStyles.goalTaskPillText, isCompleted && { color: colors.textSecondary }]}>GOAL TASK</Text>
+                 </View>
+              )}
+           </View>
         </TouchableOpacity>
 
         <TouchableOpacity style={[dynamicStyles.deleteArea]} onPress={() => handleDelete(item.id)} hitSlop={10}>

@@ -389,10 +389,10 @@ export default function GoalsScreen() {
     goalTitleCompleted: { color: colors.textSecondary },
     goalDesc: { fontSize: 15, color: colors.textSecondary, lineHeight: 22, marginBottom: 12, fontWeight: '500' },
     goalDescCompleted: { color: colors.textSecondary },
-    targetDateRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14, backgroundColor: isDark ? 'rgba(212, 175, 55, 0.05)' : 'rgba(212, 175, 55, 0.08)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 },
-    targetDateText: { fontSize: 13, color: colors.textSecondary, fontWeight: '600', letterSpacing: 0.3 },
+    targetDateRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 14, backgroundColor: isDark ? 'rgba(212, 175, 55, 0.05)' : 'rgba(212, 175, 55, 0.08)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 },
+    targetDateText: { fontSize: 13, color: colors.textSecondary, fontWeight: '600', letterSpacing: 0.3, flexShrink: 1, minWidth: 0 },
     targetDateTextCompleted: { color: colors.textSecondary },
-    daysBadge: { marginLeft: 2 },
+    daysBadge: { marginLeft: 0 },
     daysBadgeText: { fontSize: 12, color: colors.primary, fontWeight: '700', letterSpacing: 0.2 },
     categoryBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10, backgroundColor: colors.background, borderWidth: 1.5, borderColor: colors.border, shadowColor: colors.text, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 2, elevation: 1 },
     priorityBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1.5, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 3 },
@@ -501,6 +501,7 @@ export default function GoalsScreen() {
     const safeUnit = item.unit || '%';
     const safeCat = item.category || 'personal';
     const userDeadline = item.deadline || (item as any).target_date;
+    const daysRemainingText = userDeadline ? getDaysRemainingText(userDeadline, isCompleted) : null;
     const hasTasks = item.tasks && item.tasks.length > 0;
 
     return (
@@ -530,13 +531,13 @@ export default function GoalsScreen() {
                   Deadline: {userDeadline}
                 </Text>
                 
-                {getDaysRemainingText(userDeadline, isCompleted) && (
+                {daysRemainingText && (
                   <View style={dynamicStyles.daysBadge}>
                     <Text style={[
                       dynamicStyles.daysBadgeText, 
-                      getDaysRemainingText(userDeadline, isCompleted)?.includes('Overdue') && { color: '#EF4444' }
+                      daysRemainingText.includes('Overdue') && { color: '#EF4444' }
                     ]}>
-                      • {getDaysRemainingText(userDeadline, isCompleted)}
+                      {daysRemainingText}
                     </Text>
                   </View>
                 )}
