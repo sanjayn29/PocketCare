@@ -4,6 +4,9 @@
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
   },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": false,
+  "typescript.tsserver.experimental.enableProjectDiagnostics": false,
   "typescript.tsserver.excludeDirectories": [
     "**/node_modules",
     "**/.expo"
