@@ -1072,54 +1072,6 @@ const ProfileScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Theme Toggle Row */}
-        <TouchableOpacity
-          style={dynamicStyles.themeRow}
-          onPress={toggleTheme}
-          activeOpacity={0.8}
-        >
-          <View style={dynamicStyles.themeRowLeft}>
-            <View style={dynamicStyles.themeRowIcon}>
-              <Ionicons name={isDark ? "moon" : "sunny"} size={16} color={isDark ? "#818CF8" : "#F59E0B"} />
-            </View>
-            <View>
-              <Text style={dynamicStyles.themeRowLabel}>{isDark ? "Dark Mode" : "Light Mode"}</Text>
-              <Text style={dynamicStyles.themeRowSub}>Tap to switch appearance</Text>
-            </View>
-          </View>
-          <LottieView
-            ref={switchRef}
-            source={require("../../assets/animations/switch.json")}
-            autoPlay={false}
-            loop={false}
-            progress={isDark ? 1 : 0}
-            style={dynamicStyles.themeAnimation}
-          />
-        </TouchableOpacity>
-
-        {/* App Lock Toggle Row */}
-        <TouchableOpacity
-          style={dynamicStyles.themeRow}
-          onPress={toggleAppLock}
-          activeOpacity={0.8}
-        >
-          <View style={dynamicStyles.themeRowLeft}>
-            <View style={dynamicStyles.themeRowIcon}>
-              <Ionicons name={appLockEnabled ? "lock-closed" : "lock-open"} size={16} color={appLockEnabled ? "#10B981" : "#EF4444"} />
-            </View>
-            <View>
-              <Text style={dynamicStyles.themeRowLabel}>App Lock</Text>
-              <Text style={dynamicStyles.themeRowSub}>Require auth to open app</Text>
-            </View>
-          </View>
-          <Switch 
-            value={appLockEnabled} 
-            onValueChange={toggleAppLock} 
-            trackColor={{false: '#E2E8F0', true: '#10B981'}}
-            thumbColor={'#FFFFFF'}
-          />
-        </TouchableOpacity>
-
         <View style={dynamicStyles.sectionBlock}>
           <View style={dynamicStyles.sectionHeader}>
             <View
@@ -1229,6 +1181,54 @@ const ProfileScreen: React.FC = () => {
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={dynamicStyles.gameButtonArrow} />
           </TouchableOpacity>
         </View>
+
+        {/* Theme Toggle Row */}
+        <TouchableOpacity
+          style={dynamicStyles.themeRow}
+          onPress={toggleTheme}
+          activeOpacity={0.8}
+        >
+          <View style={dynamicStyles.themeRowLeft}>
+            <View style={dynamicStyles.themeRowIcon}>
+              <Ionicons name={isDark ? "moon" : "sunny"} size={16} color={isDark ? "#818CF8" : "#F59E0B"} />
+            </View>
+            <View>
+              <Text style={dynamicStyles.themeRowLabel}>{isDark ? "Dark Mode" : "Light Mode"}</Text>
+              <Text style={dynamicStyles.themeRowSub}>Tap to switch appearance</Text>
+            </View>
+          </View>
+          <LottieView
+            ref={switchRef}
+            source={require("../../assets/animations/switch.json")}
+            autoPlay={false}
+            loop={false}
+            progress={isDark ? 1 : 0}
+            style={dynamicStyles.themeAnimation}
+          />
+        </TouchableOpacity>
+
+        {/* App Lock Toggle Row */}
+        <TouchableOpacity
+          style={dynamicStyles.themeRow}
+          onPress={toggleAppLock}
+          activeOpacity={0.8}
+        >
+          <View style={dynamicStyles.themeRowLeft}>
+            <View style={dynamicStyles.themeRowIcon}>
+              <Ionicons name={appLockEnabled ? "lock-closed" : "lock-open"} size={16} color={appLockEnabled ? "#10B981" : "#EF4444"} />
+            </View>
+            <View>
+              <Text style={dynamicStyles.themeRowLabel}>App Lock</Text>
+              <Text style={dynamicStyles.themeRowSub}>Require auth to open app</Text>
+            </View>
+          </View>
+          <Switch 
+            value={appLockEnabled} 
+            onValueChange={toggleAppLock} 
+            trackColor={{false: '#E2E8F0', true: '#10B981'}}
+            thumbColor={'#FFFFFF'}
+          />
+        </TouchableOpacity>
 
         {/* ── Download Data ── */}
         <View style={dynamicStyles.logoutSection}>
