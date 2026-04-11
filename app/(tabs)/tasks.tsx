@@ -1,4 +1,5 @@
 
+import { getCardSystem } from '@/constants/card-system';
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useUser } from '@clerk/expo';
@@ -45,6 +46,7 @@ export default function TasksScreen() {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const colors = getColors(isDark)
+  const cardSystem = getCardSystem(colors, isDark)
 
   const backButtonScale = useRef(new Animated.Value(1)).current
   const [fontsLoaded] = useFonts({
@@ -140,18 +142,10 @@ export default function TasksScreen() {
     },
     // Task Card
     taskCard: {
-      backgroundColor: colors.card,
-      borderRadius: 20,
+      ...cardSystem.surface,
       marginBottom: 12,
       flexDirection: 'row',
       alignItems: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.05,
-      shadowRadius: 8,
-      elevation: 2,
-      borderWidth: 1.5,
-      borderColor: colors.border,
     },
     taskCardCompleted: {
       backgroundColor: colors.background,
@@ -257,25 +251,14 @@ export default function TasksScreen() {
       fontWeight: '800',
     },
     deleteArea: {
+      ...cardSystem.actionRail,
       padding: 16,
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderLeftWidth: 1.5,
-      borderLeftColor: colors.border,
+      gap: 0,
     },
     // Inline Create Styles
     createCard: {
-      backgroundColor: colors.card,
-      borderRadius: 20,
+      ...cardSystem.createSurface,
       marginBottom: 20,
-      shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.08,
-      shadowRadius: 10,
-      elevation: 3,
-      borderWidth: 1.5,
-      borderColor: colors.border,
-      overflow: 'hidden',
     },
     createCollapsed: {
       flexDirection: 'row',

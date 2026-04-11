@@ -1,3 +1,4 @@
+import { getCardSystem } from '@/constants/card-system';
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useUser } from '@clerk/expo';
@@ -31,6 +32,7 @@ export default function GoalsScreen() {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const colors = getColors(isDark)
+  const cardSystem = getCardSystem(colors, isDark)
   
   // Color palette for goal categories
   const categoryColors = {
@@ -380,7 +382,7 @@ export default function GoalsScreen() {
     emptyWrap: { alignItems: 'center', justifyContent: 'center', marginTop: 60 },
     emptyText: { color: colors.textSecondary, fontSize: 16, marginTop: 12, fontWeight: '500', letterSpacing: 0.3 },
     listContent: { paddingHorizontal: 16, paddingBottom: 100 },
-    goalCard: { backgroundColor: colors.card, borderRadius: 20, marginBottom: 18, flexDirection: 'row', shadowColor: colors.text, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 5, borderWidth: 1.5, borderColor: colors.border, overflow: 'hidden' },
+    goalCard: { ...cardSystem.surface, marginBottom: 18, flexDirection: 'row' },
     goalCardCompleted: { backgroundColor: colors.background, borderColor: colors.border, opacity: 0.85 },
     goalContent: { flex: 1, padding: 18 },
     goalHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
@@ -398,8 +400,8 @@ export default function GoalsScreen() {
     priorityBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1.5, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 3 },
     priorityText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
     categoryText: { fontSize: 12, fontWeight: '700', marginLeft: 5, letterSpacing: 0.4, textTransform: 'uppercase' },
-    deleteArea: { padding: 14, justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: 10, borderLeftWidth: 1.5, borderLeftColor: colors.border, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.01)' },
-    actionButton: { width: 42, height: 42, borderRadius: 14, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, shadowColor: colors.text, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3, elevation: 1 },
+    deleteArea: { ...cardSystem.actionRail, padding: 14, flexDirection: 'column' },
+    actionButton: { ...cardSystem.actionButton, width: 42, height: 42, borderRadius: 14 },
     progressArea: { marginTop: 12, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)', padding: 16, borderRadius: 14, borderTopWidth: 1.5, borderTopColor: colors.border, marginLeft: -16, marginRight: -16, marginBottom: -16, paddingLeft: 16, paddingRight: 16, borderBottomLeftRadius: 20, borderBottomRightRadius: 20 },
     progressSection: { marginTop: 12, paddingVertical: 10, paddingHorizontal: 14, backgroundColor: `rgba(${isDark ? '255, 255, 255' : '0, 0, 0'}, ${isDark ? 0.05 : 0.02})`, borderRadius: 12, borderWidth: 1, borderColor: colors.border },
     progressHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
@@ -408,7 +410,7 @@ export default function GoalsScreen() {
     progressBarWrapper: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     progressBarTrack: { flex: 1, height: 12, backgroundColor: colors.border, borderRadius: 8, overflow: 'hidden', shadowColor: colors.text, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 1 },
     progressBarFill: { height: '100%', borderRadius: 6, shadowColor: colors.text, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 1 },
-    createCard: { backgroundColor: colors.card, borderRadius: 20, marginBottom: 20, shadowColor: colors.primary, shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.15, shadowRadius: 14, elevation: 5, borderWidth: 1.5, borderColor: colors.border, overflow: 'hidden' },
+    createCard: { ...cardSystem.createSurface, marginBottom: 20 },
     createCollapsed: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
     createCollapsedText: { fontSize: 16, color: colors.textSecondary, fontWeight: '600' },
     createExpanded: { padding: 16 },

@@ -1,4 +1,5 @@
 
+import { getCardSystem } from '@/constants/card-system';
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useUser } from '@clerk/expo';
@@ -32,6 +33,7 @@ export default function SkillsScreen() {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const colors = getColors(isDark)
+  const cardSystem = getCardSystem(colors, isDark)
 
   const backButtonScale = useRef(new Animated.Value(1)).current
   const [fontsLoaded] = useFonts({
@@ -249,7 +251,7 @@ export default function SkillsScreen() {
     segmentBlock: { flexDirection: 'row', backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderRadius: 14, padding: 4, marginBottom: 16, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
     segmentBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
     segmentText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
-    createCard: { backgroundColor: colors.card, borderRadius: 20, marginBottom: 20, borderWidth: 1.5, borderColor: colors.border, shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3, overflow: 'hidden' },
+    createCard: { ...cardSystem.createSurface, marginBottom: 20 },
     createCollapsed: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
     createCollapsedText: { fontSize: 16, color: colors.textSecondary, fontWeight: '500' },
     createExpanded: { padding: 16 },
@@ -269,7 +271,7 @@ export default function SkillsScreen() {
     addTaskRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
     addTaskInput: { flex: 1, backgroundColor: colors.background, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: colors.text, borderWidth: 1, borderColor: colors.border },
     addTaskBtn: { width: 42, height: 42, borderRadius: 10, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-    skillCard: { backgroundColor: colors.card, borderRadius: 20, marginBottom: 14, borderWidth: 1.5, borderColor: colors.border, shadowColor: colors.text, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 5, overflow: 'hidden' },
+    skillCard: { ...cardSystem.surface, marginBottom: 14 },
     skillMain: { flex: 1, padding: 16 },
     skillHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     skillHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -277,7 +279,7 @@ export default function SkillsScreen() {
     levelBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
     levelBadgeText: { fontSize: 11, fontWeight: '800' },
     skillTopActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    skillTopActionButton: { width: 32, height: 32, borderRadius: 10, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border },
+    skillTopActionButton: { ...cardSystem.actionButton, width: 32, height: 32, borderRadius: 10 },
     progressArea: { backgroundColor: colors.background, padding: 10, borderRadius: 10, marginBottom: 10, borderWidth: 1.5, borderColor: colors.border },
     progressHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
     progressLabel: { fontSize: 12, fontWeight: '600', color: colors.text },

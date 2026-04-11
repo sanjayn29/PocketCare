@@ -1,4 +1,5 @@
 
+import { getCardSystem } from '@/constants/card-system';
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
@@ -33,6 +34,7 @@ export default function NotesScreen() {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const colors = getColors(isDark)
+  const cardSystem = getCardSystem(colors, isDark)
   
   const backButtonScale = useRef(new Animated.Value(1)).current;
 
@@ -294,17 +296,8 @@ export default function NotesScreen() {
     },
     // Inline Create Styles
     createCard: {
-      backgroundColor: colors.card,
-      borderRadius: 20,
+      ...cardSystem.createSurface,
       marginBottom: 20,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 12,
-      elevation: 4,
-      borderWidth: 1.5,
-      borderColor: colors.border,
-      overflow: 'hidden',
     },
     createCollapsed: {
       flexDirection: 'row',
@@ -366,47 +359,16 @@ export default function NotesScreen() {
     },
     // Note Card
     noteCard: {
-      backgroundColor: colors.card,
-      borderRadius: 20,
+      ...cardSystem.surface,
       marginBottom: 14,
       flexDirection: 'row',
-      shadowColor: colors.text,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.12,
-      shadowRadius: 12,
-      elevation: 5,
-      borderWidth: 1.5,
-      borderColor: colors.border,
-      overflow: 'hidden',
     },
     noteContentArea: {
       flex: 1,
       padding: 16,
     },
-    noteActionRail: {
-      padding: 12,
-      justifyContent: 'center',
-      alignItems: 'center',
-      gap: 10,
-      borderLeftWidth: 1.5,
-      borderLeftColor: colors.border,
-      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.01)',
-    },
-    noteActionButton: {
-      width: 38,
-      height: 38,
-      borderRadius: 12,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: colors.background,
-      borderWidth: 1,
-      borderColor: colors.border,
-      shadowColor: colors.text,
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.06,
-      shadowRadius: 3,
-      elevation: 1,
-    },
+    noteActionRail: { ...cardSystem.actionRail },
+    noteActionButton: { ...cardSystem.actionButton },
     noteTitle: {
       fontSize: 18,
       fontWeight: '700',

@@ -1,3 +1,4 @@
+import { getCardSystem } from '@/constants/card-system';
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useUser } from '@clerk/expo';
@@ -56,6 +57,7 @@ export default function FinanceScreen() {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const colors = getColors(isDark)
+  const cardSystem = getCardSystem(colors, isDark)
 
   // Multi-color palette for premium feel
   const uiColors = {
@@ -200,25 +202,17 @@ export default function FinanceScreen() {
     emptyText: { marginTop: 10, fontSize: 15, color: colors.textSecondary, fontWeight: '600' },
     chartArea: { backgroundColor: colors.card, borderRadius: 16, padding: 10, borderWidth: 1, borderColor: colors.border, alignItems: 'center', marginTop: 10 },
 
-    card: { 
-      backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : '#FFFFFF', 
-      borderRadius: 20, padding: 16, marginBottom: 12, borderWidth: 1, 
-      borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
-      flexDirection: 'row', justifyContent: 'space-between' 
+    card: {
+      ...cardSystem.surface,
+      padding: 16,
+      marginBottom: 12,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
     },
     txCard: {
-      backgroundColor: colors.card,
-      borderRadius: 20,
+      ...cardSystem.surface,
       marginBottom: 14,
       flexDirection: 'row',
-      shadowColor: colors.text,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.12,
-      shadowRadius: 12,
-      elevation: 5,
-      borderWidth: 1.5,
-      borderColor: colors.border,
-      overflow: 'hidden',
     },
     txCardSynthetic: {
       borderLeftWidth: 3,
@@ -273,41 +267,12 @@ export default function FinanceScreen() {
       fontWeight: '600',
       flex: 1,
     },
-    txActionRail: {
-      padding: 12,
-      justifyContent: 'center',
-      alignItems: 'center',
-      gap: 10,
-      borderLeftWidth: 1.5,
-      borderLeftColor: colors.border,
-      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.01)',
-    },
-    txActionButton: {
-      width: 38,
-      height: 38,
-      borderRadius: 12,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: colors.background,
-      borderWidth: 1,
-      borderColor: colors.border,
-      shadowColor: colors.text,
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.06,
-      shadowRadius: 3,
-      elevation: 1,
-    },
+    txActionRail: { ...cardSystem.actionRail },
+    txActionButton: { ...cardSystem.actionButton },
     txEditCard: {
-      backgroundColor: colors.card,
+      ...cardSystem.subtleSurface,
       borderRadius: 18,
-      borderWidth: 1.5,
-      borderColor: colors.border,
       padding: 16,
-      shadowColor: colors.text,
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.08,
-      shadowRadius: 8,
-      elevation: 3,
     },
     txDateButton: {
       flexDirection: 'row',
@@ -343,7 +308,7 @@ export default function FinanceScreen() {
     },
     selectorLabel: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, marginBottom: 8 },
 
-    createCard: { backgroundColor: colors.card, borderRadius: 16, marginBottom: 16, borderWidth: 1, borderColor: colors.border, shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3, overflow: 'hidden' },
+    createCard: { ...cardSystem.createSurface, marginBottom: 16 },
     createCollapsed: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
     createIconWrap: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
     createCollapsedText: { flex: 1, fontSize: 15, color: colors.textSecondary, fontWeight: '500' },

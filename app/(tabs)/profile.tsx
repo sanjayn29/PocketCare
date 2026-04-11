@@ -1,5 +1,6 @@
 import MemoryGameComponent from "@/components/MemoryGameComponent";
 import TapGameComponent from "@/components/TapGameComponent";
+import { getCardSystem } from "@/constants/card-system";
 import { getColors } from "@/constants/styles";
 import { useTheme } from "@/context/ThemeContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -31,6 +32,7 @@ const ProfileScreen: React.FC = () => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const colors = getColors(isDark);
+  const cardSystem = getCardSystem(colors, isDark);
   const { toggleTheme } = useTheme();
   const switchRef = useRef<LottieView>(null);
   const [fontsLoaded] = useFonts({
@@ -195,17 +197,8 @@ const ProfileScreen: React.FC = () => {
       paddingBottom: 120,
     },
     userCard: {
-      backgroundColor: colors.card,
-      borderRadius: 20,
+      ...cardSystem.surface,
       marginBottom: 20,
-      borderWidth: 1.5,
-      borderColor: colors.border,
-      shadowColor: colors.text,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.12,
-      shadowRadius: 12,
-      elevation: 5,
-      overflow: "hidden",
       padding: 18,
     },
     profileSection: {
@@ -275,17 +268,9 @@ const ProfileScreen: React.FC = () => {
       gap: 12,
     },
     streakCard: {
+      ...cardSystem.surface,
       flex: 1,
-      backgroundColor: colors.card,
-      borderRadius: 20,
       padding: 16,
-      borderWidth: 1.5,
-      borderColor: colors.border,
-      shadowColor: colors.text,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.06,
-      shadowRadius: 8,
-      elevation: 2,
     },
     streakLabel: {
       fontSize: 13,
@@ -309,17 +294,9 @@ const ProfileScreen: React.FC = () => {
       fontWeight: "600",
     },
     scoreCard: {
-      backgroundColor: colors.card,
-      borderRadius: 20,
+      ...cardSystem.surface,
       padding: 16,
       marginBottom: 12,
-      borderWidth: 1.5,
-      borderColor: colors.border,
-      shadowColor: colors.text,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.06,
-      shadowRadius: 8,
-      elevation: 2,
     },
     gameTitle: {
       fontSize: 17,
@@ -353,19 +330,11 @@ const ProfileScreen: React.FC = () => {
       backgroundColor: colors.border,
     },
     gameButton: {
+      ...cardSystem.surface,
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.card,
-      borderRadius: 20,
       padding: 16,
       marginBottom: 12,
-      borderWidth: 1.5,
-      borderColor: colors.border,
-      shadowColor: colors.text,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.06,
-      shadowRadius: 8,
-      elevation: 2,
     },
     gameButtonIconWrap: {
       width: 44,
@@ -432,15 +401,12 @@ const ProfileScreen: React.FC = () => {
       fontFamily: "Roboto Slab",
     },
     attributionCard: {
+      ...cardSystem.surface,
       alignItems: "center",
       marginBottom: 14,
       marginTop: 4,
       paddingVertical: 18,
       paddingHorizontal: 20,
-      borderRadius: 20,
-      backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)",
-      borderWidth: 1,
-      borderColor: isDark ? "rgba(212,175,55,0.18)" : "rgba(212,175,55,0.25)",
     },
     rocketWrapper: {
       width: 72,

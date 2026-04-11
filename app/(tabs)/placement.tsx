@@ -1,4 +1,5 @@
 
+import { getCardSystem } from '@/constants/card-system';
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useUser } from '@clerk/expo';
@@ -970,7 +971,10 @@ export default function PlacementScreen() {
 
 // ─── Styles (Dynamic based on theme) ──────────────────────────────────────────
 
-const getStyles = (colors: any, isDark: boolean, activeTab: 'placements' | 'companies' = 'placements') => StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean, activeTab: 'placements' | 'companies' = 'placements') => {
+  const cardSystem = getCardSystem(colors, isDark);
+
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   headerArea: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 },
   pageTitle: { fontSize: 24, fontFamily: 'Roboto Slab', fontWeight: '800', color: colors.text, letterSpacing: -0.5 },
@@ -1079,10 +1083,8 @@ const getStyles = (colors: any, isDark: boolean, activeTab: 'placements' | 'comp
 
   // ── Create Card ─────────────────────────────────────────────────────────────
   createCard: {
-    backgroundColor: colors.card, borderRadius: 20, marginBottom: 20,
-    borderWidth: 1.5, borderColor: colors.border,
-    shadowColor: activeTab === 'placements' ? '#3B82F6' : '#10B981', shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.15, shadowRadius: 14, elevation: 5, overflow: 'hidden',
+    ...cardSystem.createSurface,
+    marginBottom: 20,
   },
   createCollapsed: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
   createIconWrap: { width: 36, height: 36, borderRadius: 10, backgroundColor: activeTab === 'placements' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)', alignItems: 'center', justifyContent: 'center' },
@@ -1157,10 +1159,9 @@ const getStyles = (colors: any, isDark: boolean, activeTab: 'placements' | 'comp
 
   // ── Placement Card ──────────────────────────────────────────────────────────
   card: {
-    backgroundColor: colors.card, borderRadius: 20, marginBottom: 18,
-    flexDirection: 'row', borderWidth: 1.5, borderColor: colors.border,
-    shadowColor: colors.text, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12, shadowRadius: 12, elevation: 5, overflow: 'hidden',
+    ...cardSystem.surface,
+    marginBottom: 18,
+    flexDirection: 'row',
   },
   cardMain: { flex: 1, padding: 18 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
@@ -1170,9 +1171,10 @@ const getStyles = (colors: any, isDark: boolean, activeTab: 'placements' | 'comp
   statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10, borderWidth: 1.5, borderColor: colors.border },
   statusBadgeText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
   headerActionBtn: {
-    width: 34, height: 34, borderRadius: 10,
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border,
+    ...cardSystem.actionButton,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
   },
   metaRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap', marginBottom: 12 },
   metaChip: {
@@ -1195,7 +1197,7 @@ const getStyles = (colors: any, isDark: boolean, activeTab: 'placements' | 'comp
     borderColor: colors.border,
   },
   // ── Round Card ──────────────────────────────────────────────────────────────
-  roundCard: { backgroundColor: colors.background, borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: colors.border },
+  roundCard: { ...cardSystem.subtleSurface, backgroundColor: colors.background, borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1 },
   roundHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 4, gap: 6 },
   roundDotLarge: { width: 8, height: 8, borderRadius: 99 },
   roundTopic: { flex: 1, fontSize: 14, fontWeight: '700', color: colors.text },
@@ -1225,4 +1227,5 @@ const getStyles = (colors: any, isDark: boolean, activeTab: 'placements' | 'comp
   cancelText: { fontSize: 16, color: colors.textSecondary },
   saveHeaderText: { fontSize: 16, fontWeight: '700', color: '#D4AF37' },
   modalBody: { paddingHorizontal: 20, paddingTop: 16 },
-});
+  });
+};

@@ -1,4 +1,5 @@
 
+import { getCardSystem } from '@/constants/card-system';
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useUser } from '@clerk/expo';
@@ -45,6 +46,7 @@ export default function HealthScreen() {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const colors = getColors(isDark)
+  const cardSystem = getCardSystem(colors, isDark)
 
   // Multi-color palette for premium feel
   const uiColors = {
@@ -584,25 +586,15 @@ export default function HealthScreen() {
     segmentText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
     segmentTextActive: { color: isDark ? uiColors.medical : '#EF4444', fontWeight: '700' },
 
-    card: { 
-      backgroundColor: isDark ? 'rgba(255,255,255,0.18)' : '#FFFFFF', 
-      borderRadius: 20, padding: 16, marginBottom: 12, borderWidth: 1, 
-      borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.05)',
-      shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2
+    card: {
+      ...cardSystem.surface,
+      padding: 16,
+      marginBottom: 12,
     },
     healthCard: {
-      backgroundColor: colors.card,
-      borderRadius: 20,
+      ...cardSystem.surface,
       marginBottom: 14,
       flexDirection: 'row',
-      shadowColor: colors.text,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.12,
-      shadowRadius: 12,
-      elevation: 5,
-      borderWidth: 1.5,
-      borderColor: colors.border,
-      overflow: 'hidden',
     },
     healthCardContent: {
       flex: 1,
@@ -621,14 +613,10 @@ export default function HealthScreen() {
       marginLeft: 10,
     },
     healthTopActionButton: {
+      ...cardSystem.actionButton,
       width: 34,
       height: 34,
       borderRadius: 10,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: colors.background,
-      borderWidth: 1,
-      borderColor: colors.border,
     },
     healthTitle: {
       fontSize: 19,
@@ -667,16 +655,9 @@ export default function HealthScreen() {
       flex: 1,
     },
     editFormCard: {
-      backgroundColor: colors.card,
+      ...cardSystem.subtleSurface,
       borderRadius: 18,
-      borderWidth: 1.5,
-      borderColor: colors.border,
       padding: 16,
-      shadowColor: colors.text,
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.08,
-      shadowRadius: 8,
-      elevation: 3,
     },
     editDateButton: {
       flexDirection: 'row',
@@ -713,7 +694,7 @@ export default function HealthScreen() {
     },
     selectorLabel: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, marginBottom: 8 },
 
-    createCard: { backgroundColor: colors.card, borderRadius: 16, marginBottom: 16, borderWidth: 1, borderColor: colors.border, shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 3, overflow: 'hidden' },
+    createCard: { ...cardSystem.createSurface, marginBottom: 16 },
     createCollapsed: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
     createIconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
     createCollapsedText: { flex: 1, fontSize: 16, fontWeight: '600', color: colors.text },

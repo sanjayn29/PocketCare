@@ -1,4 +1,5 @@
 
+import { getCardSystem } from '@/constants/card-system';
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useUser } from '@clerk/expo';
@@ -48,6 +49,7 @@ export default function CalculatorScreen() {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const colors = getColors(isDark)
+  const cardSystem = getCardSystem(colors, isDark)
   
   // Multi-color palette for premium feel
   const uiColors = {
@@ -622,13 +624,10 @@ export default function CalculatorScreen() {
       paddingBottom: 120,
     },
     formCard: {
-      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.8)',
+      ...cardSystem.surface,
       borderRadius: 24,
-      borderWidth: 1.5,
-      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
       padding: 20,
       marginBottom: 20,
-      overflow: 'hidden',
     },
     segmentRow: {
       flexDirection: 'row',
@@ -688,6 +687,7 @@ export default function CalculatorScreen() {
       fontSize: 16,
     },
     resultCard: {
+      ...cardSystem.subtleSurface,
       marginTop: 20,
       padding: 16,
       borderRadius: 20,
@@ -770,10 +770,7 @@ export default function CalculatorScreen() {
       color: '#3B82F6',
     },
     historyCard: {
-      backgroundColor: isDark ? 'rgba(16, 185, 129, 0.03)' : 'rgba(16, 185, 129, 0.02)',
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: isDark ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.1)',
+      ...cardSystem.surface,
       marginBottom: 16,
       padding: 16,
     },
@@ -841,11 +838,12 @@ export default function CalculatorScreen() {
       padding: 24,
     },
     modalCard: {
+      ...cardSystem.subtleSurface,
       backgroundColor: isDark ? '#1A1A1A' : '#FFFFFF',
       borderRadius: 24,
       padding: 20,
       borderWidth: 1,
-      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : colors.border,
     },
     modalTitle: {
       fontSize: 18,

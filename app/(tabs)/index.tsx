@@ -1,3 +1,4 @@
+import { getCardSystem } from '@/constants/card-system'
 import { getColors } from '@/constants/styles'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import { useGreeting } from '@/hooks/use-greeting'
@@ -891,7 +892,10 @@ export default function HomeScreen() {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => {
+  const cardSystem = getCardSystem(colors, isDark)
+
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
 
   // ── Header ──
@@ -925,16 +929,7 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
 
   // ── Card ──
   card: {
-    backgroundColor: colors.card,
-    borderRadius: 24,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    overflow: 'hidden',
-    shadowColor: isDark ? '#000' : '#555',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: isDark ? 0.30 : 0.08,
-    shadowRadius: 16,
-    elevation: 5,
+    ...cardSystem.surface,
   },
   cardHeader: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
@@ -1007,4 +1002,5 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.25, shadowRadius: 2, elevation: 2,
   },
   toggleThumbOn: { alignSelf: 'flex-end' },
-})
+  })
+}

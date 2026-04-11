@@ -1,5 +1,6 @@
 
 
+import { getCardSystem } from '@/constants/card-system'
 import { getColors } from '@/constants/styles'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import { getAIResponse, getProductivityInsight } from '@/lib/ai-service'
@@ -41,6 +42,7 @@ export default function AIScreen() {
   const isDark = colorScheme === 'dark'
   const tabBarHeight = useBottomTabBarHeight()
   const colors = getColors(isDark)
+  const cardSystem = getCardSystem(colors, isDark)
   const brightGold = '#D4AF37'
   const softGold = '#E8C96A'
   const backButtonScale = useRef(new Animated.Value(1)).current
@@ -366,13 +368,11 @@ export default function AIScreen() {
       paddingVertical: 20,
     },
     insightCard: {
+      ...cardSystem.surface,
       marginHorizontal: 16,
       marginVertical: 20,
       padding: 16,
-      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
       borderRadius: 16,
-      borderWidth: 1,
-      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
     },
     insightHeader: {
       flexDirection: 'row',
@@ -553,4 +553,3 @@ export default function AIScreen() {
     </SafeAreaView>
   )
 }
-

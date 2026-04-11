@@ -1,4 +1,5 @@
 
+import { getCardSystem } from '@/constants/card-system';
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import {
@@ -980,7 +981,10 @@ export default function ScheduleScreen() {
   );
 }
 
-const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
+const getStyles = (colors: any, isDark: boolean) => {
+  const cardSystem = getCardSystem(colors, isDark);
+
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   headerArea: {
     paddingHorizontal: 20,
@@ -1013,12 +1017,9 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   centerWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   calendar: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
+    ...cardSystem.surface,
     marginVertical: 12,
     padding: 16,
-    borderWidth: 1.5,
-    borderColor: colors.border,
   },
   calendarHeader: {
     flexDirection: 'row',
@@ -1053,26 +1054,14 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   eventsList: { gap: 10 },
 
   eventCard: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
+    ...cardSystem.surface,
     padding: 14,
-    borderWidth: 1.5,
-    borderColor: colors.border,
     marginBottom: 10,
   },
   scheduleCard: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
+    ...cardSystem.surface,
     marginBottom: 14,
     flexDirection: 'row',
-    shadowColor: colors.text,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 5,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    overflow: 'hidden',
   },
   scheduleContent: {
     flex: 1,
@@ -1155,30 +1144,8 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
     fontWeight: '600',
     flex: 1,
   },
-  scheduleActionRail: {
-    padding: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 10,
-    borderLeftWidth: 1.5,
-    borderLeftColor: colors.border,
-    backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.01)',
-  },
-  scheduleActionButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    shadowColor: colors.text,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 1,
-  },
+  scheduleActionRail: { ...cardSystem.actionRail },
+  scheduleActionButton: { ...cardSystem.actionButton },
   eventCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1327,4 +1294,5 @@ const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   schedulesSection: {
     paddingVertical: 16,
   },
-});
+  });
+};
