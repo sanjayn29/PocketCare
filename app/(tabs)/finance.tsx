@@ -1308,7 +1308,7 @@ export default function FinanceScreen() {
         >
           {loading ? (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-              <ActivityIndicator size="large" color={uiColors.overview} />
+              <ActivityIndicator size="large" color="#D4AF37" />
             </View>
           ) : (
             <>

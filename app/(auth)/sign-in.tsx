@@ -330,7 +330,7 @@ export default function AuthPage() {
           </View>
 
           {isLoading ? (
-            <ActivityIndicator size="small" color={colors.text} />
+            <ActivityIndicator size="small" color="#D4AF37" />
           ) : (
             <View style={dynamicStyles.googleButtonInner}>
               <LottieView

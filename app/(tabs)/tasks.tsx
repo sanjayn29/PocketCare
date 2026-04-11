@@ -919,7 +919,7 @@ export default function TasksScreen() {
               disabled={isSavingNew}
             >
               {isSavingNew ? (
-                <ActivityIndicator size="small" color="#FFF" />
+                <ActivityIndicator size="small" color="#D4AF37" />
               ) : (
                 <Text style={[dynamicStyles.saveBtnText]}>Save Task</Text>
               )}
@@ -1096,7 +1096,7 @@ export default function TasksScreen() {
 
       {loading ? (
         <View style={[dynamicStyles.center]}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color="#D4AF37" />
         </View>
       ) : (
         <FlatList
@@ -1136,7 +1136,7 @@ export default function TasksScreen() {
               <Text style={[dynamicStyles.modalTitle]}>Edit Task</Text>
               <TouchableOpacity onPress={handleSaveEdit} disabled={isSavingEdit}>
                 {isSavingEdit ? (
-                  <ActivityIndicator size="small" color={colors.primary} />
+                  <ActivityIndicator size="small" color="#D4AF37" />
                 ) : (
                   <Text style={[dynamicStyles.saveHeaderBtnText]}>Save</Text>
                 )}

@@ -1390,7 +1390,7 @@ export default function CalculatorScreen() {
 
                 <TouchableOpacity style={dynamicStyles.calculateBtn} onPress={handleCalculateAndSave} disabled={saving}>
                   {saving ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <ActivityIndicator size="small" color="#D4AF37" />
                   ) : (
                     <Text style={dynamicStyles.calculateBtnText}>Calculate & Save</Text>
                   )}
@@ -1590,7 +1590,7 @@ export default function CalculatorScreen() {
           ListEmptyComponent={
             loading ? (
               <View style={dynamicStyles.centerWrap}>
-                <ActivityIndicator size="large" color="#1D4ED8" />
+                <ActivityIndicator size="large" color="#D4AF37" />
               </View>
             ) : (
               <View style={dynamicStyles.centerWrap}>
@@ -1626,7 +1626,7 @@ export default function CalculatorScreen() {
               </TouchableOpacity>
               <TouchableOpacity style={dynamicStyles.modalSaveBtn} onPress={handleSaveRename} disabled={renaming}>
                 {renaming ? (
-                  <ActivityIndicator size="small" color="#000000" />
+                  <ActivityIndicator size="small" color="#D4AF37" />
                 ) : (
                   <Text style={dynamicStyles.modalSaveText}>Save</Text>
                 )}

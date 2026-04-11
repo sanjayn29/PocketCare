@@ -776,7 +776,7 @@ export default function HealthScreen() {
         </View>
 
         <KeyboardAvoidingView style={{flex: 1}} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          {loading ? <View style={{flex:1, justifyContent:'center'}}><ActivityIndicator size="large" color={activeTab==='Medical'?uiColors.medical:activeTab==='Diet'?uiColors.diet:uiColors.fitness} /></View> : 
+          {loading ? <View style={{flex:1, justifyContent:'center'}}><ActivityIndicator size="large" color="#D4AF37" /></View> :
             activeTab === 'Medical' ? renderMedical() :
             activeTab === 'Diet' ? (
               <FlatList data={filteredDiet} keyExtractor={d=>d.id} ListHeaderComponent={<>{renderTimeFilterBlock()}{renderCustomDateFilters()}<View style={dynamicStyles.createCard}>{renderCreationCard('Diet', handleSaveDiet, isCreatingDiet, setIsCreatingDiet)}</View></>} contentContainerStyle={{padding: 16, paddingBottom: 100}} ListEmptyComponent={<Text style={{textAlign:'center', color: colors.textSecondary, marginTop: 40, fontSize: 16}}>No diet plans found.</Text>} renderItem={({item}) => renderPlanCard(item, true)} />

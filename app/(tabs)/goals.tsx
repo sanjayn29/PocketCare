@@ -665,7 +665,7 @@ export default function GoalsScreen() {
           <View style={dynamicStyles.createActions}>
             <TouchableOpacity style={dynamicStyles.cancelBtn} onPress={() => setIsCreating(false)}><Text style={dynamicStyles.cancelBtnText}>Cancel</Text></TouchableOpacity>
             <TouchableOpacity style={dynamicStyles.saveBtn} onPress={handleSaveNewGoal} disabled={isSavingNew}>
-              {isSavingNew ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={dynamicStyles.saveBtnText}>Set Goal</Text>}
+              {isSavingNew ? <ActivityIndicator size="small" color="#D4AF37" /> : <Text style={dynamicStyles.saveBtnText}>Set Goal</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -856,7 +856,7 @@ export default function GoalsScreen() {
         </View>
 
         {loading ? (
-        <View style={dynamicStyles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
+        <View style={dynamicStyles.center}><ActivityIndicator size="large" color="#D4AF37" /></View>
       ) : (
         <FlatList
           data={filteredGoals}
@@ -887,7 +887,7 @@ export default function GoalsScreen() {
                 <TouchableOpacity onPress={() => setModalVisible(false)}><Text style={dynamicStyles.cancelText}>Cancel</Text></TouchableOpacity>
                 <Text style={dynamicStyles.modalTitle}>Manage Goal</Text>
                 <TouchableOpacity onPress={handleSaveEdit} disabled={isSavingEdit}>
-                  {isSavingEdit ? <ActivityIndicator size="small" color={colors.primary} /> : <Text style={dynamicStyles.saveHeaderBtnText}>Save</Text>}
+                  {isSavingEdit ? <ActivityIndicator size="small" color="#D4AF37" /> : <Text style={dynamicStyles.saveHeaderBtnText}>Save</Text>}
                 </TouchableOpacity>
               </View>
 

@@ -416,7 +416,7 @@ export default function SkillsScreen() {
               <Text style={dynamicStyles.cancelBtnText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity style={dynamicStyles.saveBtn} onPress={handleSaveSkill} disabled={isSavingNew}>
-              {isSavingNew ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={dynamicStyles.saveBtnText}>Add Skill</Text>}
+              {isSavingNew ? <ActivityIndicator size="small" color="#D4AF37" /> : <Text style={dynamicStyles.saveBtnText}>Add Skill</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -502,7 +502,7 @@ export default function SkillsScreen() {
         </View>
 
         {loading ? (
-          <View style={dynamicStyles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
+          <View style={dynamicStyles.center}><ActivityIndicator size="large" color="#D4AF37" /></View>
         ) : (
           <FlatList
             data={getFilteredSkills()}
@@ -532,7 +532,7 @@ export default function SkillsScreen() {
                 <TouchableOpacity onPress={() => setModalVisible(false)}><Text style={dynamicStyles.cancelText}>Cancel</Text></TouchableOpacity>
                 <Text style={dynamicStyles.modalTitle}>Edit Skill</Text>
                 <TouchableOpacity onPress={handleSaveEdit} disabled={isSavingEdit}>
-                  {isSavingEdit ? <ActivityIndicator size="small" color={colors.primary} /> : <Text style={dynamicStyles.saveHeaderText}>Save</Text>}
+                  {isSavingEdit ? <ActivityIndicator size="small" color="#D4AF37" /> : <Text style={dynamicStyles.saveHeaderText}>Save</Text>}
                 </TouchableOpacity>
               </View>
 

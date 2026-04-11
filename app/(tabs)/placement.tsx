@@ -315,7 +315,7 @@ const CreateCard = React.memo(({
           </TouchableOpacity>
           <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={isSavingNew}>
             {isSavingNew
-              ? <ActivityIndicator size="small" color="#FFF" />
+              ? <ActivityIndicator size="small" color="#D4AF37" />
               : <Text style={styles.saveBtnText}>Save Application</Text>}
           </TouchableOpacity>
         </View>
@@ -814,7 +814,7 @@ export default function PlacementScreen() {
           </View>
 
           {loading ? (
-            <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
+            <View style={styles.center}><ActivityIndicator size="large" color="#D4AF37" /></View>
           ) : (
             <FlatList
               data={filteredPlacements}
@@ -863,7 +863,7 @@ export default function PlacementScreen() {
           </View>
 
           {loading ? (
-            <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
+            <View style={styles.center}><ActivityIndicator size="large" color="#D4AF37" /></View>
           ) : (
             <FlatList
               data={filteredCompanies}
@@ -899,7 +899,7 @@ export default function PlacementScreen() {
                 <Text style={styles.modalTitle}>Edit Application</Text>
                 <TouchableOpacity onPress={handleSaveEdit} disabled={isSavingEdit}>
                   {isSavingEdit
-                    ? <ActivityIndicator size="small" color={colors.primary} />
+                    ? <ActivityIndicator size="small" color="#D4AF37" />
                     : <Text style={styles.saveHeaderText}>Save</Text>}
                 </TouchableOpacity>
               </View>

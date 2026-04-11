@@ -583,7 +583,7 @@ export default function ScheduleScreen() {
 
         {loading ? (
           <View style={styles.centerWrap}>
-            <ActivityIndicator size="large" color={activeTab === 'Current' ? '#3B82F6' : '#10B981'} />
+            <ActivityIndicator size="large" color="#D4AF37" />
           </View>
         ) : (
           <>
@@ -737,7 +737,7 @@ export default function ScheduleScreen() {
                 <Text style={styles.modalTitle}>New Meeting</Text>
                 <TouchableOpacity onPress={handleSaveEvent} disabled={isSaving}>
                   {isSaving ? (
-                    <ActivityIndicator size="small" color={activeTab === 'Current' ? '#3B82F6' : '#10B981'} />
+                    <ActivityIndicator size="small" color="#D4AF37" />
                   ) : (
                     <Text style={[styles.saveText, { color: activeTab === 'Current' ? '#3B82F6' : '#10B981' }]}>Save</Text>
                   )}
@@ -867,7 +867,7 @@ export default function ScheduleScreen() {
                 <Text style={styles.modalTitle}>Edit Meeting</Text>
                 <TouchableOpacity onPress={handleSaveEdit} disabled={isEditSaving}>
                   {isEditSaving ? (
-                    <ActivityIndicator size="small" color={activeTab === 'Current' ? '#3B82F6' : '#10B981'} />
+                    <ActivityIndicator size="small" color="#D4AF37" />
                   ) : (
                     <Text style={[styles.saveText, { color: activeTab === 'Current' ? '#3B82F6' : '#10B981' }]}>Save</Text>
                   )}

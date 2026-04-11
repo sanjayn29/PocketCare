@@ -684,7 +684,7 @@ export default function NotesScreen() {
                 disabled={isSavingNew}
               >
                 {isSavingNew ? (
-                  <ActivityIndicator size="small" color={colors.card} />
+                  <ActivityIndicator size="small" color="#D4AF37" />
                 ) : (
                   <Text style={dynamicStyles.saveBtnText}>Save Note</Text>
                 )}
@@ -732,7 +732,7 @@ export default function NotesScreen() {
 
       {loading ? (
         <View style={dynamicStyles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color="#D4AF37" />
         </View>
       ) : (
         <FlatList
@@ -775,7 +775,7 @@ export default function NotesScreen() {
                 <Text style={dynamicStyles.modalTitle}>Edit Note</Text>
                 <TouchableOpacity onPress={handleSaveEdit} disabled={isSavingEdit}>
                   {isSavingEdit ? (
-                    <ActivityIndicator size="small" color={colors.primary} />
+                    <ActivityIndicator size="small" color="#D4AF37" />
                   ) : (
                     <Text style={dynamicStyles.saveHeaderBtnText}>Save</Text>
                   )}
