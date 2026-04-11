@@ -604,7 +604,7 @@ export default function ScheduleScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={[styles.content, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
+            <ScrollView style={[styles.content, { backgroundColor: colors.background }]} contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
             {/* Current Tab */}
             {activeTab === 'Current' && (
               <>

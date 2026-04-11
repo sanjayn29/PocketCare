@@ -33,17 +33,21 @@ export default function TabLayout() {
           headerShown: false,
           tabBarStyle: {
             position: 'absolute',
-            bottom: Platform.OS === 'ios' ? 8 : 5,
-            left: 20,
-            right: 20,
+            bottom: 0,
+            left: 0,
+            right: 0,
             backgroundColor: isDark ? '#000000' : '#FFFFFF',
-            borderRadius: 40,
-            height: 74,
-            borderWidth: 1,
+            borderTopLeftRadius: 30,
+            borderTopRightRadius: 30,
+            height: 80,
+            borderTopWidth: 1,
+            borderLeftWidth: 1,
+            borderRightWidth: 1,
+            borderBottomWidth: 0,
             borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
             elevation: 0,
             shadowOpacity: 0,
-            paddingBottom: Platform.OS === 'ios' ? 20 : 12,
+            paddingBottom: Platform.OS === 'ios' ? 24 : 12,
             paddingTop: 12,
           },
           tabBarBackground: () => (
@@ -52,7 +56,8 @@ export default function TabLayout() {
               tint={isDark ? 'dark' : 'light'}
               style={{
                 ...StyleSheet.absoluteFillObject,
-                borderRadius: 40,
+                borderTopLeftRadius: 30,
+                borderTopRightRadius: 30,
                 overflow: 'hidden',
               }}
             />
