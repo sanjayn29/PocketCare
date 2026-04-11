@@ -13,8 +13,16 @@ import { useFonts } from "expo-font";
 import { useRouter } from "expo-router";
 import LottieView from "lottie-react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Image, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View, Switch } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from "react-native-safe-area-context";
+
+let LocalAuthentication: any = null;
+try {
+  LocalAuthentication = require('expo-local-authentication');
+} catch {
+  console.log('[profile] expo-local-authentication native module not available.');
+}
 
 interface MemoryScore {
   bestMoves: number;
@@ -46,6 +54,49 @@ const ProfileScreen: React.FC = () => {
   const [tapScore, setTapScore] = useState<TapScore | null>(null);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [maxStreak, setMaxStreak] = useState(0);
+  const [appLockEnabled, setAppLockEnabled] = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem('appLockEnabled').then(val => {
+      setAppLockEnabled(val === 'true');
+    });
+  }, []);
+
+  const toggleAppLock = async () => {
+    if (!LocalAuthentication) {
+      Alert.alert("App Lock Unavailable", "App Lock requires a native build. Use 'expo run:android'.");
+      return;
+    }
+
+    if (!appLockEnabled) {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!hasHardware || !isEnrolled) {
+        Alert.alert("App Lock Unavailable", "Your device does not have a screen lock or biometrics configured.");
+        return;
+      }
+
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Authenticate to enable App Lock",
+        fallbackLabel: "Use Passcode",
+      });
+      
+      if (result.success) {
+        setAppLockEnabled(true);
+        await AsyncStorage.setItem('appLockEnabled', 'true');
+      }
+    } else {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Authenticate to disable App Lock",
+        fallbackLabel: "Use Passcode",
+      });
+      
+      if (result.success) {
+        setAppLockEnabled(false);
+        await AsyncStorage.setItem('appLockEnabled', 'false');
+      }
+    }
+  };
 
   const email = user?.emailAddresses?.[0]?.emailAddress;
   const userId = user?.id;
@@ -511,6 +562,29 @@ const ProfileScreen: React.FC = () => {
             loop={false}
             progress={isDark ? 1 : 0}
             style={dynamicStyles.themeAnimation}
+          />
+        </TouchableOpacity>
+
+        {/* App Lock Toggle Row */}
+        <TouchableOpacity
+          style={dynamicStyles.themeRow}
+          onPress={toggleAppLock}
+          activeOpacity={0.8}
+        >
+          <View style={dynamicStyles.themeRowLeft}>
+            <View style={dynamicStyles.themeRowIcon}>
+              <Ionicons name={appLockEnabled ? "lock-closed" : "lock-open"} size={16} color={appLockEnabled ? "#10B981" : "#EF4444"} />
+            </View>
+            <View>
+              <Text style={dynamicStyles.themeRowLabel}>App Lock</Text>
+              <Text style={dynamicStyles.themeRowSub}>Require auth to open app</Text>
+            </View>
+          </View>
+          <Switch 
+            value={appLockEnabled} 
+            onValueChange={toggleAppLock} 
+            trackColor={{false: '#E2E8F0', true: '#10B981'}}
+            thumbColor={'#FFFFFF'}
           />
         </TouchableOpacity>
 

@@ -1,4 +1,5 @@
 import { ThemeProvider } from '@/context/ThemeContext'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import LockScreen from '@/components/LockScreen'
 import { savePushTokenToFirestore } from '@/lib/save-user'
 import { recordVisit } from '@/lib/streak-service'
@@ -80,26 +81,30 @@ export default function RootLayout() {
 
   // On mount: check if device has any credential (biometrics / PIN) configured
   useEffect(() => {
-    isAuthAvailable().then((available) => {
+    isAuthAvailable().then(async (available) => {
       setAuthAvailable(available)
-      if (!available) {
-        // No credential set up on this device — skip lock screen entirely
+      const lockSetting = await AsyncStorage.getItem('appLockEnabled')
+      if (!available || lockSetting !== 'true') {
+        // No credential or user disabled app lock
         setIsUnlocked(true)
       }
     })
   }, [])
 
-  // Re-lock when the app goes to the background, just like banking apps
+  // Re-lock when the app goes to the background
   useEffect(() => {
     const subscription = AppState.addEventListener(
       'change',
-      (nextState: AppStateStatus) => {
+      async (nextState: AppStateStatus) => {
         if (
           appState.current === 'active' &&
           (nextState === 'background' || nextState === 'inactive')
         ) {
           if (authAvailable) {
-            setIsUnlocked(false)
+            const lockSetting = await AsyncStorage.getItem('appLockEnabled')
+            if (lockSetting === 'true') {
+              setIsUnlocked(false)
+            }
           }
         }
         appState.current = nextState
