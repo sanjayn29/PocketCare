@@ -20,8 +20,7 @@
         "backgroundColor": "#FFFFFF"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "useNextNotationForAndroidMaterial": true
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
