@@ -1,30 +1,37 @@
-import { ThemeProvider } from '@/context/ThemeContext'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import LockScreen from '@/components/LockScreen'
+import { ThemeProvider } from '@/context/ThemeContext'
 import { savePushTokenToFirestore } from '@/lib/save-user'
 import { recordVisit } from '@/lib/streak-service'
-import {
-  clearRemovedReminders,
-  configureNotificationHandler,
-  registerForPushNotificationsAsync,
-  sendWelcomeNotification,
-} from '@/utils/notifications'
 import { isAuthAvailable } from '@/utils/deviceAuth'
+import {
+    clearRemovedReminders,
+    configureNotificationHandler,
+    registerForPushNotificationsAsync,
+    sendWelcomeNotification,
+} from '@/utils/notifications'
 import { ClerkProvider, useUser } from '@clerk/expo'
 import { tokenCache } from '@clerk/expo/token-cache'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Font from 'expo-font'
 import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { StatusBar } from 'expo-status-bar'
 import React, { useEffect, useRef, useState } from 'react'
-import { AppState, AppStateStatus } from 'react-native'
+import { AppState, AppStateStatus, StyleSheet, Text, View } from 'react-native'
 
 SplashScreen.preventAutoHideAsync()
 
-const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
 
-if (!publishableKey) {
-  throw new Error('Add your Clerk Publishable Key to the .env file')
+function MissingConfigScreen() {
+  return (
+    <View style={styles.missingConfigContainer}>
+      <Text style={styles.missingConfigTitle}>PocketCare Configuration Error</Text>
+      <Text style={styles.missingConfigText}>
+        Missing EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY. Add it to your EAS environment and rebuild.
+      </Text>
+    </View>
+  )
 }
 
 function RootLayoutContent() {
@@ -138,6 +145,10 @@ export default function RootLayout() {
     return null
   }
 
+  if (!publishableKey) {
+    return <MissingConfigScreen />
+  }
+
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
       <ThemeProvider>
@@ -152,3 +163,26 @@ export default function RootLayout() {
     </ClerkProvider>
   )
 }
+
+const styles = StyleSheet.create({
+  missingConfigContainer: {
+    flex: 1,
+    paddingHorizontal: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0F172A',
+  },
+  missingConfigTitle: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  missingConfigText: {
+    color: '#CBD5E1',
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+})
