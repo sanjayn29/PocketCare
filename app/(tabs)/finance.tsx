@@ -7,42 +7,41 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { BlurView } from 'expo-blur';
 import { useFonts } from 'expo-font';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert,
-  Animated,
-  Dimensions,
-  FlatList,
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal, Platform, ScrollView,
-  StyleSheet,
-  Switch, Text,
-  TextInput, TouchableOpacity, View
+    ActivityIndicator, Alert,
+    Animated,
+    Dimensions,
+    FlatList,
+    Keyboard,
+    KeyboardAvoidingView,
+    Modal, Platform, ScrollView,
+    StyleSheet,
+    Switch, Text,
+    TextInput, TouchableOpacity, View
 } from 'react-native';
 import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  addDebt,
-  addFinanceGoal,
-  addTransaction,
-  Debt,
-  DebtInterestType,
-  deleteDebt,
-  deleteFinanceGoal,
-  deleteTransaction,
-  FinanceGoal, getFinanceData,
-  Transaction,
-  TransactionType,
-  updateDebt,
-  updateFinanceGoal,
-  updateTransaction
+    addDebt,
+    addFinanceGoal,
+    addTransaction,
+    Debt,
+    DebtInterestType,
+    deleteDebt,
+    deleteFinanceGoal,
+    deleteTransaction,
+    FinanceGoal, getFinanceData,
+    Transaction,
+    TransactionType,
+    updateDebt,
+    updateFinanceGoal,
+    updateTransaction
 } from '../../lib/finance-service';
 
 const screenWidth = Dimensions.get('window').width;
 
 // ─── UTILS ──────────────────────────────────────────────────────────────────
-const isValidDateOnlyString = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value);
 const todayStr = new Date().toISOString().split('T')[0];
 
 type TabType = 'Overview' | 'Transactions' | 'Debts' | 'Goals';
@@ -68,7 +67,7 @@ export default function FinanceScreen() {
   }
 
   const backButtonScale = useRef(new Animated.Value(1)).current
-  const [fontsLoaded] = useFonts({
+  useFonts({
     'Roboto Slab': require('../../assets/Font/RobotoSlab-VariableFont_wght.ttf'),
   })
 
@@ -346,7 +345,7 @@ export default function FinanceScreen() {
   });
 
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [, setRefreshing] = useState(false);
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
@@ -419,21 +418,21 @@ export default function FinanceScreen() {
 
   const [showDatePicker, setShowDatePicker] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (email) loadData();
-    else setLoading(false);
-  }, [email]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!email) return;
     try {
       const data = await getFinanceData(email);
       setTransactions((data.transactions || []).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       setDebts((data.debts || []).sort((a,b) => new Date(b.amount_given_date).getTime() - new Date(a.amount_given_date).getTime()));
       setGoals((data.goals || []).sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
-    } catch(e) {}
+    } catch {}
     finally { setLoading(false); setRefreshing(false); }
-  };
+  }, [email]);
+
+  useEffect(() => {
+    if (email) loadData();
+    else setLoading(false);
+  }, [email, loadData]);
 
   const calcDebtAmount = (item: Debt) => {
     if (item.interest_type === 'none' || !item.interest_rate) return Number(item.amount);

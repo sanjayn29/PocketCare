@@ -10,10 +10,9 @@ import { BlurView } from 'expo-blur'
 import { useFonts } from 'expo-font'
 import { useRouter } from 'expo-router'
 import LottieView from 'lottie-react-native'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
     Animated,
-    Dimensions,
     FlatList,
     KeyboardAvoidingView,
     Platform,
@@ -24,8 +23,6 @@ import {
     View
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-
-const { width } = Dimensions.get('window')
 
 interface Message {
   id: string
@@ -80,7 +77,13 @@ export default function AIScreen() {
         }),
       ]),
     ).start()
-  }, [backButtonScale])
+  }, [backButtonScale, fadeAnim])
+
+  const loadInsight = useCallback(async () => {
+    if (!email) return
+    const insightText = await getProductivityInsight(email)
+    setInsight(insightText)
+  }, [email])
 
   useEffect(() => {
     if (email) {
@@ -94,13 +97,7 @@ export default function AIScreen() {
         },
       ])
     }
-  }, [email])
-
-  const loadInsight = async () => {
-    if (!email) return
-    const insightText = await getProductivityInsight(email)
-    setInsight(insightText)
-  }
+  }, [email, loadInsight])
 
   const handleSendMessage = async () => {
     if (!inputText.trim() || !email) return
@@ -190,6 +187,7 @@ export default function AIScreen() {
       </View>
     )
   })
+  MessageItem.displayName = 'MessageItem'
 
   const renderMessage = (item: Message) => <MessageItem item={item} />
 

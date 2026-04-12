@@ -5,7 +5,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -62,14 +62,6 @@ export default function NotesScreen() {
   const [showDatePicker, setShowDatePicker] = useState<'start' | 'end' | null>(null);
 
   useEffect(() => {
-    if (email) {
-      loadNotes();
-    } else {
-      setLoading(false);
-    }
-  }, [email]);
-
-  useEffect(() => {
     Animated.loop(
       Animated.sequence([
         Animated.timing(backButtonScale, {
@@ -84,9 +76,9 @@ export default function NotesScreen() {
         }),
       ])
     ).start();
-  }, []);
+  }, [backButtonScale]);
 
-  const loadNotes = async () => {
+  const loadNotes = useCallback(async () => {
     if (!email) return;
     try {
       const fetchedNotes = await getNotes(email);
@@ -98,7 +90,15 @@ export default function NotesScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [email]);
+
+  useEffect(() => {
+    if (email) {
+      loadNotes();
+    } else {
+      setLoading(false);
+    }
+  }, [email, loadNotes]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -123,7 +123,7 @@ export default function NotesScreen() {
       setIsCreating(false);
       Keyboard.dismiss();
       loadNotes();
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to save note');
     } finally {
       setIsSavingNew(false);
@@ -149,7 +149,7 @@ export default function NotesScreen() {
       await updateNote(email, editingNote.id, { title: editTitle, content: editContent });
       setModalVisible(false);
       loadNotes();
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to update note');
     } finally {
       setIsSavingEdit(false);
@@ -176,8 +176,6 @@ export default function NotesScreen() {
 
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
     return notes.filter((note) => {
       const noteDate = new Date(note.updated_at);
       const noteDateOnly = new Date(noteDate.getFullYear(), noteDate.getMonth(), noteDate.getDate());

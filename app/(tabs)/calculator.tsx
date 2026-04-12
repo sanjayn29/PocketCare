@@ -8,31 +8,31 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { BlurView } from 'expo-blur';
 import { useFonts } from 'expo-font';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  FlatList,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Animated,
+    FlatList,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  CalculationEntry,
-  CalculationHistoryGroup,
-  CalculationType,
-  createOrAppendCalculation,
-  deleteCalculationEntry,
-  deleteCalculationHistory,
-  getCalculationHistory,
-  updateCalculationHistoryTitle,
+    CalculationEntry,
+    CalculationHistoryGroup,
+    CalculationType,
+    createOrAppendCalculation,
+    deleteCalculationEntry,
+    deleteCalculationHistory,
+    getCalculationHistory,
+    updateCalculationHistoryTitle,
 } from '../../lib/calculator-service';
 
 
@@ -50,14 +50,6 @@ export default function CalculatorScreen() {
   const isDark = colorScheme === 'dark'
   const colors = getColors(isDark)
   const cardSystem = getCardSystem(colors, isDark)
-  
-  // Multi-color palette for premium feel
-  const uiColors = {
-    primary: '#3B82F6',   // Blue for Basic
-    secondary: '#EF4444', // Red for Interest
-    tertiary: '#10B981',  // Green for History
-    accent: '#D4AF37',    // Amber for highlights
-  }
   
   const backButtonScale = useRef(new Animated.Value(1)).current
   const [fontsLoaded] = useFonts({
@@ -105,7 +97,7 @@ export default function CalculatorScreen() {
   const [basicExpression, setBasicExpression] = useState('');
   const [basicResult, setBasicResult] = useState<number | null>(null);
   const [basicTitle, setBasicTitle] = useState('');
-  const [basicHistories, setBasicHistories] = useState<CalculationHistoryGroup[]>([]);
+  const [, setBasicHistories] = useState<CalculationHistoryGroup[]>([]);
   const [basicSaving, setBasicSaving] = useState(false);
 
   // Filter states
@@ -114,16 +106,7 @@ export default function CalculatorScreen() {
   const [filterDate, setFilterDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  useEffect(() => {
-    if (!email) {
-      setLoading(false);
-      return;
-    }
-    loadHistory();
-    loadBasicHistory();
-  }, [email]);
-
-  const loadHistory = async () => {
+  const loadHistory = useCallback(async () => {
     if (!email) return;
     try {
       const fetched = await getCalculationHistory(email);
@@ -134,9 +117,9 @@ export default function CalculatorScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [email]);
 
-  const loadBasicHistory = async () => {
+  const loadBasicHistory = useCallback(async () => {
     if (!email) return;
     try {
       const fetched = await getCalculationHistory(email);
@@ -146,7 +129,16 @@ export default function CalculatorScreen() {
     } catch (error) {
       console.error(error);
     }
-  };
+  }, [email]);
+
+  useEffect(() => {
+    if (!email) {
+      setLoading(false);
+      return;
+    }
+    loadHistory();
+    loadBasicHistory();
+  }, [email, loadBasicHistory, loadHistory]);
 
   const parsedInputs = useMemo(() => {
     const p = Number(principal);
@@ -155,10 +147,6 @@ export default function CalculatorScreen() {
     const n = Number(compoundsPerYear);
     return { p, r, t, n };
   }, [principal, rate, time, compoundsPerYear]);
-
-  const interestHistories = useMemo(() => {
-    return histories.filter((group) => !group.entries.some((entry) => (entry.type as any) === 'basic_calculation'));
-  }, [histories]);
 
   const allCombinedHistories = useMemo(() => {
     const combined = histories.filter((group) => {
@@ -194,34 +182,6 @@ export default function CalculatorScreen() {
     combined.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
     return combined;
   }, [histories, historyFilterType, historyFilterDate, filterDate]);
-
-  const filteredHistories = useMemo(() => {
-    return interestHistories.filter((group) => {
-      // Filter by calculation type
-      if (historyFilterType !== 'all') {
-        const groupType = group.entries[0]?.type;
-        if (groupType !== historyFilterType) return false;
-      }
-
-      // Filter by date
-      if (historyFilterDate !== 'all') {
-        const groupDate = new Date(group.updated_at);
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const groupDay = new Date(groupDate.getFullYear(), groupDate.getMonth(), groupDate.getDate());
-
-        if (historyFilterDate === 'today') {
-          if (groupDay.getTime() !== today.getTime()) return false;
-        } else if (historyFilterDate === 'week') {
-          const weekAgo = new Date(today);
-          weekAgo.setDate(weekAgo.getDate() - 7);
-          if (groupDay < weekAgo) return false;
-        }
-      }
-
-      return true;
-    });
-  }, [interestHistories, historyFilterType, historyFilterDate]);
 
   const handleCalculateAndSave = async () => {
     if (!email) {

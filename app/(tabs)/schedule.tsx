@@ -3,16 +3,16 @@ import { getCardSystem } from '@/constants/card-system';
 import { getColors } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import {
-  addScheduleEvent,
-  autoCompletePastScheduleEvents,
-  deleteScheduleEvent,
-  getScheduleEvents,
-  ScheduleEvent,
-  updateScheduleEvent,
+    addScheduleEvent,
+    autoCompletePastScheduleEvents,
+    deleteScheduleEvent,
+    getScheduleEvents,
+    ScheduleEvent,
+    updateScheduleEvent,
 } from '@/lib/schedule-service';
 import {
-  cancelScheduleEventReminder,
-  scheduleScheduleEventReminder,
+    cancelScheduleEventReminder,
+    scheduleScheduleEventReminder,
 } from '@/utils/notifications';
 import { useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,22 +20,22 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { BlurView } from 'expo-blur';
 import { useFonts } from 'expo-font';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  FlatList,
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Animated,
+    FlatList,
+    Keyboard,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -65,7 +65,7 @@ export default function ScheduleScreen() {
   const colors = getColors(isDark);
 
   const backButtonScale = useRef(new Animated.Value(1)).current
-  const [fontsLoaded] = useFonts({
+  useFonts({
     'Roboto Slab': require('../../assets/Font/RobotoSlab-VariableFont_wght.ttf'),
   })
 
@@ -123,11 +123,7 @@ export default function ScheduleScreen() {
     ).start()
   }, [backButtonScale])
 
-  useEffect(() => {
-    loadEvents();
-  }, [email]);
-
-  const loadEvents = async () => {
+  const loadEvents = useCallback(async () => {
     try {
       if (email) {
         const fetchedEvents = await autoCompletePastScheduleEvents(email);
@@ -139,7 +135,11 @@ export default function ScheduleScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [email]);
+
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
 
   const handleDateSelect = (date: string) => {
     setSelectedDate(date);

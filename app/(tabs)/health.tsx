@@ -8,7 +8,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { BlurView } from 'expo-blur';
 import { useFonts } from 'expo-font';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator, Alert, Animated, FlatList,
     Keyboard,
@@ -55,7 +55,7 @@ export default function HealthScreen() {
     fitness: '#EF4444',  // Red
   }
 
-  const [fontsLoaded] = useFonts({
+  useFonts({
     'Roboto Slab': require('../../assets/Font/RobotoSlab-VariableFont_wght.ttf'),
   })
 
@@ -135,21 +135,21 @@ export default function HealthScreen() {
   const [editStart, setEditStart] = useState(todayStr);
   const [editEnd, setEditEnd] = useState(todayStr);
 
-  useEffect(() => {
-    if (email) loadData();
-    else setLoading(false);
-  }, [email]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!email) return;
     try {
       const data = await getHealthData(email);
       setMedicalList(data.medical.sort((a,b)=> new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
       setDietList(data.food_diet.sort((a,b)=> new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
       setFitnessList(data.fitness.sort((a,b)=> new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
-    } catch(e) {}
+    } catch {}
     finally { setLoading(false); }
-  };
+  }, [email]);
+
+  useEffect(() => {
+    if (email) loadData();
+    else setLoading(false);
+  }, [email, loadData]);
 
   const onDateChange = (event: any, selectedDate?: Date) => {
     if (Platform.OS === 'android') setShowDatePicker(null);
@@ -404,7 +404,12 @@ export default function HealthScreen() {
                 <TouchableOpacity onPress={()=> {
                     Alert.alert('Delete', `Delete ${isDiet ? 'diet' : 'fitness'} plan?`, [
                       {text:'Cancel'}, {text:'Delete', style:'destructive', onPress:() => {
-                        isDiet ? deleteDiet(email!, item.id) : deleteFitness(email!, item.id); loadData();
+                        if (isDiet) {
+                          deleteDiet(email!, item.id);
+                        } else {
+                          deleteFitness(email!, item.id);
+                        }
+                        loadData();
                       }}
                     ]);
                 }} style={dynamicStyles.healthTopActionButton}>
@@ -447,7 +452,7 @@ export default function HealthScreen() {
                 </View>
               </View>
             </View>
-            <Text style={{fontSize:11, color: colors.textSecondary, marginTop: 8, textAlign:'center', fontStyle: 'italic'}}>Tap today's date to track your progress</Text>
+            <Text style={{fontSize:11, color: colors.textSecondary, marginTop: 8, textAlign:'center', fontStyle: 'italic'}}>Tap today&apos;s date to track your progress</Text>
           </View>
        </View>
      );

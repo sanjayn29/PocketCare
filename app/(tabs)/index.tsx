@@ -1,7 +1,6 @@
 import { getCardSystem } from '@/constants/card-system'
 import { getColors } from '@/constants/styles'
 import { useColorScheme } from '@/hooks/use-color-scheme'
-import { useGreeting } from '@/hooks/use-greeting'
 import { getFinanceData } from '@/lib/finance-service'
 import { getGoals } from '@/lib/goals-service'
 import { getHealthData } from '@/lib/health-service'
@@ -12,11 +11,11 @@ import { getScheduleEvents } from '@/lib/schedule-service'
 import { getStreakData } from '@/lib/streak-service'
 import { getTasks } from '@/lib/tasks-service'
 import {
-  ALL_WIDGETS,
-  WidgetConfig,
-  WidgetId,
-  getWidgetConfig,
-  saveWidgetConfig,
+    ALL_WIDGETS,
+    WidgetConfig,
+    WidgetId,
+    getWidgetConfig,
+    saveWidgetConfig,
 } from '@/lib/widget-service'
 import { useUser } from '@clerk/expo'
 import { Ionicons } from '@expo/vector-icons'
@@ -25,17 +24,17 @@ import { useRouter } from 'expo-router'
 import LottieView from 'lottie-react-native'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  Animated,
-  Image,
-  Modal,
-  RefreshControl,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View
+    Animated,
+    Image,
+    Modal,
+    RefreshControl,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
@@ -76,7 +75,7 @@ function useAnimatedNumber(target: number, duration = 900) {
     Animated.timing(anim, { toValue: target, duration, useNativeDriver: false }).start()
     const id = anim.addListener(({ value }) => setDisplay(Math.round(value)))
     return () => anim.removeListener(id)
-  }, [target])
+  }, [target, anim, duration])
   return display
 }
 
@@ -112,7 +111,7 @@ const MiniBar = ({ value, max, color, isDark, height = 7 }: {
   const w = useRef(new Animated.Value(0)).current
   useEffect(() => {
     Animated.timing(w, { toValue: max > 0 ? (value / max) * 100 : 0, duration: 1000, useNativeDriver: false }).start()
-  }, [value, max])
+  }, [value, max, w])
   return (
     <View style={{ height, borderRadius: height / 2, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)', overflow: 'hidden' }}>
       <Animated.View style={{
@@ -136,14 +135,6 @@ const Chip = ({ icon, label, color }: { icon: string; label: string; color: stri
   </View>
 )
 
-// ─── Stat block ───────────────────────────────────────────────────────────────
-const StatBlock = ({ label, value, color, small }: { label: string; value: string; color: string; small?: boolean }) => (
-  <View style={{ alignItems: 'center', flex: 1 }}>
-    <Text style={{ fontSize: small ? 16 : 22, fontWeight: '900', color, letterSpacing: -0.5 }}>{value}</Text>
-    <Text style={{ fontSize: 10, color: '#9CA3AF', fontWeight: '600', marginTop: 2, textAlign: 'center' }}>{label}</Text>
-  </View>
-)
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const { user } = useUser()
@@ -151,7 +142,6 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const colors = getColors(isDark)
-  const greeting = useGreeting(user?.firstName || 'User')
   const email = user?.emailAddresses?.[0]?.emailAddress
 
   const [data, setData] = useState<HomeData>({
@@ -190,12 +180,12 @@ export default function HomeScreen() {
 
   useEffect(() => { getWidgetConfig().then(setWidgets) }, [])
 
-  const runCardAnimations = () => {
+  const runCardAnimations = useCallback(() => {
     cardAnims.forEach(a => a.setValue(0))
     Animated.stagger(70, cardAnims.map(a =>
       Animated.spring(a, { toValue: 1, useNativeDriver: true, tension: 80, friction: 10 })
     )).start()
-  }
+  }, [cardAnims])
 
   const loadData = useCallback(async () => {
     if (!email) return
@@ -263,7 +253,7 @@ export default function HomeScreen() {
       runCardAnimations()
     } catch (e) { console.error(e) }
     finally { setRefreshing(false) }
-  }, [email])
+  }, [email, runCardAnimations])
 
   useEffect(() => { if (email) loadData() }, [email, loadData])
 
@@ -554,7 +544,7 @@ export default function HomeScreen() {
                 <Text style={{ fontSize: 16, fontWeight: '800', color: colors.text }} numberOfLines={1}>
                   {data.fitnessToday.name}
                 </Text>
-                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>Today's Plan</Text>
+                <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>Today&apos;s Plan</Text>
               </View>
             </View>
             <View style={{

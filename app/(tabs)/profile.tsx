@@ -13,19 +13,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlurView } from "expo-blur";
 import * as FileSystem from 'expo-file-system/legacy';
 import { useFonts } from "expo-font";
+import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from "expo-router";
 import LottieView from "lottie-react-native";
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Image, Linking, Platform, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-let LocalAuthentication: any = null;
-try {
-  LocalAuthentication = require('expo-local-authentication');
-} catch {
-  console.log('[profile] expo-local-authentication native module not available.');
-}
 
 interface MemoryScore {
   bestMoves: number;
@@ -79,7 +73,7 @@ const wrapByChars = (text: string, width: number): string[] => {
   return lines.length ? lines : ["-"];
 };
 
-const tableLines = (title: string, columns: Array<{ header: string; width: number }>, rows: string[][]): string[] => {
+const tableLines = (title: string, columns: { header: string; width: number }[], rows: string[][]): string[] => {
   const lines: string[] = [];
   const separator = `+${columns.map((c) => "-".repeat(c.width + 2)).join("+")}+`;
   const header = `|${columns
@@ -508,7 +502,7 @@ const ProfileScreen: React.FC = () => {
   }, []);
 
   const toggleAppLock = async () => {
-    if (!LocalAuthentication) {
+    if (!LocalAuthentication?.authenticateAsync) {
       Alert.alert("App Lock Unavailable", "App Lock requires a native build. Use 'expo run:android'.");
       return;
     }

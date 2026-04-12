@@ -99,6 +99,7 @@ const DatePickerInput = React.memo(({ value, onChange, colors, styles }: DatePic
     </View>
   );
 });
+DatePickerInput.displayName = 'DatePickerInput';
 
 // ─── Sub-components (defined OUTSIDE main component to prevent remounts) ──────
 
@@ -124,6 +125,7 @@ const RoundResultSelector = React.memo(({
     </View>
   );
 });
+RoundResultSelector.displayName = 'RoundResultSelector';
 
 const RoundCard = React.memo(({
   round, onDelete, onResultChange, colors, styles,
@@ -148,6 +150,7 @@ const RoundCard = React.memo(({
     </View>
   );
 });
+RoundCard.displayName = 'RoundCard';
 
 // ── AddRoundForm — also outside to prevent keyboard dismiss ──────────────────
 type AddRoundFormProps = {
@@ -185,6 +188,7 @@ const AddRoundForm = React.memo(({ topic, setTopic, desc, setDesc, result, setRe
     </View>
   </View>
 ));
+AddRoundForm.displayName = 'AddRoundForm';
 
 // ── CreateCard — extracted so FlatList doesn't remount it ────────────────────
 type CreateCardProps = {
@@ -227,9 +231,6 @@ const CreateCard = React.memo(({
   styles,
   activeTab,
 }: CreateCardProps) => {
-  const STATUS_CONFIG = getStatusConfig(colors);
-  const ROUND_RESULT_CONFIG = getRoundResultConfig(colors);
-
   return (
   <View style={styles.createCard}>
     {isCreating ? (
@@ -332,6 +333,7 @@ const CreateCard = React.memo(({
   </View>
   );
 });
+CreateCard.displayName = 'CreateCard';
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
@@ -351,7 +353,7 @@ export default function PlacementScreen() {
   };
 
   const backButtonScale = useRef(new Animated.Value(1)).current;
-  const [fontsLoaded] = useFonts({
+  useFonts({
     'Roboto Slab': require('../../assets/Font/RobotoSlab-VariableFont_wght.ttf'),
   });
 
@@ -502,14 +504,9 @@ export default function PlacementScreen() {
       position: 'absolute', bottom: -8, width: '60%', height: 3, backgroundColor: uiColors.companies, borderRadius: 2,
       shadowColor: uiColors.companies, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4,
     },
-  }), [colors, isDark, activeTab]);
+  }), [colors, isDark, uiColors.companies, uiColors.placements]);
 
-  useEffect(() => {
-    if (email) loadPlacements();
-    else setLoading(false);
-  }, [email]);
-
-  const loadPlacements = async () => {
+  const loadPlacements = useCallback(async () => {
     if (!email) return;
     try {
       const fetched = await getPlacements(email);
@@ -517,7 +514,12 @@ export default function PlacementScreen() {
       setPlacements(fetched);
     } catch (e) { console.error(e); }
     finally { setLoading(false); setRefreshing(false); }
-  };
+  }, [email]);
+
+  useEffect(() => {
+    if (email) loadPlacements();
+    else setLoading(false);
+  }, [email, loadPlacements]);
 
   const handleRefresh = () => { setRefreshing(true); loadPlacements(); };
 
@@ -564,7 +566,7 @@ export default function PlacementScreen() {
       loadPlacements();
     } catch { Alert.alert('Error', 'Failed to save placement.'); }
     finally { setIsSavingNew(false); }
-  }, [email, newCompany, newStatus, newCompanyStatus, newDate, newStudied, newRounds]);
+  }, [email, newCompany, newStatus, newCompanyStatus, newDate, newStudied, newRounds, loadPlacements]);
 
   const resetCreate = useCallback(() => {
     setNewCompany(''); setNewStatus('interview'); setNewCompanyStatus(undefined); setNewDate('');
@@ -622,22 +624,13 @@ export default function PlacementScreen() {
     finally { setIsSavingEdit(false); }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = useCallback((id: string) => {
     if (!email) return;
     Alert.alert('Delete Application', 'Remove this company application?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => { await deletePlacement(email, id); loadPlacements(); } },
     ]);
-  };
-
-  // ── Counts for filter badges ──
-  const counts = useMemo(() => ({
-    all: placements.length,
-    applied:   placements.filter(p => p.status === 'applied').length,
-    interview: placements.filter(p => p.status === 'interview').length,
-    offer:     placements.filter(p => p.status === 'offer').length,
-    rejected:  placements.filter(p => p.status === 'rejected').length,
-  }), [placements]);
+  }, [email, loadPlacements]);
 
   // Filtered placements by application status
   const filteredPlacements = useMemo(() =>
@@ -677,7 +670,7 @@ export default function PlacementScreen() {
   ), [
     isCreating, newCompany, newStatus, newCompanyStatus, newDate, newStudied, newRounds,
     showAddRound, roundTopic, roundDesc, roundResult,
-    addRoundToNew, removeRoundFromNew, handleSave, isSavingNew, resetCreate, colors, styles, isDark, activeTab
+    addRoundToNew, removeRoundFromNew, handleSave, isSavingNew, resetCreate, colors, styles, activeTab
   ]);
 
   // ── Placement card render ──
@@ -750,7 +743,7 @@ export default function PlacementScreen() {
         </TouchableOpacity>
       </View>
     );
-  }, [colors, styles, isDark, activeTab]);
+  }, [colors, styles, isDark, handleDelete]);
 
   // ─────────────────────────────────────────────────────────────────────────────
 
@@ -847,7 +840,6 @@ export default function PlacementScreen() {
             {(['all', 'present', 'completed', 'upcoming'] as const).map(s => {
               const active = companyStatusFilter === s;
               const label = s === 'all' ? 'All' : getCompanyStatusConfig(colors)[s].label;
-              const cfg = s === 'all' ? null : getCompanyStatusConfig(colors)[s];
               return (
                 <TouchableOpacity
                   key={s}

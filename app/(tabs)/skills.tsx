@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useFonts } from 'expo-font';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator, Alert, Animated, FlatList,
     Keyboard, KeyboardAvoidingView, Modal, Platform,
@@ -36,7 +36,7 @@ export default function SkillsScreen() {
   const cardSystem = getCardSystem(colors, isDark)
 
   const backButtonScale = useRef(new Animated.Value(1)).current
-  const [fontsLoaded] = useFonts({
+  useFonts({
     'Roboto Slab': require('../../assets/Font/RobotoSlab-VariableFont_wght.ttf'),
   })
 
@@ -92,12 +92,7 @@ export default function SkillsScreen() {
     ).start()
   }, [backButtonScale])
 
-  useEffect(() => {
-    if (email) loadSkills();
-    else setLoading(false);
-  }, [email]);
-
-  const loadSkills = async () => {
+  const loadSkills = useCallback(async () => {
     if (!email) return;
     try {
       const fetched = await getSkills(email);
@@ -109,7 +104,12 @@ export default function SkillsScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [email]);
+
+  useEffect(() => {
+    if (email) loadSkills();
+    else setLoading(false);
+  }, [email, loadSkills]);
 
   const handleRefresh = () => { setRefreshing(true); loadSkills(); };
 

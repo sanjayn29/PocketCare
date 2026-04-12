@@ -1,20 +1,20 @@
-import React, { useState, useEffect, useRef } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Modal,
-  Vibration,
-  Animated,
-  Dimensions,
-  TouchableWithoutFeedback,
-} from "react-native";
-import { useUser } from "@clerk/expo";
-import { saveMemoryGameScore } from "@/lib/games-service";
 import { getColors } from "@/constants/styles";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { saveMemoryGameScore } from "@/lib/games-service";
+import { useUser } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+    Animated,
+    Dimensions,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    Vibration,
+    View,
+} from "react-native";
 
 interface Card {
   id: number;
@@ -44,13 +44,26 @@ const MemoryGameComponent: React.FC<{ onClose: () => void }> = ({ onClose }) => 
   const [gameWon, setGameWon] = useState(false);
   const [timerActive, setTimerActive] = useState(false);
 
+  const initializeGame = useCallback(() => {
+    const shuffled = [...EMOJIS, ...EMOJIS]
+      .sort(() => Math.random() - 0.5)
+      .map((value, id) => ({ id, value, flipped: false, matched: false }));
+    setCards(shuffled);
+    setFlippedCards([]);
+    setMatchedPairs(0);
+    setMoves(0);
+    setSeconds(0);
+    setGameWon(false);
+    setTimerActive(true);
+  }, []);
+
   useEffect(() => {
     initializeGame();
     Animated.parallel([
       Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, tension: 65, friction: 11 }),
       Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
     ]).start();
-  }, []);
+  }, [fadeAnim, initializeGame, slideAnim]);
 
   const handleClose = () => {
     Animated.parallel([
@@ -97,19 +110,6 @@ const MemoryGameComponent: React.FC<{ onClose: () => void }> = ({ onClose }) => 
       if (email) saveMemoryGameScore(email, moves, seconds);
     }
   }, [matchedPairs, moves, seconds, user]);
-
-  const initializeGame = () => {
-    const shuffled = [...EMOJIS, ...EMOJIS]
-      .sort(() => Math.random() - 0.5)
-      .map((value, id) => ({ id, value, flipped: false, matched: false }));
-    setCards(shuffled);
-    setFlippedCards([]);
-    setMatchedPairs(0);
-    setMoves(0);
-    setSeconds(0);
-    setGameWon(false);
-    setTimerActive(true);
-  };
 
   const handleCardPress = (index: number) => {
     if (cards[index].matched || cards[index].flipped || flippedCards.length === 2) return;

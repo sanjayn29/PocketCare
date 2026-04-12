@@ -6,20 +6,20 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert,
-  Animated,
-  FlatList,
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  ScrollView,
-  StyleSheet, Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    ActivityIndicator, Alert,
+    Animated,
+    FlatList,
+    Keyboard,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet, Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { addGoal, deleteGoal, getGoals, Goal, GoalCategory, GoalPriority, GoalTask, updateGoal } from '../../lib/goals-service';
@@ -33,14 +33,6 @@ export default function GoalsScreen() {
   const isDark = colorScheme === 'dark'
   const colors = getColors(isDark)
   const cardSystem = getCardSystem(colors, isDark)
-  
-  // Color palette for goal categories
-  const categoryColors = {
-    health: colors.border,
-    finance: colors.border,
-    career: colors.border,
-    personal: colors.border,
-  }
   
   const backButtonScale = useRef(new Animated.Value(1)).current
 
@@ -131,12 +123,7 @@ export default function GoalsScreen() {
     if (selectedDate) setEditDeadline(toLocalDateString(selectedDate));
   };
 
-  useEffect(() => {
-    if (email) loadGoals();
-    else setLoading(false);
-  }, [email]);
-
-  const loadGoals = async () => {
+  const loadGoals = useCallback(async () => {
     if (!email) return;
     try {
       const fetchedGoals = await getGoals(email);
@@ -154,7 +141,12 @@ export default function GoalsScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [email]);
+
+  useEffect(() => {
+    if (email) loadGoals();
+    else setLoading(false);
+  }, [email, loadGoals]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -228,7 +220,7 @@ export default function GoalsScreen() {
       setIsCreating(false);
       Keyboard.dismiss();
       loadGoals();
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to save goal');
     } finally {
       setIsSavingNew(false);
@@ -284,7 +276,7 @@ export default function GoalsScreen() {
       });
       setModalVisible(false);
       loadGoals();
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to update goal');
     } finally {
       setIsSavingEdit(false);
@@ -871,7 +863,7 @@ export default function GoalsScreen() {
           ListEmptyComponent={
              <View style={dynamicStyles.emptyWrap}>
                <Ionicons name="trophy-outline" size={60} color="#CBD5E1" />
-               <Text style={dynamicStyles.emptyText}>You haven't set any goals yet.</Text>
+               <Text style={dynamicStyles.emptyText}>You haven&apos;t set any goals yet.</Text>
              </View>
           }
         />

@@ -8,19 +8,19 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { BlurView } from 'expo-blur';
 import { useFonts } from 'expo-font';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert,
-  Animated,
-  FlatList,
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  StyleSheet, Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    ActivityIndicator, Alert,
+    Animated,
+    FlatList,
+    Keyboard,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    StyleSheet, Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getGoals, Goal, updateGoal } from '../../lib/goals-service';
@@ -49,7 +49,7 @@ export default function TasksScreen() {
   const cardSystem = getCardSystem(colors, isDark)
 
   const backButtonScale = useRef(new Animated.Value(1)).current
-  const [fontsLoaded] = useFonts({
+  useFonts({
     'Roboto Slab': require('../../assets/Font/RobotoSlab-VariableFont_wght.ttf'),
   })
 
@@ -511,15 +511,7 @@ export default function TasksScreen() {
     }
   };
 
-  useEffect(() => {
-    if (email) {
-      loadTasks();
-    } else {
-      setLoading(false);
-    }
-  }, [email]);
-
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     if (!email) return;
     try {
       const fetchedTasks = await getTasks(email);
@@ -577,7 +569,15 @@ export default function TasksScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [email]);
+
+  useEffect(() => {
+    if (email) {
+      loadTasks();
+    } else {
+      setLoading(false);
+    }
+  }, [email, loadTasks]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -604,7 +604,7 @@ export default function TasksScreen() {
       setIsCreating(false);
       Keyboard.dismiss();
       loadTasks();
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to save task');
     } finally {
       setIsSavingNew(false);
@@ -641,7 +641,7 @@ export default function TasksScreen() {
       } else {
         await updateTask(email, task.id, { status: newStatus });
       }
-    } catch (error) {
+    } catch {
       // Revert if error
       loadTasks();
       Alert.alert('Error', 'Failed to update task status');
@@ -682,7 +682,7 @@ export default function TasksScreen() {
       }
       setModalVisible(false);
       loadTasks();
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to update task');
     } finally {
       setIsSavingEdit(false);
@@ -1112,7 +1112,7 @@ export default function TasksScreen() {
           ListEmptyComponent={
              <View style={[dynamicStyles.emptyWrap]}>
                <Ionicons name="checkbox-outline" size={60} color={colors.border} />
-               <Text style={[dynamicStyles.emptyText]}>No tasks pending. You're all caught up!</Text>
+               <Text style={[dynamicStyles.emptyText]}>No tasks pending. You&apos;re all caught up!</Text>
              </View>
           }
         />

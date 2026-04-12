@@ -1,20 +1,20 @@
-import React, { useState, useEffect, useRef } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Modal,
-  Vibration,
-  Animated,
-  Dimensions,
-  TouchableWithoutFeedback,
-} from "react-native";
-import { useUser } from "@clerk/expo";
-import { saveTapGameScore } from "@/lib/games-service";
 import { getColors } from "@/constants/styles";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { saveTapGameScore } from "@/lib/games-service";
+import { useUser } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useRef, useState } from "react";
+import {
+    Animated,
+    Dimensions,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    Vibration,
+    View,
+} from "react-native";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const SHEET_HEIGHT = SCREEN_HEIGHT * 0.58;
@@ -40,7 +40,7 @@ const TapGameComponent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, tension: 65, friction: 11 }),
       Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
     ]).start();
-  }, []);
+  }, [fadeAnim, slideAnim]);
 
   const handleClose = () => {
     Animated.parallel([

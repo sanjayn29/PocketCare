@@ -1,20 +1,20 @@
 import { getColors } from '@/constants/styles'
 import { useColorScheme } from '@/hooks/use-color-scheme'
+import { authenticateUser } from '@/utils/deviceAuth'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  ActivityIndicator,
-  Animated,
-  Easing,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Animated,
+    Easing,
+    Image,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { authenticateUser } from '@/utils/deviceAuth'
 
 interface LockScreenProps {
   onUnlock: () => void
@@ -34,6 +34,39 @@ export default function LockScreen({ onUnlock }: LockScreenProps) {
   const shakeAnim = useRef(new Animated.Value(0)).current
   // Fade-in entrance
   const fadeAnim = useRef(new Animated.Value(0)).current
+
+  const triggerShake = useCallback(() => {
+    shakeAnim.setValue(0)
+    Animated.sequence([
+      Animated.timing(shakeAnim, { toValue: 10, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -10, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 8, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -8, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
+    ]).start()
+  }, [shakeAnim])
+
+  const triggerAuth = useCallback(async () => {
+    if (isAuthenticating) return
+    setIsAuthenticating(true)
+    setShowError(false)
+
+    const success = await authenticateUser()
+
+    setIsAuthenticating(false)
+
+    if (success) {
+      // Fade out before calling onUnlock
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start(() => onUnlock())
+    } else {
+      setShowError(true)
+      triggerShake()
+    }
+  }, [fadeAnim, isAuthenticating, onUnlock, triggerShake])
 
   useEffect(() => {
     // Entrance fade
@@ -63,40 +96,7 @@ export default function LockScreen({ onUnlock }: LockScreenProps) {
 
     // Auto-trigger authentication on mount for seamless UX
     triggerAuth()
-  }, [])
-
-  const triggerShake = () => {
-    shakeAnim.setValue(0)
-    Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 10, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -10, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 8, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -8, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
-    ]).start()
-  }
-
-  const triggerAuth = async () => {
-    if (isAuthenticating) return
-    setIsAuthenticating(true)
-    setShowError(false)
-
-    const success = await authenticateUser()
-
-    setIsAuthenticating(false)
-
-    if (success) {
-      // Fade out before calling onUnlock
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: true,
-      }).start(() => onUnlock())
-    } else {
-      setShowError(true)
-      triggerShake()
-    }
-  }
+  }, [fadeAnim, glowAnim, triggerAuth])
 
   const glowScale = glowAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.15] })
   const glowOpacity = glowAnim.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.55] })
