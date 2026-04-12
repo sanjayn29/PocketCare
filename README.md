@@ -1,60 +1,88 @@
-# Welcome to your Expo app 👋
+# 📱 PocketCare
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**PocketCare** is a smart **personal productivity and life management app** built with **React Native + Expo**.
 
-## Get started
+It helps users manage daily life in one place — including **finance, tasks, health, goals, notes, schedules, and skills**.
 
-1. Install dependencies
+---
 
-   ```bash
-   npm install
-   ```
+## 🚀 Features
 
-2. Configure environment variables
+- 📊 **Finance Tracker** — Manage income, expenses, and debts  
+- 🎯 **Goal Manager** — Create and track personal goals  
+- 📝 **Notes** — Save ideas and important information  
+- 📅 **Schedule Planner** — Plan events and daily activities  
+- 📋 **Task Manager** — Organize tasks with priorities  
+- 🧠 **Skills Tracker** — Track learning progress  
+- ❤️ **Health Tracker** — Monitor health and fitness records  
+- 💼 **Placement Tracker** — Track job applications and interviews  
+- 🤖 **AI Assistant** — Smart productivity support  
+- 📥 **Data Export** — Download all your app data anytime  
 
-   Create a `.env` file in the project root:
+---
 
-   ```bash
-   EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-   ```
+## 🛠 Tech Stack
 
-   Important: never put Clerk secret keys (`sk_*`) in this Expo app.
+- **React Native**
+- **Expo**
+- **Expo Router**
+- **Firebase Firestore**
+- **Clerk Authentication**
+- **AsyncStorage**
+- **TypeScript**
 
-3. Start the app
+---
 
-   ```bash
-   npx expo start
-   ```
+## 📥 Data Export
 
-In the output, you'll find options to open the app in a
+PocketCare allows users to **download their complete data**.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+Export includes:
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- Finance  
+- Goals  
+- Health  
+- Notes  
+- Placements  
+- Schedule  
+- Skills  
+- Tasks  
 
-## Get a fresh project
+The file is exported as:
 
-When you're ready, run:
 
-```bash
-npm run reset-project
-```
+You can save it to:
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+- Device storage  
+- Google Drive  
+- OneDrive  
+- Email  
+- Cloud storage apps  
 
-## Learn more
+---
 
-To learn more about developing your project with Expo, look at the following resources:
+## 🧪 How to Test
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+1. Login to the app  
+2. Add data in different sections  
+3. Open the **Profile page**  
+4. Click **Download Your Data**  
+5. Save the exported JSON file  
 
-## Join the community
+---
 
-Join our community of developers creating universal apps.
+## 👨‍💻 Developer
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+**Sanjay N**
+
+🚀 Freelancer  
+
+🌐 Portfolio: https://sanjayn.me  
+💼 LinkedIn: https://linkedin.com/in/sanjayn29  
+🐙 GitHub: https://github.com/sanjayn29  
+
+---
+
+## ⭐ Support
+
+If you like this project, consider giving it a **star ⭐ on GitHub** to support the development.
