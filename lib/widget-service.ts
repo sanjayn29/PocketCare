@@ -26,9 +26,9 @@ export const ALL_WIDGETS: { id: WidgetId; title: string; subtitle: string; iconN
   { id: 'goals_progress',   title: 'Goals',            subtitle: 'Active goal progress',      iconName: 'trophy',              color: '#8B5CF6' },
   { id: 'next_event',       title: 'Next Event',       subtitle: 'Upcoming schedule item',    iconName: 'calendar',            color: '#EC4899' },
   { id: 'fitness_today',    title: 'Fitness',          subtitle: "Today's fitness plan",      iconName: 'barbell',             color: '#14B8A6' },
-  { id: 'placement_status', title: 'Placement',        subtitle: 'Latest placement status',   iconName: 'business',            color: '#6366F1' },
-  { id: 'notes_quick',      title: 'Recent Note',      subtitle: 'Latest quick note',         iconName: 'document-text',       color: '#A855F7' },
-  { id: 'ai_tip',           title: 'AI Tips',          subtitle: 'Daily AI-powered insight',  iconName: 'sparkles',            color: '#0EA5E9' },
+  { id: 'placement_status', title: 'Placement',        subtitle: 'Latest placement status',   iconName: 'business',            color: '#84CC16' },
+  { id: 'notes_quick',      title: 'Recent Note',      subtitle: 'Latest quick note',         iconName: 'document-text',       color: '#F43F5E' },
+  { id: 'ai_tip',           title: 'AI Tips',          subtitle: 'Daily AI-powered insight',  iconName: 'sparkles',            color: '#06B6D4' },
 ];
 
 const STORAGE_KEY = 'pocketcare_widget_config';
