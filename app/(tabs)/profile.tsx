@@ -454,7 +454,7 @@ const createPdfBase64 = async (jsonString: string, email: string): Promise<strin
 
 const isDownloadsDirectoryUri = (uri: string) => /download/i.test(decodeURIComponent(uri));
 
-type ProfileTabType = 'Status' | 'Settings';
+type ProfileTabType = 'Status' | 'Settings' | 'About';
 
 const ProfileScreen: React.FC = () => {
   const { signOut } = useAuth();
@@ -484,7 +484,22 @@ const ProfileScreen: React.FC = () => {
   const profileTabColors = {
     status: '#D4AF37',
     settings: '#D4AF37',
+    about: '#D4AF37',
   };
+
+  const aboutFeatures = [
+    { title: 'Goals', description: 'Create short-term and long-term goals, organize priorities, and track progress clearly.' },
+    { title: 'Tasks', description: 'Add daily tasks, set deadlines, and stay consistent with completion tracking.' },
+    { title: 'Schedule', description: 'Plan your study day with time-based events and manage routines efficiently.' },
+    { title: 'Health', description: 'Track diet, fitness, and medical records to maintain a balanced student lifestyle.' },
+    { title: 'Notes', description: 'Capture quick notes, ideas, and important reminders in one organized place.' },
+    { title: 'Finance', description: 'Record expenses and money goals to build better financial discipline as a student.' },
+    { title: 'AI', description: 'Get instant guidance and smart suggestions to support learning, planning, and problem solving.' },
+    { title: 'Calculator', description: 'Use built-in calculations quickly for study-related math, planning, and everyday needs.' },
+    { title: 'Skills', description: 'Track skills you are learning and monitor step-by-step growth over time.' },
+    { title: 'Placement', description: 'Manage placement preparation data, rounds, and readiness for opportunities.' },
+    { title: 'Games & Streaks', description: 'Boost focus and motivation with mini games, streaks, and score tracking.' },
+  ];
 
   useEffect(() => {
     AsyncStorage.getItem('appLockEnabled').then(val => {
@@ -789,13 +804,6 @@ const ProfileScreen: React.FC = () => {
       color: colors.textSecondary,
       letterSpacing: 0.3,
     },
-    tabIndicator: {
-      position: 'absolute',
-      bottom: 3,
-      width: '42%',
-      height: 2.5,
-      borderRadius: 999,
-    },
     userCard: {
       ...cardSystem.surface,
       marginBottom: 20,
@@ -1025,6 +1033,47 @@ const ProfileScreen: React.FC = () => {
       letterSpacing: 0.4,
       fontFamily: "Roboto Slab",
     },
+    aboutInfoCard: {
+      ...cardSystem.surface,
+      marginBottom: 14,
+      paddingVertical: 16,
+      paddingHorizontal: 16,
+    },
+    aboutInfoTitle: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: colors.text,
+      marginBottom: 8,
+      fontFamily: "Roboto Slab",
+    },
+    aboutInfoText: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      lineHeight: 20,
+      fontWeight: "500",
+    },
+    aboutHighlight: {
+      color: "#D4AF37",
+      fontWeight: "700",
+    },
+    aboutFeatureRow: {
+      marginBottom: 12,
+      paddingBottom: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    aboutFeatureTitle: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: colors.text,
+      marginBottom: 4,
+    },
+    aboutFeatureText: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      lineHeight: 19,
+      fontWeight: "500",
+    },
     attributionCard: {
       ...cardSystem.surface,
       alignItems: "center",
@@ -1115,9 +1164,12 @@ const ProfileScreen: React.FC = () => {
         </View>
 
         <View style={dynamicStyles.tabContainer}>
-          {(['Status', 'Settings'] as ProfileTabType[]).map((tab) => {
+          {(['Status', 'Settings', 'About'] as ProfileTabType[]).map((tab) => {
             const isActive = activeTab === tab;
-            const activeColor = tab === 'Status' ? profileTabColors.status : profileTabColors.settings;
+            const activeColor =
+              tab === 'Status' ? profileTabColors.status :
+              tab === 'Settings' ? profileTabColors.settings :
+              profileTabColors.about;
 
             return (
               <TouchableOpacity
@@ -1133,7 +1185,11 @@ const ProfileScreen: React.FC = () => {
                 onPress={() => setActiveTab(tab)}
               >
                 <Ionicons
-                  name={tab === 'Status' ? 'stats-chart-outline' : 'settings-outline'}
+                  name={
+                    tab === 'Status' ? 'stats-chart-outline' :
+                    tab === 'Settings' ? 'settings-outline' :
+                    'information-circle-outline'
+                  }
                   size={16}
                   color={isActive ? activeColor : colors.textSecondary}
                 />
@@ -1145,7 +1201,6 @@ const ProfileScreen: React.FC = () => {
                 >
                   {tab}
                 </Text>
-                {isActive && <View style={[dynamicStyles.tabIndicator, { backgroundColor: activeColor }]} />}
               </TouchableOpacity>
             );
           })}
@@ -1262,6 +1317,25 @@ const ProfileScreen: React.FC = () => {
                 <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={dynamicStyles.gameButtonArrow} />
               </TouchableOpacity>
             </View>
+
+            <TouchableOpacity
+              style={dynamicStyles.attributionCard}
+              activeOpacity={0.75}
+              onPress={() => Linking.openURL("https://www.sanjayn.me")}
+            >
+              <View style={dynamicStyles.rocketWrapper}>
+                <LottieView
+                  source={require("../../assets/animations/Rocketship.json")}
+                  autoPlay
+                  loop
+                  style={dynamicStyles.rocketAnimation}
+                />
+              </View>
+              <Text style={dynamicStyles.attributionTagline}>Crafted with passion by</Text>
+              <Text style={dynamicStyles.attributionName}>Sanjay N</Text>
+              <View style={dynamicStyles.attributionDivider} />
+              <Text style={dynamicStyles.attributionLink}>www.sanjayn.me</Text>
+            </TouchableOpacity>
           </>
         )}
 
@@ -1334,26 +1408,6 @@ const ProfileScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
 
-            {/* ── Made by ── */}
-            <TouchableOpacity
-              style={dynamicStyles.attributionCard}
-              activeOpacity={0.75}
-              onPress={() => Linking.openURL("https://www.sanjayn.me")}
-            >
-              <View style={dynamicStyles.rocketWrapper}>
-                <LottieView
-                  source={require("../../assets/animations/Rocketship.json")}
-                  autoPlay
-                  loop
-                  style={dynamicStyles.rocketAnimation}
-                />
-              </View>
-              <Text style={dynamicStyles.attributionTagline}>Crafted with passion by</Text>
-              <Text style={dynamicStyles.attributionName}>Sanjay N</Text>
-              <View style={dynamicStyles.attributionDivider} />
-              <Text style={dynamicStyles.attributionLink}>www.sanjayn.me</Text>
-            </TouchableOpacity>
-
             {/* ── Logout ── */}
             <View style={dynamicStyles.logoutSection}>
               <TouchableOpacity
@@ -1374,6 +1428,78 @@ const ProfileScreen: React.FC = () => {
                 <Text style={dynamicStyles.logoutFullLabel}>Sign Out</Text>
               </TouchableOpacity>
             </View>
+
+            <TouchableOpacity
+              style={dynamicStyles.attributionCard}
+              activeOpacity={0.75}
+              onPress={() => Linking.openURL("https://www.sanjayn.me")}
+            >
+              <View style={dynamicStyles.rocketWrapper}>
+                <LottieView
+                  source={require("../../assets/animations/Rocketship.json")}
+                  autoPlay
+                  loop
+                  style={dynamicStyles.rocketAnimation}
+                />
+              </View>
+              <Text style={dynamicStyles.attributionTagline}>Crafted with passion by</Text>
+              <Text style={dynamicStyles.attributionName}>Sanjay N</Text>
+              <View style={dynamicStyles.attributionDivider} />
+              <Text style={dynamicStyles.attributionLink}>www.sanjayn.me</Text>
+            </TouchableOpacity>
+          </>
+        )}
+
+        {activeTab === 'About' && (
+          <>
+            <View style={dynamicStyles.aboutInfoCard}>
+              <Text style={dynamicStyles.aboutInfoTitle}>About PocketCare</Text>
+              <Text style={dynamicStyles.aboutInfoText}>
+                This is the current version of PocketCare: Version Zero.
+                {'\n\n'}
+                From your feedback, PocketCare will be updated and improved regularly in future releases.
+                {'\n\n'}
+                PocketCare is developed by <Text style={dynamicStyles.aboutHighlight}>Sanjay N</Text>, a student of AI & ML,
+                who analyzed student needs and designed this app to support student productivity and personal growth.
+                {'\n\n'}
+                Website: <Text style={dynamicStyles.aboutHighlight}>www.sanjayn.me</Text>
+              </Text>
+            </View>
+
+            <View style={dynamicStyles.aboutInfoCard}>
+              <Text style={dynamicStyles.aboutInfoTitle}>Features</Text>
+              {aboutFeatures.map((feature, index) => (
+                <View
+                  key={feature.title}
+                  style={[
+                    dynamicStyles.aboutFeatureRow,
+                    index === aboutFeatures.length - 1 && { marginBottom: 0, paddingBottom: 0, borderBottomWidth: 0 },
+                  ]}
+                >
+                  <Text style={dynamicStyles.aboutFeatureTitle}>{feature.title}:</Text>
+                  <Text style={dynamicStyles.aboutFeatureText}>{feature.description}</Text>
+                </View>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={dynamicStyles.attributionCard}
+              activeOpacity={0.75}
+              onPress={() => Linking.openURL("https://www.sanjayn.me")}
+            >
+              <View style={dynamicStyles.rocketWrapper}>
+                <LottieView
+                  source={require("../../assets/animations/Rocketship.json")}
+                  autoPlay
+                  loop
+                  style={dynamicStyles.rocketAnimation}
+                />
+              </View>
+              <Text style={dynamicStyles.attributionTagline}>Crafted with passion by</Text>
+              <Text style={dynamicStyles.attributionName}>Sanjay N</Text>
+              <View style={dynamicStyles.attributionDivider} />
+              <Text style={dynamicStyles.attributionLink}>www.sanjayn.me</Text>
+            </TouchableOpacity>
           </>
         )}
       </ScrollView>
