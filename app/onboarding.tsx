@@ -128,14 +128,19 @@ export default function OnboardingPage() {
                 loop
                 style={styles.introAnimation}
               />
-              <Pressable onPress={onDeveloperPress} style={({ pressed }) => [styles.devLinkButton, pressed && styles.buttonPressed]}>
-                <View style={styles.devLinkRow}>
-                  
-                  <ThemedText style={[styles.devPrefixText, { color: isDark ? '#FFFFFF' : '#111111' }]}>Developed by</ThemedText>
-                  <View style={styles.devNameWrap}>
-                    <ThemedText style={styles.devNameText}>Sanjay N</ThemedText>
-                  </View>
+              <Pressable onPress={onDeveloperPress} style={({ pressed }) => [styles.attributionCard, pressed && styles.buttonPressed]}>
+                <View style={styles.rocketWrapper}>
+                  <LottieView
+                    source={require('../assets/animations/Rocketship.json')}
+                    autoPlay
+                    loop
+                    style={styles.rocketAnimation}
+                  />
                 </View>
+                <ThemedText style={[styles.attributionTagline, { color: colors.textSecondary }]}>Crafted with passion by</ThemedText>
+                <ThemedText style={[styles.attributionName, { color: colors.text }]}>Sanjay N</ThemedText>
+                <View style={styles.attributionDivider} />
+                <ThemedText style={styles.attributionLink}>www.sanjayn.me</ThemedText>
               </Pressable>
             </View>
           ) : (
@@ -255,30 +260,60 @@ const styles = StyleSheet.create({
     height: 280,
     marginTop: 12,
   },
-  devLinkButton: {
-    marginTop: 10,
-  },
-  devLinkRow: {
-    flexDirection: 'column',
+  attributionCard: {
+    width: '100%',
     alignItems: 'center',
+    marginTop: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: 'rgba(212, 175, 55, 0.75)',
+    backgroundColor: 'rgba(212, 175, 55, 0.06)',
   },
-  devPrefixText: {
-    fontSize: 14,
-    textAlign: 'center',
+  rocketWrapper: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#D4AF37',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+    shadowColor: '#D4AF37',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  devNameText: {
+  rocketAnimation: {
+    width: 42,
+    height: 42,
+  },
+  attributionTagline: {
+    fontSize: 11,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  attributionName: {
+    fontSize: 24,
     fontFamily: 'Momo Signature',
-    fontSize: 22,
-    color: '#D4AF37',
-    textDecorationLine: 'underline',
-    textDecorationColor: '#D4AF37',
-    textAlign: 'center',
+    letterSpacing: 0.8,
+    marginBottom: 6,
   },
-  devNameWrap: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#D4AF37',
-    paddingBottom: 2,
-    marginTop: 2,
+  attributionDivider: {
+    width: 34,
+    height: 2,
+    borderRadius: 2,
+    backgroundColor: '#D4AF37',
+    marginBottom: 6,
+  },
+  attributionLink: {
+    fontSize: 12,
+    color: '#D4AF37',
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
   blockCard: {
     width: 260,
