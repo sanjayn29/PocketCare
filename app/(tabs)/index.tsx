@@ -727,7 +727,10 @@ export default function HomeScreen() {
       {/* ── Header ── */}
       <View style={s.header}>
         <View style={{ flex: 1 }}>
-          <Text style={s.headerTitle}>PocketCare</Text>
+          <View style={s.headerBrand}>
+            <Image source={require('../../assets/Logo2.png')} style={s.headerLogo} />
+            <Text style={s.headerTitle}>PocketCare</Text>
+          </View>
           <Text style={s.headerSub}>
             {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' })}
           </Text>
@@ -896,6 +899,8 @@ const getStyles = (colors: any, isDark: boolean) => {
     borderBottomColor: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)',
     backgroundColor: colors.background,
   },
+  headerBrand: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  headerLogo: { width: 32, height: 32, borderRadius: 8 },
   headerTitle: { fontSize: 28, fontFamily: 'MomoSignature', color: '#D4AF37', letterSpacing: -0.5 },
   headerSub: { fontSize: 12, color: colors.textSecondary, marginTop: 4, fontWeight: '600', letterSpacing: 0.2 },
   headerActions: { flexDirection: 'row', gap: 10 },

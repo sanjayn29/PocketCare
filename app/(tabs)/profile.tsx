@@ -1075,6 +1075,8 @@ const ProfileScreen: React.FC = () => {
       marginTop: 4,
       paddingVertical: 18,
       paddingHorizontal: 20,
+      borderWidth: 1.5,
+      borderColor: "rgba(212, 175, 55, 0.75)",
     },
     rocketWrapper: {
       width: 72,
