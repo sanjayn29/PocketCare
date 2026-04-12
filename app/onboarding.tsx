@@ -8,7 +8,7 @@ import { useFonts } from 'expo-font'
 import { useRouter } from 'expo-router'
 import LottieView from 'lottie-react-native'
 import React, { useEffect, useRef, useState } from 'react'
-import { Animated, Linking, Pressable, StyleSheet, View } from 'react-native'
+import { Animated, Linking, PanResponder, Pressable, StyleSheet, View } from 'react-native'
 
 type OnboardingPageData =
   | {
@@ -62,12 +62,36 @@ const ONBOARDING_PAGES: readonly OnboardingPageData[] = [
 ] as const
 
 export default function OnboardingPage() {
+  const swipeThreshold = 50
   const router = useRouter()
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const colors = getColors(isDark)
   const [pageIndex, setPageIndex] = useState(0)
   const floatAnim = useRef(new Animated.Value(0)).current
+  const pageIndexRef = useRef(0)
+
+  useEffect(() => {
+    pageIndexRef.current = pageIndex
+  }, [pageIndex])
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) =>
+        Math.abs(gestureState.dx) > 18 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy),
+      onPanResponderRelease: (_, gestureState) => {
+        const currentIndex = pageIndexRef.current
+        const shouldSwipeNext = gestureState.dx <= -swipeThreshold || gestureState.vx <= -0.35
+        const shouldSwipePrev = gestureState.dx >= swipeThreshold || gestureState.vx >= 0.35
+
+        if (shouldSwipeNext && currentIndex < ONBOARDING_PAGES.length - 1) {
+          setPageIndex(currentIndex + 1)
+        } else if (shouldSwipePrev && currentIndex > 0) {
+          setPageIndex(currentIndex - 1)
+        }
+      },
+    })
+  ).current
 
   useEffect(() => {
     Animated.loop(
@@ -115,7 +139,7 @@ export default function OnboardingPage() {
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: colors.background }]}> 
-      <View style={styles.canvas}>
+      <View style={styles.canvas} {...panResponder.panHandlers}>
         <Animated.View style={[
           styles.diagramContainer,
           page.type === 'intro' && styles.introDiagramContainer,
@@ -133,21 +157,21 @@ export default function OnboardingPage() {
                   loop
                   style={styles.introAnimation}
                 />
+                <Pressable onPress={onDeveloperPress} style={({ pressed }) => [styles.attributionInline, pressed && styles.buttonPressed]}>
+                  <View style={styles.rocketWrapper}>
+                    <LottieView
+                      source={require('../assets/animations/Rocketship.json')}
+                      autoPlay
+                      loop
+                      style={styles.rocketAnimation}
+                    />
+                  </View>
+                  <ThemedText style={[styles.attributionTagline, { color: colors.textSecondary }]}>Crafted with passion by</ThemedText>
+                  <ThemedText style={[styles.attributionName, { color: colors.text }]}>Sanjay N</ThemedText>
+                  <View style={styles.attributionDivider} />
+                  <ThemedText style={styles.attributionLink}>www.sanjayn.me</ThemedText>
+                </Pressable>
               </View>
-              <Pressable onPress={onDeveloperPress} style={({ pressed }) => [styles.attributionCard, pressed && styles.buttonPressed]}>
-                <View style={styles.rocketWrapper}>
-                  <LottieView
-                    source={require('../assets/animations/Rocketship.json')}
-                    autoPlay
-                    loop
-                    style={styles.rocketAnimation}
-                  />
-                </View>
-                <ThemedText style={[styles.attributionTagline, { color: colors.textSecondary }]}>Crafted with passion by</ThemedText>
-                <ThemedText style={[styles.attributionName, { color: colors.text }]}>Sanjay N</ThemedText>
-                <View style={styles.attributionDivider} />
-                <ThemedText style={styles.attributionLink}>www.sanjayn.me</ThemedText>
-              </Pressable>
             </View>
           ) : (
             <View style={styles.diagramRow}>
@@ -206,7 +230,7 @@ export default function OnboardingPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
     paddingTop: 60,
     paddingBottom: 32,
     justifyContent: 'space-between',
@@ -239,13 +263,15 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
+    width: '100%',
+    maxWidth: 360,
   },
   introContent: {
     width: '100%',
-    maxWidth: 320,
+    maxWidth: 360,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: 0,
     gap: 12,
   },
   introMainCard: {
@@ -256,6 +282,7 @@ const styles = StyleSheet.create({
     borderColor: '#D4AF37',
     paddingVertical: 12,
     paddingHorizontal: 14,
+    paddingBottom: 18,
   },
   introTitle: {
     fontFamily: 'Momo Signature',
@@ -282,16 +309,15 @@ const styles = StyleSheet.create({
     height: 240,
     marginTop: 8,
   },
-  attributionCard: {
+  attributionInline: {
     width: '100%',
     alignItems: 'center',
-    marginTop: 10,
-    paddingVertical: 14,
+    marginTop: 12,
+    paddingTop: 14,
+    paddingBottom: 20,
     paddingHorizontal: 16,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: 'rgba(212, 175, 55, 0.75)',
-    backgroundColor: 'rgba(212, 175, 55, 0.06)',
+    borderRadius: 16,
+    backgroundColor: 'rgba(212, 175, 55, 0.04)',
   },
   rocketWrapper: {
     width: 60,
@@ -320,9 +346,11 @@ const styles = StyleSheet.create({
   },
   attributionName: {
     fontSize: 24,
+    lineHeight: 34,
     fontFamily: 'Momo Signature',
     letterSpacing: 0.8,
     marginBottom: 6,
+    textAlign: 'center',
   },
   attributionDivider: {
     width: 34,
@@ -338,7 +366,8 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
   blockCard: {
-    width: 260,
+    width: '100%',
+    maxWidth: 360,
     minHeight: 120,
     borderRadius: 28,
     padding: 18,
