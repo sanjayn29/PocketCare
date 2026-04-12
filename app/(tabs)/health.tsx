@@ -263,7 +263,7 @@ export default function HealthScreen() {
       return `rgba(${r}, ${g}, ${b}, ${opacity})`;
     };
     const getActiveHexColor = () => {
-      return themeName === 'medical' ? '#1D4ED8' : themeName === 'diet' ? '#059669' : '#B45309';
+      return themeName === 'medical' ? uiColors.medical : themeName === 'diet' ? uiColors.diet : '#B45309';
     };
     
     return (
