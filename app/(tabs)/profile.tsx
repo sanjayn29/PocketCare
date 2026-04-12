@@ -454,6 +454,8 @@ const createPdfBase64 = async (jsonString: string, email: string): Promise<strin
 
 const isDownloadsDirectoryUri = (uri: string) => /download/i.test(decodeURIComponent(uri));
 
+type ProfileTabType = 'Status' | 'Settings';
+
 const ProfileScreen: React.FC = () => {
   const { signOut } = useAuth();
   const { user } = useUser();
@@ -477,6 +479,12 @@ const ProfileScreen: React.FC = () => {
   const [maxStreak, setMaxStreak] = useState(0);
   const [appLockEnabled, setAppLockEnabled] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [activeTab, setActiveTab] = useState<ProfileTabType>('Status');
+
+  const profileTabColors = {
+    status: '#D4AF37',
+    settings: '#D4AF37',
+  };
 
   useEffect(() => {
     AsyncStorage.getItem('appLockEnabled').then(val => {
@@ -753,6 +761,40 @@ const ProfileScreen: React.FC = () => {
       paddingHorizontal: 16,
       paddingTop: 14,
       paddingBottom: 120,
+    },
+    tabContainer: {
+      flexDirection: 'row',
+      gap: 10,
+      marginBottom: 18,
+      padding: 6,
+      backgroundColor: isDark ? 'rgba(212, 175, 55, 0.14)' : 'rgba(212, 175, 55, 0.1)',
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(212, 175, 55, 0.35)' : 'rgba(212, 175, 55, 0.25)',
+    },
+    tabButton: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'row',
+      gap: 8,
+      borderRadius: 12,
+      paddingVertical: 11,
+      paddingHorizontal: 8,
+      position: 'relative',
+    },
+    tabButtonText: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.textSecondary,
+      letterSpacing: 0.3,
+    },
+    tabIndicator: {
+      position: 'absolute',
+      bottom: 3,
+      width: '42%',
+      height: 2.5,
+      borderRadius: 999,
     },
     userCard: {
       ...cardSystem.surface,
@@ -1072,223 +1114,268 @@ const ProfileScreen: React.FC = () => {
           </View>
         </View>
 
-        <View style={dynamicStyles.sectionBlock}>
-          <View style={dynamicStyles.sectionHeader}>
-            <View
-              style={[
-                dynamicStyles.sectionIconWrap,
-                { backgroundColor: isDark ? "rgba(212, 175, 55, 0.2)" : "rgba(212, 175, 55, 0.14)" },
-              ]}
-            >
-              <Ionicons name="flame-outline" size={16} color="#D4AF37" />
-            </View>
-            <Text style={dynamicStyles.sectionTitle}>Streaks</Text>
-          </View>
-          <View style={dynamicStyles.streakContainer}>
-            <View style={dynamicStyles.streakCard}>
-              <Text style={dynamicStyles.streakLabel}>Current</Text>
-              <View style={dynamicStyles.streakValueContainer}>
-                <Text style={dynamicStyles.streakValue}>{currentStreak}</Text>
-                <Text style={dynamicStyles.streakUnit}>days</Text>
-              </View>
-            </View>
-            <View style={dynamicStyles.streakCard}>
-              <Text style={dynamicStyles.streakLabel}>Best</Text>
-              <View style={dynamicStyles.streakValueContainer}>
-                <Text style={dynamicStyles.streakValue}>{maxStreak}</Text>
-                <Text style={dynamicStyles.streakUnit}>days</Text>
-              </View>
-            </View>
-          </View>
+        <View style={dynamicStyles.tabContainer}>
+          {(['Status', 'Settings'] as ProfileTabType[]).map((tab) => {
+            const isActive = activeTab === tab;
+            const activeColor = tab === 'Status' ? profileTabColors.status : profileTabColors.settings;
+
+            return (
+              <TouchableOpacity
+                key={tab}
+                style={[
+                  dynamicStyles.tabButton,
+                  isActive && {
+                    backgroundColor: isDark ? `${activeColor}26` : `${activeColor}1A`,
+                    borderWidth: 1,
+                    borderColor: activeColor,
+                  },
+                ]}
+                onPress={() => setActiveTab(tab)}
+              >
+                <Ionicons
+                  name={tab === 'Status' ? 'stats-chart-outline' : 'settings-outline'}
+                  size={16}
+                  color={isActive ? activeColor : colors.textSecondary}
+                />
+                <Text
+                  style={[
+                    dynamicStyles.tabButtonText,
+                    isActive && { color: activeColor, fontWeight: '800' },
+                  ]}
+                >
+                  {tab}
+                </Text>
+                {isActive && <View style={[dynamicStyles.tabIndicator, { backgroundColor: activeColor }]} />}
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
-        <View style={dynamicStyles.sectionBlock}>
-          <View style={dynamicStyles.sectionHeader}>
-            <View
-              style={[
-                dynamicStyles.sectionIconWrap,
-                { backgroundColor: isDark ? "rgba(212, 175, 55, 0.2)" : "rgba(212, 175, 55, 0.15)" },
-              ]}
+        {activeTab === 'Status' && (
+          <>
+            <View style={dynamicStyles.sectionBlock}>
+              <View style={dynamicStyles.sectionHeader}>
+                <View
+                  style={[
+                    dynamicStyles.sectionIconWrap,
+                    { backgroundColor: isDark ? "rgba(212, 175, 55, 0.2)" : "rgba(212, 175, 55, 0.14)" },
+                  ]}
+                >
+                  <Ionicons name="flame-outline" size={16} color="#D4AF37" />
+                </View>
+                <Text style={dynamicStyles.sectionTitle}>Streaks</Text>
+              </View>
+              <View style={dynamicStyles.streakContainer}>
+                <View style={dynamicStyles.streakCard}>
+                  <Text style={dynamicStyles.streakLabel}>Current</Text>
+                  <View style={dynamicStyles.streakValueContainer}>
+                    <Text style={dynamicStyles.streakValue}>{currentStreak}</Text>
+                    <Text style={dynamicStyles.streakUnit}>days</Text>
+                  </View>
+                </View>
+                <View style={dynamicStyles.streakCard}>
+                  <Text style={dynamicStyles.streakLabel}>Best</Text>
+                  <View style={dynamicStyles.streakValueContainer}>
+                    <Text style={dynamicStyles.streakValue}>{maxStreak}</Text>
+                    <Text style={dynamicStyles.streakUnit}>days</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            <View style={dynamicStyles.sectionBlock}>
+              <View style={dynamicStyles.sectionHeader}>
+                <View
+                  style={[
+                    dynamicStyles.sectionIconWrap,
+                    { backgroundColor: isDark ? "rgba(212, 175, 55, 0.2)" : "rgba(212, 175, 55, 0.15)" },
+                  ]}
+                >
+                  <Ionicons name="trophy-outline" size={16} color="#D4AF37" />
+                </View>
+                <Text style={dynamicStyles.sectionTitle}>Best Scores</Text>
+              </View>
+
+              <View style={dynamicStyles.scoreCard}>
+                <Text style={dynamicStyles.gameTitle}>Memory Game</Text>
+                <View style={dynamicStyles.scoreDetails}>
+                  <View style={dynamicStyles.scoreItem}>
+                    <Text style={dynamicStyles.scoreLabel}>Best Moves</Text>
+                    <Text style={dynamicStyles.scoreValue}>{memoryScore?.bestMoves || "N/A"}</Text>
+                  </View>
+                  <View style={dynamicStyles.divider} />
+                  <View style={dynamicStyles.scoreItem}>
+                    <Text style={dynamicStyles.scoreLabel}>Time</Text>
+                    <Text style={dynamicStyles.scoreValue}>{memoryScore?.bestTime ? `${memoryScore.bestTime}s` : "N/A"}</Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={dynamicStyles.scoreCard}>
+                <Text style={dynamicStyles.gameTitle}>Tap Game</Text>
+                <View style={dynamicStyles.scoreDetails}>
+                  <View style={dynamicStyles.scoreItem}>
+                    <Text style={dynamicStyles.scoreLabel}>Best Score</Text>
+                    <Text style={dynamicStyles.scoreValue}>{tapScore?.bestScore || "N/A"}</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            <View style={dynamicStyles.sectionBlock}>
+              <View style={dynamicStyles.sectionHeader}>
+                <View
+                  style={[
+                    dynamicStyles.sectionIconWrap,
+                    { backgroundColor: isDark ? "rgba(59, 130, 246, 0.2)" : "rgba(59, 130, 246, 0.14)" },
+                  ]}
+                >
+                  <LottieView
+                    source={require("../../assets/animations/gaming.json")}
+                    autoPlay
+                    loop
+                    style={dynamicStyles.gamingAnimation}
+                  />
+                </View>
+                <Text style={dynamicStyles.sectionTitle}>Play Games</Text>
+              </View>
+
+              <TouchableOpacity style={dynamicStyles.gameButton} onPress={() => setShowMemoryGame(true)}>
+                <View style={dynamicStyles.gameButtonIconWrap}>
+                  <Ionicons name="extension-puzzle-outline" size={22} color={colors.primary} />
+                </View>
+                <View style={dynamicStyles.gameButtonContent}>
+                  <Text style={dynamicStyles.gameButtonTitle}>Memory Game</Text>
+                  <Text style={dynamicStyles.gameButtonSubtitle}>Match pairs of cards</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={dynamicStyles.gameButtonArrow} />
+              </TouchableOpacity>
+
+              <TouchableOpacity style={dynamicStyles.gameButton} onPress={() => setShowTapGame(true)}>
+                <View style={dynamicStyles.gameButtonIconWrap}>
+                  <Ionicons name="finger-print-outline" size={22} color={colors.primary} />
+                </View>
+                <View style={dynamicStyles.gameButtonContent}>
+                  <Text style={dynamicStyles.gameButtonTitle}>Tap Game</Text>
+                  <Text style={dynamicStyles.gameButtonSubtitle}>Tap as fast as you can</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={dynamicStyles.gameButtonArrow} />
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+
+        {activeTab === 'Settings' && (
+          <>
+            {/* Theme Toggle Row */}
+            <TouchableOpacity
+              style={dynamicStyles.themeRow}
+              onPress={toggleTheme}
+              activeOpacity={0.8}
             >
-              <Ionicons name="trophy-outline" size={16} color="#D4AF37" />
-            </View>
-            <Text style={dynamicStyles.sectionTitle}>Best Scores</Text>
-          </View>
-
-          <View style={dynamicStyles.scoreCard}>
-            <Text style={dynamicStyles.gameTitle}>Memory Game</Text>
-            <View style={dynamicStyles.scoreDetails}>
-              <View style={dynamicStyles.scoreItem}>
-                <Text style={dynamicStyles.scoreLabel}>Best Moves</Text>
-                <Text style={dynamicStyles.scoreValue}>{memoryScore?.bestMoves || "N/A"}</Text>
+              <View style={dynamicStyles.themeRowLeft}>
+                <View style={dynamicStyles.themeRowIcon}>
+                  <Ionicons name={isDark ? "moon" : "sunny"} size={16} color={isDark ? "#818CF8" : "#F59E0B"} />
+                </View>
+                <View>
+                  <Text style={dynamicStyles.themeRowLabel}>{isDark ? "Dark Mode" : "Light Mode"}</Text>
+                  <Text style={dynamicStyles.themeRowSub}>Tap to switch appearance</Text>
+                </View>
               </View>
-              <View style={dynamicStyles.divider} />
-              <View style={dynamicStyles.scoreItem}>
-                <Text style={dynamicStyles.scoreLabel}>Time</Text>
-                <Text style={dynamicStyles.scoreValue}>{memoryScore?.bestTime ? `${memoryScore.bestTime}s` : "N/A"}</Text>
-              </View>
-            </View>
-          </View>
-
-          <View style={dynamicStyles.scoreCard}>
-            <Text style={dynamicStyles.gameTitle}>Tap Game</Text>
-            <View style={dynamicStyles.scoreDetails}>
-              <View style={dynamicStyles.scoreItem}>
-                <Text style={dynamicStyles.scoreLabel}>Best Score</Text>
-                <Text style={dynamicStyles.scoreValue}>{tapScore?.bestScore || "N/A"}</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        <View style={dynamicStyles.sectionBlock}>
-          <View style={dynamicStyles.sectionHeader}>
-            <View
-              style={[
-                dynamicStyles.sectionIconWrap,
-                { backgroundColor: isDark ? "rgba(59, 130, 246, 0.2)" : "rgba(59, 130, 246, 0.14)" },
-              ]}
-            >
               <LottieView
-                source={require("../../assets/animations/gaming.json")}
-                autoPlay
-                loop
-                style={dynamicStyles.gamingAnimation}
+                ref={switchRef}
+                source={require("../../assets/animations/switch.json")}
+                autoPlay={false}
+                loop={false}
+                progress={isDark ? 1 : 0}
+                style={dynamicStyles.themeAnimation}
               />
-            </View>
-            <Text style={dynamicStyles.sectionTitle}>Play Games</Text>
-          </View>
+            </TouchableOpacity>
 
-          <TouchableOpacity style={dynamicStyles.gameButton} onPress={() => setShowMemoryGame(true)}>
-            <View style={dynamicStyles.gameButtonIconWrap}>
-              <Ionicons name="extension-puzzle-outline" size={22} color={colors.primary} />
-            </View>
-            <View style={dynamicStyles.gameButtonContent}>
-              <Text style={dynamicStyles.gameButtonTitle}>Memory Game</Text>
-              <Text style={dynamicStyles.gameButtonSubtitle}>Match pairs of cards</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={dynamicStyles.gameButtonArrow} />
-          </TouchableOpacity>
+            {/* App Lock Toggle Row */}
+            <TouchableOpacity
+              style={dynamicStyles.themeRow}
+              onPress={toggleAppLock}
+              activeOpacity={0.8}
+            >
+              <View style={dynamicStyles.themeRowLeft}>
+                <View style={dynamicStyles.themeRowIcon}>
+                  <Ionicons name={appLockEnabled ? "lock-closed" : "lock-open"} size={16} color={appLockEnabled ? "#10B981" : "#EF4444"} />
+                </View>
+                <View>
+                  <Text style={dynamicStyles.themeRowLabel}>App Lock</Text>
+                  <Text style={dynamicStyles.themeRowSub}>Require auth to open app</Text>
+                </View>
+              </View>
+              <Switch 
+                value={appLockEnabled} 
+                onValueChange={toggleAppLock} 
+                trackColor={{false: '#E2E8F0', true: '#10B981'}}
+                thumbColor={'#FFFFFF'}
+              />
+            </TouchableOpacity>
 
-          <TouchableOpacity style={dynamicStyles.gameButton} onPress={() => setShowTapGame(true)}>
-            <View style={dynamicStyles.gameButtonIconWrap}>
-              <Ionicons name="finger-print-outline" size={22} color={colors.primary} />
+            {/* ── Download Data ── */}
+            <View style={dynamicStyles.logoutSection}>
+              <TouchableOpacity
+                style={[dynamicStyles.downloadButton, isDownloading && { opacity: 0.7 }]}
+                onPress={handleDownloadData}
+                activeOpacity={0.82}
+                disabled={isDownloading}
+              >
+                {isDownloading ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Ionicons name="download" size={20} color="#FFFFFF" />
+                )}
+                <Text style={dynamicStyles.downloadLabel}>
+                  {isDownloading ? "Downloading PDF..." : "Download Data (PDF)"}
+                </Text>
+              </TouchableOpacity>
             </View>
-            <View style={dynamicStyles.gameButtonContent}>
-              <Text style={dynamicStyles.gameButtonTitle}>Tap Game</Text>
-              <Text style={dynamicStyles.gameButtonSubtitle}>Tap as fast as you can</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={dynamicStyles.gameButtonArrow} />
-          </TouchableOpacity>
-        </View>
 
-        {/* Theme Toggle Row */}
-        <TouchableOpacity
-          style={dynamicStyles.themeRow}
-          onPress={toggleTheme}
-          activeOpacity={0.8}
-        >
-          <View style={dynamicStyles.themeRowLeft}>
-            <View style={dynamicStyles.themeRowIcon}>
-              <Ionicons name={isDark ? "moon" : "sunny"} size={16} color={isDark ? "#818CF8" : "#F59E0B"} />
-            </View>
-            <View>
-              <Text style={dynamicStyles.themeRowLabel}>{isDark ? "Dark Mode" : "Light Mode"}</Text>
-              <Text style={dynamicStyles.themeRowSub}>Tap to switch appearance</Text>
-            </View>
-          </View>
-          <LottieView
-            ref={switchRef}
-            source={require("../../assets/animations/switch.json")}
-            autoPlay={false}
-            loop={false}
-            progress={isDark ? 1 : 0}
-            style={dynamicStyles.themeAnimation}
-          />
-        </TouchableOpacity>
+            {/* ── Made by ── */}
+            <TouchableOpacity
+              style={dynamicStyles.attributionCard}
+              activeOpacity={0.75}
+              onPress={() => Linking.openURL("https://www.sanjayn.me")}
+            >
+              <View style={dynamicStyles.rocketWrapper}>
+                <LottieView
+                  source={require("../../assets/animations/Rocketship.json")}
+                  autoPlay
+                  loop
+                  style={dynamicStyles.rocketAnimation}
+                />
+              </View>
+              <Text style={dynamicStyles.attributionTagline}>Crafted with passion by</Text>
+              <Text style={dynamicStyles.attributionName}>Sanjay N</Text>
+              <View style={dynamicStyles.attributionDivider} />
+              <Text style={dynamicStyles.attributionLink}>www.sanjayn.me</Text>
+            </TouchableOpacity>
 
-        {/* App Lock Toggle Row */}
-        <TouchableOpacity
-          style={dynamicStyles.themeRow}
-          onPress={toggleAppLock}
-          activeOpacity={0.8}
-        >
-          <View style={dynamicStyles.themeRowLeft}>
-            <View style={dynamicStyles.themeRowIcon}>
-              <Ionicons name={appLockEnabled ? "lock-closed" : "lock-open"} size={16} color={appLockEnabled ? "#10B981" : "#EF4444"} />
+            {/* ── Logout ── */}
+            <View style={dynamicStyles.logoutSection}>
+              <TouchableOpacity
+                style={dynamicStyles.logoutFullButton}
+                onPress={handleLogout}
+                activeOpacity={0.82}
+              >
+                <LottieView
+                  source={require("../../assets/animations/Logout.json")}
+                  autoPlay
+                  loop
+                  colorFilters={[
+                    { keypath: "logout 2.logout.Fill 1", color: "#FFFFFF" },
+                    { keypath: "logout.logout.Fill 1", color: "#FFFFFF" },
+                  ]}
+                  style={dynamicStyles.logoutFullAnimation}
+                />
+                <Text style={dynamicStyles.logoutFullLabel}>Sign Out</Text>
+              </TouchableOpacity>
             </View>
-            <View>
-              <Text style={dynamicStyles.themeRowLabel}>App Lock</Text>
-              <Text style={dynamicStyles.themeRowSub}>Require auth to open app</Text>
-            </View>
-          </View>
-          <Switch 
-            value={appLockEnabled} 
-            onValueChange={toggleAppLock} 
-            trackColor={{false: '#E2E8F0', true: '#10B981'}}
-            thumbColor={'#FFFFFF'}
-          />
-        </TouchableOpacity>
-
-        {/* ── Download Data ── */}
-        <View style={dynamicStyles.logoutSection}>
-          <TouchableOpacity
-            style={[dynamicStyles.downloadButton, isDownloading && { opacity: 0.7 }]}
-            onPress={handleDownloadData}
-            activeOpacity={0.82}
-            disabled={isDownloading}
-          >
-            {isDownloading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Ionicons name="download" size={20} color="#FFFFFF" />
-            )}
-            <Text style={dynamicStyles.downloadLabel}>
-              {isDownloading ? "Downloading PDF..." : "Download Data (PDF)"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* ── Made by ── */}
-        <TouchableOpacity
-          style={dynamicStyles.attributionCard}
-          activeOpacity={0.75}
-          onPress={() => Linking.openURL("https://www.sanjayn.me")}
-        >
-          <View style={dynamicStyles.rocketWrapper}>
-            <LottieView
-              source={require("../../assets/animations/Rocketship.json")}
-              autoPlay
-              loop
-              style={dynamicStyles.rocketAnimation}
-            />
-          </View>
-          <Text style={dynamicStyles.attributionTagline}>Crafted with passion by</Text>
-          <Text style={dynamicStyles.attributionName}>Sanjay N</Text>
-          <View style={dynamicStyles.attributionDivider} />
-          <Text style={dynamicStyles.attributionLink}>www.sanjayn.me</Text>
-        </TouchableOpacity>
-
-        {/* ── Logout ── */}
-        <View style={dynamicStyles.logoutSection}>
-          <TouchableOpacity
-            style={dynamicStyles.logoutFullButton}
-            onPress={handleLogout}
-            activeOpacity={0.82}
-          >
-            <LottieView
-              source={require("../../assets/animations/Logout.json")}
-              autoPlay
-              loop
-              colorFilters={[
-                { keypath: "logout 2.logout.Fill 1", color: "#FFFFFF" },
-                { keypath: "logout.logout.Fill 1", color: "#FFFFFF" },
-              ]}
-              style={dynamicStyles.logoutFullAnimation}
-            />
-            <Text style={dynamicStyles.logoutFullLabel}>Sign Out</Text>
-          </TouchableOpacity>
-        </View>
+          </>
+        )}
       </ScrollView>
 
       {showMemoryGame && <MemoryGameComponent onClose={handleGameClose} />}
