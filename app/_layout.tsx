@@ -16,8 +16,8 @@ import * as Font from 'expo-font'
 import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { StatusBar } from 'expo-status-bar'
-import React, { useEffect, useRef, useState } from 'react'
-import { AppState, AppStateStatus, StyleSheet, Text, View } from 'react-native'
+import React, { useEffect, useState } from 'react'
+import { StyleSheet, Text, View } from 'react-native'
 
 SplashScreen.preventAutoHideAsync()
 
@@ -84,7 +84,6 @@ export default function RootLayout() {
   // ── Lock screen state ────────────────────────────────────────────────────
   const [isUnlocked, setIsUnlocked] = useState(false)
   const [authAvailable, setAuthAvailable] = useState<boolean | null>(null) // null = still checking
-  const appState = useRef(AppState.currentState)
 
   // On mount: check if device has any credential (biometrics / PIN) configured
   useEffect(() => {
@@ -97,29 +96,6 @@ export default function RootLayout() {
       }
     })
   }, [])
-
-  // Re-lock when the app goes to the background
-  useEffect(() => {
-    const subscription = AppState.addEventListener(
-      'change',
-      async (nextState: AppStateStatus) => {
-        if (
-          appState.current === 'active' &&
-          (nextState === 'background' || nextState === 'inactive')
-        ) {
-          if (authAvailable) {
-            const lockSetting = await AsyncStorage.getItem('appLockEnabled')
-            if (lockSetting === 'true') {
-              setIsUnlocked(false)
-            }
-          }
-        }
-        appState.current = nextState
-      }
-    )
-
-    return () => subscription.remove()
-  }, [authAvailable])
 
   // Load custom fonts
   useEffect(() => {
