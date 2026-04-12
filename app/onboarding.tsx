@@ -116,18 +116,24 @@ export default function OnboardingPage() {
   return (
     <ThemedView style={[styles.container, { backgroundColor: colors.background }]}> 
       <View style={styles.canvas}>
-        <Animated.View style={[styles.diagramContainer, { transform: [{ translateY: floatAnim }] }]}> 
+        <Animated.View style={[
+          styles.diagramContainer,
+          page.type === 'intro' && styles.introDiagramContainer,
+          { transform: [{ translateY: floatAnim }] },
+        ]}> 
           <View style={[styles.glowCircle, { backgroundColor: `${colors.primary}20` }]} />
           {page.type === 'intro' ? (
             <View style={styles.introContent}>
-              <ThemedText style={[styles.introTitle, { color: colors.primary }]}>{page.title}</ThemedText>
-              <ThemedText style={[styles.introQuote, { color: colors.text }]}>{page.subtitle}</ThemedText>
-              <LottieView
-                source={require('../assets/animations/Intro.json')}
-                autoPlay
-                loop
-                style={styles.introAnimation}
-              />
+              <View style={[styles.introMainCard, { backgroundColor: colors.card }]}>
+                <ThemedText style={[styles.introTitle, { color: colors.primary }]}>{page.title}</ThemedText>
+                <ThemedText style={[styles.introQuote, { color: colors.text }]}>{page.subtitle}</ThemedText>
+                <LottieView
+                  source={require('../assets/animations/Intro.json')}
+                  autoPlay
+                  loop
+                  style={styles.introAnimation}
+                />
+              </View>
               <Pressable onPress={onDeveloperPress} style={({ pressed }) => [styles.attributionCard, pressed && styles.buttonPressed]}>
                 <View style={styles.rocketWrapper}>
                   <LottieView
@@ -217,6 +223,11 @@ const styles = StyleSheet.create({
     borderRadius: 34,
     padding: 14,
   },
+  introDiagramContainer: {
+    borderWidth: 0,
+    padding: 0,
+    width: '100%',
+  },
   glowCircle: {
     position: 'absolute',
     width: 260,
@@ -230,10 +241,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   introContent: {
-    width: 280,
+    width: '100%',
+    maxWidth: 320,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 4,
+    gap: 12,
+  },
+  introMainCard: {
+    width: '100%',
+    alignItems: 'center',
+    borderRadius: 28,
+    borderWidth: 1.5,
+    borderColor: '#D4AF37',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
   },
   introTitle: {
     fontFamily: 'Momo Signature',
@@ -256,9 +278,9 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   introAnimation: {
-    width: 280,
-    height: 280,
-    marginTop: 12,
+    width: 240,
+    height: 240,
+    marginTop: 8,
   },
   attributionCard: {
     width: '100%',
