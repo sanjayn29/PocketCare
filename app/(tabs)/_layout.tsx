@@ -5,6 +5,7 @@ import { Redirect, Tabs } from 'expo-router';
 import LottieView from 'lottie-react-native';
 import React from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AnimatedTabButton } from '@/components/AnimatedTabButton';
 import FloatingActionButton from '@/components/FloatingActionButton';
@@ -16,6 +17,10 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
   const colors = getColors(isDark);
+  const insets = useSafeAreaInsets();
+
+  const tabBarBottomPadding = Math.max(insets.bottom, Platform.OS === 'ios' ? 18 : 12);
+  const tabBarHeight = 56 + 12 + tabBarBottomPadding;
 
   if (!isLoaded) {
     return null;
@@ -39,7 +44,7 @@ export default function TabLayout() {
             backgroundColor: isDark ? '#000000' : '#FFFFFF',
             borderTopLeftRadius: 30,
             borderTopRightRadius: 30,
-            height: 80,
+            height: tabBarHeight,
             borderTopWidth: 1.5,
             borderLeftWidth: 1.5,
             borderRightWidth: 1.5,
@@ -47,7 +52,7 @@ export default function TabLayout() {
             borderColor: isDark ? 'rgba(212, 175, 55, 0.6)' : 'rgba(212, 175, 55, 0.8)',
             elevation: 0,
             shadowOpacity: 0,
-            paddingBottom: Platform.OS === 'ios' ? 24 : 12,
+            paddingBottom: tabBarBottomPadding,
             paddingTop: 12,
           },
           tabBarBackground: () => (
