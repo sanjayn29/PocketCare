@@ -7,6 +7,7 @@ import {
     clearRemovedReminders,
     configureNotificationHandler,
     registerForPushNotificationsAsync,
+    scheduleDailyProgressReminder,
     sendWelcomeNotification,
 } from '@/utils/notifications'
 import { ClerkProvider, useUser } from '@clerk/expo'
@@ -61,6 +62,7 @@ function RootLayoutContent() {
           await savePushTokenToFirestore(email, token)
         }
         await sendWelcomeNotification(firstName)
+        await scheduleDailyProgressReminder()
       } catch (error) {
         console.warn('Push registration skipped:', error)
       }

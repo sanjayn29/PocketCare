@@ -2,8 +2,12 @@ name: Scheduled Push Notifications
 
 on:
   schedule:
-    - cron: "30 13 * * *" # 7:00 PM IST daily-checkin (GitHub cron uses UTC)
-    - cron: "30 2 * * *" # 8:00 AM IST task + goal + placement reminders (GitHub cron uses UTC)
+    # 7:00 PM IST = 13:30 UTC — daily progress check-in
+    - cron: "30 13 * * *"
+    # 8:00 AM IST = 02:30 UTC — morning deadline reminders (tasks, goals, placements, debts)
+    - cron: "30 2 * * *"
+
+  # Manual trigger from GitHub Actions UI
   workflow_dispatch:
     inputs:
       mode:
@@ -12,12 +16,13 @@ on:
         default: "deadlines"
         type: choice
         options:
-          - deadlines
-          - all
           - daily
+          - deadlines
           - goals
           - tasks
           - placements
+          - debts
+          - all
 
 jobs:
   send_notifications:
@@ -26,7 +31,12 @@ jobs:
       FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
       FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
       EXPO_PUSH_ACCESS_TOKEN: ${{ secrets.EXPO_PUSH_ACCESS_TOKEN }}
-      MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (github.event.schedule == '30 2 * * *' && 'deadlines' || 'daily') }}
+      # Fix: use github.event.inputs.mode (not inputs.mode) for workflow_dispatch
+      MODE: >-
+        ${{
+          github.event_name == 'workflow_dispatch' && github.event.inputs.mode ||
+          (github.event.schedule == '30 2 * * *' && 'deadlines' || 'daily')
+        }}
 
     steps:
       - name: Checkout
@@ -39,11 +49,12 @@ jobs:
 
       - name: Validate secrets
         run: |
-          [ -n "$FIREBASE_SERVICE_ACCOUNT_JSON" ] || (echo "Missing FIREBASE_SERVICE_ACCOUNT_JSON" && exit 1)
-          [ -n "$FIREBASE_PROJECT_ID" ] || (echo "Missing FIREBASE_PROJECT_ID" && exit 1)
+          [ -n "$FIREBASE_SERVICE_ACCOUNT_JSON" ] || (echo "❌ Missing FIREBASE_SERVICE_ACCOUNT_JSON" && exit 1)
+          [ -n "$FIREBASE_PROJECT_ID" ]           || (echo "❌ Missing FIREBASE_PROJECT_ID" && exit 1)
+          echo "✅ Secrets validated. MODE=$MODE"
 
       - name: Install firebase-admin
-        run: npm i firebase-admin
+        run: npm install firebase-admin
 
       - name: Send notifications
         run: node scripts/send-cron-notifications.js "$MODE"

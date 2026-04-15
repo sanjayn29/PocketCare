@@ -7,6 +7,8 @@ import { Platform } from 'react-native'
 let isHandlerConfigured = false
 const ANDROID_CHANNEL_ID = 'default'
 const SCHEDULE_REMINDER_IDS_KEY = 'schedule_reminder_ids_v1'
+const WELCOME_SENT_KEY = 'welcome_notification_sent_v1'
+const DAILY_REMINDER_SCHEDULED_KEY = 'daily_progress_reminder_scheduled_v1'
 
 type ScheduleReminderIds = Record<string, string>
 type ScheduleReminderInput = {
@@ -142,6 +144,10 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
 }
 
 export async function sendWelcomeNotification(firstName?: string | null): Promise<boolean> {
+  // ── Guard: only send once ever ──────────────────────────────────────────
+  const alreadySent = await AsyncStorage.getItem(WELCOME_SENT_KEY)
+  if (alreadySent === 'true') return false
+
   let { status } = await Notifications.getPermissionsAsync()
   if (status !== 'granted') {
     const requested = await Notifications.requestPermissionsAsync()
@@ -162,6 +168,9 @@ export async function sendWelcomeNotification(firstName?: string | null): Promis
     },
     trigger: null,
   })
+
+  // Mark as sent so it never fires again
+  await AsyncStorage.setItem(WELCOME_SENT_KEY, 'true')
   return true
 }
 
@@ -236,4 +245,51 @@ export async function scheduleScheduleEventReminder(input: ScheduleReminderInput
   reminderIds[input.eventId] = identifier
   await setScheduleReminderIds(reminderIds)
   return true
+}
+
+/**
+ * Schedules a repeating daily notification at 7:00 PM local time.
+ * Only schedules once — guarded by AsyncStorage so it survives app restarts.
+ * Call this once after login.
+ */
+export async function scheduleDailyProgressReminder(): Promise<boolean> {
+  // Guard: already scheduled, skip
+  const alreadyScheduled = await AsyncStorage.getItem(DAILY_REMINDER_SCHEDULED_KEY)
+  if (alreadyScheduled === 'true') return false
+
+  const permissionGranted = await ensureLocalNotificationPermission()
+  if (!permissionGranted) return false
+
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: '📊 Daily Progress Check',
+      body: "How did today go? Log your tasks, health, and finances to stay on track! 💪",
+      sound: 'default',
+      ...(Platform.OS === 'android' ? { channelId: ANDROID_CHANNEL_ID } : {}),
+      data: { type: 'daily-progress-reminder' },
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DAILY,
+      hour: 19,   // 7 PM
+      minute: 0,
+    },
+  })
+
+  await AsyncStorage.setItem(DAILY_REMINDER_SCHEDULED_KEY, 'true')
+  return true
+}
+
+/**
+ * Cancels the daily progress reminder and clears the guard flag.
+ * Useful if user disables it from settings.
+ */
+export async function cancelDailyProgressReminder(): Promise<void> {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync()
+  for (const req of scheduled) {
+    const data = req.content.data as { type?: string } | undefined
+    if (data?.type === 'daily-progress-reminder') {
+      await Notifications.cancelScheduledNotificationAsync(req.identifier)
+    }
+  }
+  await AsyncStorage.removeItem(DAILY_REMINDER_SCHEDULED_KEY)
 }
