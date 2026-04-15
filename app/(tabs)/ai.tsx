@@ -1,18 +1,17 @@
 
 
-import { getCardSystem } from '@/constants/card-system'
+
 import { getColors } from '@/constants/styles'
 import { useColorScheme } from '@/hooks/use-color-scheme'
-import { getAIResponse, getProductivityInsight } from '@/lib/ai-service'
+import { getAIResponse } from '@/lib/ai-service'
 import { useUser } from '@clerk/expo'
 import { Ionicons } from '@expo/vector-icons'
 import { BlurView } from 'expo-blur'
-import { useFonts } from 'expo-font'
+
 import { useRouter } from 'expo-router'
 import LottieView from 'lottie-react-native'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
-    Animated,
     FlatList,
     KeyboardAvoidingView,
     Platform,
@@ -38,56 +37,17 @@ export default function AIScreen() {
   const isDark = colorScheme === 'dark'
   const TAB_BAR_HEIGHT = 80;
   const colors = getColors(isDark)
-  const cardSystem = getCardSystem(colors, isDark)
+
   const brightGold = '#D4AF37'
-  const softGold = '#E8C96A'
-  const backButtonScale = useRef(new Animated.Value(1)).current
-  const fadeAnim = useRef(new Animated.Value(0)).current
-  const [fontsLoaded] = useFonts({
-    'Roboto Slab': require('../../assets/Font/RobotoSlab-VariableFont_wght.ttf'),
-    'Momo Signature': require('../../assets/Font/MomoSignature-Regular.ttf'),
-  })
-  
+
   const email = user?.emailAddresses?.[0]?.emailAddress
   const [messages, setMessages] = useState<Message[]>([])
   const [inputText, setInputText] = useState('')
   const [loading, setLoading] = useState(false)
-  const [showInsight, setShowInsight] = useState(true)
-  const [insight, setInsight] = useState('')
   const flatListRef = useRef<FlatList>(null)
 
   useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 800,
-      useNativeDriver: true,
-    }).start()
-
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(backButtonScale, {
-          toValue: 1.06,
-          duration: 700,
-          useNativeDriver: true,
-        }),
-        Animated.timing(backButtonScale, {
-          toValue: 1,
-          duration: 700,
-          useNativeDriver: true,
-        }),
-      ]),
-    ).start()
-  }, [backButtonScale, fadeAnim])
-
-  const loadInsight = useCallback(async () => {
-    if (!email) return
-    const insightText = await getProductivityInsight(email)
-    setInsight(insightText)
-  }, [email])
-
-  useEffect(() => {
     if (email) {
-      loadInsight()
       setMessages([
         {
           id: '0',
@@ -97,7 +57,7 @@ export default function AIScreen() {
         },
       ])
     }
-  }, [email, loadInsight])
+  }, [email])
 
   const handleSendMessage = async () => {
     if (!inputText.trim() || !email) return
@@ -112,7 +72,7 @@ export default function AIScreen() {
     setMessages((prev) => [...prev, userMessage])
     setInputText('')
     setLoading(true)
-    setShowInsight(false)
+
 
     const conversationHistory = messages.map((msg) => ({
       role: msg.isUser ? 'user' : 'assistant',
@@ -267,7 +227,7 @@ export default function AIScreen() {
     },
     headerDivider: {
       height: 0.5,
-      backgroundColor: softGold,
+      backgroundColor: '#E8C96A',
       marginHorizontal: 16,
       marginBottom: 12,
       opacity: 0.6,
@@ -364,31 +324,7 @@ export default function AIScreen() {
       alignItems: 'center',
       paddingVertical: 20,
     },
-    insightCard: {
-      ...cardSystem.surface,
-      marginHorizontal: 16,
-      marginVertical: 20,
-      padding: 16,
-      borderRadius: 16,
-    },
-    insightHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 8,
-      gap: 8,
-    },
-    insightTitle: {
-      fontSize: 18, // Sub Heading (H3)
-      fontWeight: '700',
-      color: isDark ? '#FFFFFF' : '#000000',
-      letterSpacing: 0.5,
-      textTransform: 'uppercase',
-    },
-    insightText: {
-      fontSize: 14, // Secondary Text
-      color: colors.text,
-      lineHeight: 22,
-    },
+
     inputWrapper: {
       paddingBottom: Platform.OS === 'ios' ? 12 : 10,
       marginBottom: TAB_BAR_HEIGHT + (Platform.OS === 'ios' ? 14 : 12),
@@ -442,9 +378,7 @@ export default function AIScreen() {
     },
   })
 
-  if (!fontsLoaded) {
-    return null
-  }
+
 
   return (
     <SafeAreaView style={dynamicStyles.container} edges={['top', 'bottom', 'left', 'right']}>
@@ -473,26 +407,6 @@ export default function AIScreen() {
               </View>
             </View>
           </View>
-          
-          <Animated.ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false} 
-            contentContainerStyle={{ marginTop: 18, gap: 8, paddingBottom: 4 }}
-          >
-            <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textSecondary, alignSelf: 'center', marginRight: 4 }}>Access:</Text>
-            {['✅ Tasks', '🎯 Goals', '❤️ Health Stats'].map(item => (
-              <View key={item} style={{
-                backgroundColor: isDark ? 'rgba(212, 175, 55, 0.15)' : 'rgba(212, 175, 55, 0.12)',
-                paddingHorizontal: 12, paddingVertical: 6,
-                borderRadius: 20, borderWidth: 1,
-                borderColor: isDark ? 'rgba(212, 175, 55, 0.5)' : '#D4AF37'
-              }}>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: isDark ? '#E8C96A' : '#B8860B' }}>
-                  {item}
-                </Text>
-              </View>
-            ))}
-          </Animated.ScrollView>
         </View>
 
         <FlatList
@@ -506,32 +420,16 @@ export default function AIScreen() {
           maxToRenderPerBatch={10}
           windowSize={10}
           ListFooterComponent={
-            <>
-              {loading && (
-                <View style={dynamicStyles.loadingContainer}>
-                   <LottieView
-                    source={require('../../assets/animations/Loader.json')}
-                    autoPlay
-                    loop
-                    style={{ width: 120, height: 120 }}
-                  />
-                </View>
-              )}
-              {showInsight && insight && (
-                <View style={dynamicStyles.insightCard}>
-                  <View style={dynamicStyles.insightHeader}>
-                     <LottieView
-                      source={require('../../assets/animations/AI.json')}
-                      autoPlay
-                      loop
-                      style={{ width: 24, height: 24 }}
-                    />
-                    <Text style={dynamicStyles.insightTitle}>Pro Insight</Text>
-                  </View>
-                  <Text style={dynamicStyles.insightText}>{insight}</Text>
-                </View>
-              )}
-            </>
+            loading ? (
+              <View style={dynamicStyles.loadingContainer}>
+                <LottieView
+                  source={require('../../assets/animations/Loader.json')}
+                  autoPlay
+                  loop
+                  style={{ width: 120, height: 120 }}
+                />
+              </View>
+            ) : null
           }
         />
 
