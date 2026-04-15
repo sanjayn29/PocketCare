@@ -29,16 +29,16 @@ type TabView = 'placements' | 'companies';
 
 // Dynamic config based on theme
 const getStatusConfig = (colors: any): Record<PlacementStatus, { label: string; color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }> => ({
-  applied:   { label: 'Applied',   color: '#D4AF37', bg: colors.overlay, icon: 'paper-plane' },
-  interview: { label: 'Interview', color: colors.warning, bg: colors.overlay, icon: 'mic' },
-  offer:     { label: 'Offer',     color: colors.success, bg: colors.overlay, icon: 'trophy' },
-  rejected:  { label: 'Rejected',  color: colors.danger, bg: colors.overlay, icon: 'close-circle' },
+  applied:   { label: 'Applied',   color: '#D4AF37', bg: 'rgba(212, 175, 55, 0.13)',  icon: 'paper-plane' },
+  interview: { label: 'Interview', color: colors.warning, bg: `rgba(245, 158, 11, 0.13)`, icon: 'mic' },
+  offer:     { label: 'Offer',     color: colors.success, bg: `rgba(16, 185, 129, 0.13)`, icon: 'trophy' },
+  rejected:  { label: 'Rejected',  color: colors.danger,  bg: `rgba(239, 68, 68, 0.13)`,  icon: 'close-circle' },
 });
 
 const getCompanyStatusConfig = (colors: any): Record<CompanyStatus, { label: string; color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }> => ({
-  present:   { label: 'Present',   color: colors.primary, bg: colors.overlay, icon: 'checkmark-circle' },
-  completed: { label: 'Completed', color: colors.success, bg: colors.overlay, icon: 'checkmark-done' },
-  upcoming:  { label: 'Upcoming',  color: colors.warning, bg: colors.overlay, icon: 'calendar' },
+  present:   { label: 'Present',   color: colors.primary, bg: `rgba(59, 130, 246, 0.13)`,  icon: 'checkmark-circle' },
+  completed: { label: 'Completed', color: colors.success, bg: `rgba(16, 185, 129, 0.13)`,  icon: 'checkmark-done' },
+  upcoming:  { label: 'Upcoming',  color: colors.warning, bg: `rgba(245, 158, 11, 0.13)`,  icon: 'calendar' },
 });
 
 const getRoundResultConfig = (colors: any): Record<PlacementRound['result'], { label: string; color: string; bg: string }> => ({
@@ -710,14 +710,16 @@ export default function PlacementScreen() {
                 </Text>
               </View>
             )}
-            <View style={[styles.metaChip, { backgroundColor: item.studied ? (isDark ? '#1e563f' : '#ECFDF5') : colors.card, borderColor: isDark ? colors.border : undefined, borderWidth: isDark ? 1 : 0 }]}>
+            <View style={[styles.metaChip, { 
+              backgroundColor: item.studied ? 'rgba(16, 185, 129, 0.13)' : 'rgba(100, 116, 139, 0.1)',
+            }]}>
               <Ionicons name={item.studied ? 'checkmark-circle' : 'close-circle-outline'} size={13} color={item.studied ? colors.success : colors.textSecondary} />
               <Text style={[styles.metaChipText, { color: item.studied ? colors.success : colors.textSecondary }]}>
                 {item.studied ? 'Studied' : 'Not Studied'}
               </Text>
             </View>
             {item.rounds.length > 0 && (
-              <View style={[styles.metaChip, { borderColor: colors.border, borderWidth: 1 }]}>
+              <View style={[styles.metaChip, { backgroundColor: 'rgba(59, 130, 246, 0.13)' }]}>
                 <Ionicons name="layers-outline" size={13} color={colors.primary} />
                 <Text style={[styles.metaChipText, { color: colors.primary }]}>
                   {item.rounds.length} Round{item.rounds.length > 1 ? 's' : ''} · {roundsDone} Cleared
@@ -1160,7 +1162,7 @@ const getStyles = (colors: any, isDark: boolean, activeTab: 'placements' | 'comp
   headerRightActions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 8 },
   companyName: { flex: 1, marginRight: 8, fontSize: 19, fontWeight: '700', color: colors.text, fontFamily: 'Roboto Slab', letterSpacing: -0.3 },
   cardDate: { fontSize: 13, color: colors.textSecondary, fontWeight: '600', marginTop: 2, letterSpacing: 0.3 },
-  statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10, borderWidth: 1.5, borderColor: colors.border },
+  statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10, borderWidth: 1.5, borderColor: 'transparent' },
   statusBadgeText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
   headerActionBtn: {
     ...cardSystem.actionButton,
@@ -1171,8 +1173,7 @@ const getStyles = (colors: any, isDark: boolean, activeTab: 'placements' | 'comp
   metaRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap', marginBottom: 12 },
   metaChip: {
     flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 7,
-    borderRadius: 10, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.background,
-    shadowColor: colors.text, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 2, elevation: 1
+    borderRadius: 10, borderWidth: 1.5, borderColor: 'transparent', backgroundColor: 'transparent',
   },
   metaChipText: { fontSize: 12, fontWeight: '600', color: colors.text },
   roundPreview: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6, paddingVertical: 2 },
