@@ -422,8 +422,18 @@ export default function FinanceScreen() {
     if (!email) return;
     try {
       const data = await getFinanceData(email);
-      setTransactions((data.transactions || []).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-      setDebts((data.debts || []).sort((a,b) => new Date(b.amount_given_date).getTime() - new Date(a.amount_given_date).getTime()));
+      setTransactions((data.transactions || []).sort((a, b) => {
+        // Primary: most recently ADDED (created_at); secondary: user-chosen date
+        const createdDiff = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        if (createdDiff !== 0) return createdDiff;
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      }));
+      setDebts((data.debts || []).sort((a, b) => {
+        // Primary: most recently ADDED (created_at); secondary: amount_given_date
+        const createdDiff = new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        if (createdDiff !== 0) return createdDiff;
+        return new Date(b.amount_given_date).getTime() - new Date(a.amount_given_date).getTime();
+      }));
       setGoals((data.goals || []).sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
     } catch {}
     finally { setLoading(false); setRefreshing(false); }
