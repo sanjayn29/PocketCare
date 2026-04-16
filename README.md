@@ -83,6 +83,11 @@ You can save it to:
 
 ---
 
+Built at **Neovate** 🏢  
+🌐 https://www.neovateai.tech
+
+---
+
 ## ⭐ Support
 
 If you like this project, consider giving it a **star ⭐ on GitHub** to support the development.
