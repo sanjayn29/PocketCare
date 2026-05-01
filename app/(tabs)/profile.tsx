@@ -946,16 +946,60 @@ const ProfileScreen: React.FC = () => {
     },
     scoreCard: {
       ...cardSystem.surface,
-      padding: 16,
-      marginBottom: 12,
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 11,
+      paddingHorizontal: 14,
+      marginBottom: 10,
+      gap: 12,
+    },
+    scoreIconBadge: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    scoreTitleWrap: {
+      flex: 1,
     },
     gameTitle: {
-      fontSize: 17,
+      fontSize: 14,
       fontWeight: "700",
       color: colors.text,
-      marginBottom: 12,
       fontFamily: "Roboto Slab",
     },
+    gameSubtitle: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      fontWeight: "500",
+      marginTop: 1,
+    },
+    scoreChipsRow: {
+      flexDirection: "row",
+      gap: 6,
+    },
+    scoreChip: {
+      alignItems: "center",
+      backgroundColor: isDark ? "rgba(212,175,55,0.12)" : "rgba(212,175,55,0.10)",
+      borderRadius: 10,
+      paddingVertical: 4,
+      paddingHorizontal: 10,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(212,175,55,0.30)" : "rgba(212,175,55,0.22)",
+    },
+    scoreLabel: {
+      fontSize: 10,
+      color: colors.textSecondary,
+      fontWeight: "600",
+      marginBottom: 1,
+    },
+    scoreValue: {
+      fontSize: 16,
+      fontWeight: "800",
+      color: "#D4AF37",
+    },
+    // legacy — kept for any other usage
     scoreDetails: {
       flexDirection: "row",
       justifyContent: "center",
@@ -964,17 +1008,6 @@ const ProfileScreen: React.FC = () => {
     scoreItem: {
       alignItems: "center",
       flex: 1,
-    },
-    scoreLabel: {
-      fontSize: 12,
-      color: colors.textSecondary,
-      marginBottom: 4,
-      fontWeight: "600",
-    },
-    scoreValue: {
-      fontSize: 22,
-      fontWeight: "800",
-      color: colors.primary,
     },
     divider: {
       width: 1,
@@ -1296,37 +1329,65 @@ const ProfileScreen: React.FC = () => {
                 <Text style={dynamicStyles.sectionTitle}>Best Scores</Text>
               </View>
 
+              {/* Memory Game Score Card */}
               <View style={dynamicStyles.scoreCard}>
-                <Text style={dynamicStyles.gameTitle}>Memory Game</Text>
-                <View style={dynamicStyles.scoreDetails}>
-                  <View style={dynamicStyles.scoreItem}>
-                    <Text style={dynamicStyles.scoreLabel}>Best Moves</Text>
-                    <Text style={dynamicStyles.scoreValue}>{memoryScore?.bestMoves || "N/A"}</Text>
+                <View style={[dynamicStyles.scoreIconBadge, { backgroundColor: isDark ? "rgba(139,92,246,0.18)" : "rgba(139,92,246,0.12)" }]}>
+                  <Ionicons name="extension-puzzle-outline" size={20} color="#8B5CF6" />
+                </View>
+                <View style={dynamicStyles.scoreTitleWrap}>
+                  <Text style={dynamicStyles.gameTitle}>Memory Game</Text>
+                  <Text style={dynamicStyles.gameSubtitle}>Match the pairs</Text>
+                </View>
+                <View style={dynamicStyles.scoreChipsRow}>
+                  <View style={dynamicStyles.scoreChip}>
+                    <Text style={dynamicStyles.scoreLabel}>
+                      <Ionicons name="footsteps-outline" size={9} /> Moves
+                    </Text>
+                    <Text style={dynamicStyles.scoreValue}>{memoryScore?.bestMoves ?? "—"}</Text>
                   </View>
-                  <View style={dynamicStyles.divider} />
-                  <View style={dynamicStyles.scoreItem}>
-                    <Text style={dynamicStyles.scoreLabel}>Time</Text>
-                    <Text style={dynamicStyles.scoreValue}>{memoryScore?.bestTime ? `${memoryScore.bestTime}s` : "N/A"}</Text>
+                  <View style={dynamicStyles.scoreChip}>
+                    <Text style={dynamicStyles.scoreLabel}>
+                      <Ionicons name="timer-outline" size={9} /> Time
+                    </Text>
+                    <Text style={dynamicStyles.scoreValue}>{memoryScore?.bestTime ? `${memoryScore.bestTime}s` : "—"}</Text>
                   </View>
                 </View>
               </View>
 
+              {/* Tap Game Score Card */}
               <View style={dynamicStyles.scoreCard}>
-                <Text style={dynamicStyles.gameTitle}>Tap Game</Text>
-                <View style={dynamicStyles.scoreDetails}>
-                  <View style={dynamicStyles.scoreItem}>
-                    <Text style={dynamicStyles.scoreLabel}>Best Score</Text>
-                    <Text style={dynamicStyles.scoreValue}>{tapScore?.bestScore || "N/A"}</Text>
+                <View style={[dynamicStyles.scoreIconBadge, { backgroundColor: isDark ? "rgba(236,72,153,0.18)" : "rgba(236,72,153,0.12)" }]}>
+                  <Ionicons name="finger-print-outline" size={20} color="#EC4899" />
+                </View>
+                <View style={dynamicStyles.scoreTitleWrap}>
+                  <Text style={dynamicStyles.gameTitle}>Tap Game</Text>
+                  <Text style={dynamicStyles.gameSubtitle}>Tap as fast as you can</Text>
+                </View>
+                <View style={dynamicStyles.scoreChipsRow}>
+                  <View style={dynamicStyles.scoreChip}>
+                    <Text style={dynamicStyles.scoreLabel}>
+                      <Ionicons name="flash-outline" size={9} /> Best
+                    </Text>
+                    <Text style={dynamicStyles.scoreValue}>{tapScore?.bestScore ?? "—"}</Text>
                   </View>
                 </View>
               </View>
 
+              {/* Math Challenge Score Card */}
               <View style={dynamicStyles.scoreCard}>
-                <Text style={dynamicStyles.gameTitle}>Math Challenge</Text>
-                <View style={dynamicStyles.scoreDetails}>
-                  <View style={dynamicStyles.scoreItem}>
-                    <Text style={dynamicStyles.scoreLabel}>Best Score</Text>
-                    <Text style={dynamicStyles.scoreValue}>{mathScore?.bestScore || "N/A"}</Text>
+                <View style={[dynamicStyles.scoreIconBadge, { backgroundColor: isDark ? "rgba(16,185,129,0.18)" : "rgba(16,185,129,0.12)" }]}>
+                  <Ionicons name="calculator-outline" size={20} color="#10B981" />
+                </View>
+                <View style={dynamicStyles.scoreTitleWrap}>
+                  <Text style={dynamicStyles.gameTitle}>Math Challenge</Text>
+                  <Text style={dynamicStyles.gameSubtitle}>Solve quick equations</Text>
+                </View>
+                <View style={dynamicStyles.scoreChipsRow}>
+                  <View style={dynamicStyles.scoreChip}>
+                    <Text style={dynamicStyles.scoreLabel}>
+                      <Ionicons name="star-outline" size={9} /> Best
+                    </Text>
+                    <Text style={dynamicStyles.scoreValue}>{mathScore?.bestScore ?? "—"}</Text>
                   </View>
                 </View>
               </View>

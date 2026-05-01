@@ -10,7 +10,8 @@ export type WidgetId =
   | 'fitness_today'
   | 'placement_status'
   | 'notes_quick'
-  | 'ai_tip';
+  | 'ai_tip'
+  | 'game_scores';
 
 export interface WidgetConfig {
   id: WidgetId;
@@ -29,6 +30,7 @@ export const ALL_WIDGETS: { id: WidgetId; title: string; subtitle: string; iconN
   { id: 'placement_status', title: 'Placement',        subtitle: 'Latest placement status',   iconName: 'business',            color: '#84CC16' },
   { id: 'notes_quick',      title: 'Recent Note',      subtitle: 'Latest quick note',         iconName: 'document-text',       color: '#F43F5E' },
   { id: 'ai_tip',           title: 'AI Tips',          subtitle: 'Daily AI-powered insight',  iconName: 'sparkles',            color: '#06B6D4' },
+  { id: 'game_scores',      title: 'Game Scores',      subtitle: 'Best scores from all games', iconName: 'game-controller',     color: '#D4AF37' },
 ];
 
 const STORAGE_KEY = 'pocketcare_widget_config';
@@ -44,6 +46,7 @@ const DEFAULT_WIDGETS: WidgetConfig[] = [
   { id: 'placement_status', enabled: false, order: 7 },
   { id: 'notes_quick',      enabled: true,  order: 8 },
   { id: 'ai_tip',           enabled: true,  order: 9 },
+  { id: 'game_scores',      enabled: true,  order: 10 },
 ];
 
 export async function getWidgetConfig(): Promise<WidgetConfig[]> {

@@ -10,6 +10,7 @@ import { saveUserToFirestore } from '@/lib/save-user'
 import { getScheduleEvents } from '@/lib/schedule-service'
 import { getStreakData } from '@/lib/streak-service'
 import { getTasks } from '@/lib/tasks-service'
+import { getGameScores, GameScores } from '@/lib/games-service'
 import {
     ALL_WIDGETS,
     WidgetConfig,
@@ -68,6 +69,7 @@ interface HomeData {
   totalGoals: number
   completedGoals: number
   overdueTasksCount: number
+  gameScores: GameScores | null
 }
 
 // ─── Animated number hook ────────────────────────────────────────────────────
@@ -154,6 +156,7 @@ export default function HomeScreen() {
     placementLatest: null,
     placementCounts: { applied: 0, interview: 0, offer: 0, rejected: 0, total: 0 },
     latestNote: null, totalGoals: 0, completedGoals: 0, overdueTasksCount: 0,
+    gameScores: null,
   })
   const [widgets, setWidgets] = useState<WidgetConfig[]>([])
   const [showPicker, setShowPicker] = useState(false)
@@ -195,10 +198,10 @@ export default function HomeScreen() {
     if (!email) return
     try {
       const today = new Date().toISOString().split('T')[0]
-      const [streakData, finData, tasks, goals, healthData, events, placements, notes] = await Promise.all([
+      const [streakData, finData, tasks, goals, healthData, events, placements, notes, gameScores] = await Promise.all([
         getStreakData(email), getFinanceData(email), getTasks(email),
         getGoals(email), getHealthData(email), getScheduleEvents(email),
-        getPlacements(email), getNotes(email),
+        getPlacements(email), getNotes(email), getGameScores(email),
       ])
 
       const calcDebtAmount = (item: Debt) => {
@@ -294,6 +297,7 @@ export default function HomeScreen() {
         activeGoals, nextEvent, fitnessToday, placementLatest, placementCounts,
         latestNote, totalGoals: goals.length,
         completedGoals: goals.filter(g => g.status === 'achieved').length,
+        gameScores,
       })
       runCardAnimations()
     } catch (e) { console.error(e) }
@@ -351,6 +355,7 @@ export default function HomeScreen() {
     ai_tip: '/(tabs)/ai',
     streak: '/(tabs)/profile',
     greeting: '/(tabs)/profile',
+    game_scores: '/(tabs)/profile',
   }
 
   // ── Widget Bodies ─────────────────────────────────────────────────────────
@@ -758,6 +763,102 @@ export default function HomeScreen() {
                 <Chip icon="sparkles" label="Tap to chat" color={color} />
               </View>
             </View>
+          </View>
+        )
+
+      // ── GAME SCORES ──────────────────────────────────────────────────
+      case 'game_scores':
+        const gs = data.gameScores
+        const gameItems = [
+          {
+            label: 'Memory',
+            icon: 'extension-puzzle-outline',
+            color: '#8B5CF6',
+            chips: [
+              { tag: 'Moves', val: gs?.memoryGame?.bestMoves ?? null },
+              { tag: 'Time',  val: gs?.memoryGame?.bestTime  != null ? `${gs.memoryGame.bestTime}s` : null },
+            ],
+          },
+          {
+            label: 'Tap',
+            icon: 'finger-print-outline',
+            color: '#EC4899',
+            chips: [
+              { tag: 'Best', val: gs?.tapGame?.bestScore ?? null },
+            ],
+          },
+          {
+            label: 'Math',
+            icon: 'calculator-outline',
+            color: '#10B981',
+            chips: [
+              { tag: 'Best', val: gs?.mathGame?.bestScore ?? null },
+            ],
+          },
+        ]
+        return (
+          <View style={{ gap: 10 }}>
+            {gameItems.map((g) => (
+              <View
+                key={g.label}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 12,
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  borderRadius: 14,
+                  backgroundColor: g.color + '12',
+                  borderWidth: 1,
+                  borderColor: g.color + '30',
+                }}
+              >
+                {/* Icon badge */}
+                <View style={{
+                  width: 38, height: 38, borderRadius: 12,
+                  backgroundColor: g.color + '22',
+                  alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Ionicons name={g.icon as any} size={19} color={g.color} />
+                </View>
+
+                {/* Title */}
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: colors.text }}>{g.label} Game</Text>
+                  <Text style={{ fontSize: 10, color: colors.textSecondary, marginTop: 1 }}>Best Score</Text>
+                </View>
+
+                {/* Score chips */}
+                <View style={{ flexDirection: 'row', gap: 6 }}>
+                  {g.chips.map((chip) => (
+                    <View
+                      key={chip.tag}
+                      style={{
+                        alignItems: 'center',
+                        backgroundColor: colors.background,
+                        borderRadius: 10,
+                        paddingVertical: 4,
+                        paddingHorizontal: 10,
+                        borderWidth: 1,
+                        borderColor: g.color + '40',
+                        minWidth: 44,
+                      }}
+                    >
+                      <Text style={{ fontSize: 9, color: colors.textSecondary, fontWeight: '600' }}>{chip.tag}</Text>
+                      <Text style={{ fontSize: 15, fontWeight: '900', color: g.color }}>
+                        {chip.val != null ? String(chip.val) : '—'}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ))}
+
+            {!gs && (
+              <View style={{ alignItems: 'center', paddingVertical: 8 }}>
+                <Text style={{ fontSize: 12, color: colors.textSecondary }}>Play games on the Profile tab to set scores!</Text>
+              </View>
+            )}
           </View>
         )
 
