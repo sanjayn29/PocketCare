@@ -2,6 +2,7 @@ import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
 import { db } from '../firebaseConfig'
 
 export type TransactionType = 'income' | 'expense'
+export type TransactionSource = 'manual' | 'goal_auto'
 
 export type Transaction = {
   id: string
@@ -11,6 +12,7 @@ export type Transaction = {
   note: string
   date: string // ISO date
   created_at: string
+  source?: TransactionSource
 }
 
 export type DebtInterestType = 'none' | 'simple' | 'compound'
@@ -39,21 +41,30 @@ export type FinanceGoal = {
 
 const COLLECTION_NAME = 'finance'
 
+type FinanceDoc = {
+  transactions: Transaction[]
+  debts: Debt[]
+  goals: FinanceGoal[]
+  initial_balance: number | null
+}
+
 export async function getFinanceData(email: string) {
   try {
     const userDocRef = doc(db, COLLECTION_NAME, email)
     const docSnap = await getDoc(userDocRef)
     if (docSnap.exists()) {
-      return docSnap.data() as {
-        transactions: Transaction[]
-        debts: Debt[]
-        goals: FinanceGoal[]
+      const data = docSnap.data() as Partial<FinanceDoc>
+      return {
+        transactions: data.transactions || [],
+        debts: data.debts || [],
+        goals: data.goals || [],
+        initial_balance: typeof data.initial_balance === 'number' ? data.initial_balance : null,
       }
     }
-    return { transactions: [], debts: [], goals: [] }
+    return { transactions: [], debts: [], goals: [], initial_balance: null }
   } catch (error) {
     console.error('Error getting finance data:', error)
-    return { transactions: [], debts: [], goals: [] }
+    return { transactions: [], debts: [], goals: [], initial_balance: null }
   }
 }
 
@@ -61,9 +72,20 @@ export async function ensureFinanceDoc(email: string) {
   const userDocRef = doc(db, COLLECTION_NAME, email)
   const docSnap = await getDoc(userDocRef)
   if (!docSnap.exists()) {
-    await setDoc(userDocRef, { transactions: [], debts: [], goals: [] })
+    await setDoc(userDocRef, { transactions: [], debts: [], goals: [], initial_balance: null })
   }
   return userDocRef
+}
+
+export async function setInitialBalance(email: string, amount: number): Promise<boolean> {
+  try {
+    const userDocRef = await ensureFinanceDoc(email)
+    await updateDoc(userDocRef, { initial_balance: amount })
+    return true
+  } catch (error) {
+    console.error('Error setting initial balance', error)
+    return false
+  }
 }
 
 export async function addTransaction(
@@ -72,7 +94,8 @@ export async function addTransaction(
   amount: number,
   category: string,
   note: string,
-  date: string
+  date: string,
+  source: TransactionSource = 'manual'
 ): Promise<boolean> {
   try {
     const userDocRef = await ensureFinanceDoc(email)
@@ -80,7 +103,8 @@ export async function addTransaction(
     const newTask: Transaction = {
       id: Date.now().toString(),
       type, amount, category, note, date,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      source,
     }
     await updateDoc(userDocRef, { transactions: [...(data.transactions || []), newTask] })
     return true

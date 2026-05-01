@@ -1,7 +1,7 @@
 import { getCardSystem } from '@/constants/card-system'
 import { getColors } from '@/constants/styles'
 import { useColorScheme } from '@/hooks/use-color-scheme'
-import { getFinanceData } from '@/lib/finance-service'
+import { Debt, getFinanceData } from '@/lib/finance-service'
 import { getGoals } from '@/lib/goals-service'
 import { getHealthData } from '@/lib/health-service'
 import { getNotes } from '@/lib/notes-service'
@@ -44,6 +44,9 @@ interface HomeData {
   maxStreak: number
   income: number
   expenses: number
+  presentAmount: number
+  initialBalance: number
+  goalsReserved: number
   pendingTasks: number
   totalTasks: number
   completedTasks: number
@@ -145,7 +148,7 @@ export default function HomeScreen() {
   const email = user?.emailAddresses?.[0]?.emailAddress
 
   const [data, setData] = useState<HomeData>({
-    streak: 0, maxStreak: 0, income: 0, expenses: 0,
+    streak: 0, maxStreak: 0, income: 0, expenses: 0, presentAmount: 0, initialBalance: 0, goalsReserved: 0,
     pendingTasks: 0, totalTasks: 0, completedTasks: 0, highPriorityTasks: 0,
     activeGoals: [], nextEvent: null, fitnessToday: null,
     placementLatest: null,
@@ -167,6 +170,7 @@ export default function HomeScreen() {
 
   const animIncome = useAnimatedNumber(data.income)
   const animExpenses = useAnimatedNumber(data.expenses)
+  const animPresentAmount = useAnimatedNumber(data.presentAmount)
   const animStreak = useAnimatedNumber(data.streak)
   const animTasks = useAnimatedNumber(data.pendingTasks)
 
@@ -197,8 +201,49 @@ export default function HomeScreen() {
         getPlacements(email), getNotes(email),
       ])
 
-      const income = (finData.transactions || []).filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0)
-      const expenses = (finData.transactions || []).filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0)
+      const calcDebtAmount = (item: Debt) => {
+        if (item.interest_type === 'none' || !item.interest_rate) return Number(item.amount)
+        const start = new Date(item.amount_given_date).getTime()
+        let end = item.due_date ? new Date(item.due_date).getTime() : new Date().getTime()
+        if (item.given_back && item.date_given_back && !item.due_date) {
+          end = new Date(item.date_given_back).getTime()
+        }
+        const daysRange = (end - start) / (1000 * 3600 * 24)
+        if (daysRange <= 0) return Number(item.amount)
+        const r = Number(item.interest_rate) / 100
+        const years = daysRange / 365.25
+        const principal = Number(item.amount)
+        const total = item.interest_type === 'simple'
+          ? principal * (1 + (r * years))
+          : principal * Math.pow(1 + r, years)
+        return Math.max(total, principal)
+      }
+
+      const txIncome = (finData.transactions || []).filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0)
+      const txExpenses = (finData.transactions || []).filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0)
+
+      const debtSummary = (finData.debts || []).reduce(
+        (acc, debt) => {
+          const debtAmount = Number(debt.amount) || 0
+          acc.expenses += debtAmount
+          if (debt.given_back && debt.date_given_back) {
+            acc.income += calcDebtAmount(debt)
+          }
+          return acc
+        },
+        { income: 0, expenses: 0 }
+      )
+
+      const income = txIncome + debtSummary.income
+      const expenses = txExpenses + debtSummary.expenses
+      const goalsReserved = (finData.goals || []).reduce((sum, goal) => sum + Number(goal.current_amount || 0), 0)
+      const goalReservedLoggedInTx = (finData.transactions || []).reduce((sum, tx) => {
+        if (tx.source !== 'goal_auto') return sum
+        return tx.type === 'expense' ? sum + Number(tx.amount) : sum - Number(tx.amount)
+      }, 0)
+      const legacyGoalsReserved = Math.max(0, goalsReserved - goalReservedLoggedInTx)
+      const initialBalance = typeof finData.initial_balance === 'number' ? finData.initial_balance : 0
+      const presentAmount = initialBalance + income - expenses - legacyGoalsReserved
 
       const todayTasks = tasks.filter(t => t.due_date === today)
       const pendingTasks = todayTasks.filter(t => t.status === 'pending').length
@@ -244,7 +289,7 @@ export default function HomeScreen() {
 
       setData({
         streak: streakData.currentStreak, maxStreak: streakData.maxStreak,
-        income, expenses, pendingTasks, totalTasks: todayTasks.length,
+        income, expenses, presentAmount, initialBalance, goalsReserved, pendingTasks, totalTasks: todayTasks.length,
         completedTasks, highPriorityTasks, overdueTasksCount,
         activeGoals, nextEvent, fitnessToday, placementLatest, placementCounts,
         latestNote, totalGoals: goals.length,
@@ -310,8 +355,6 @@ export default function HomeScreen() {
 
   // ── Widget Bodies ─────────────────────────────────────────────────────────
   const renderWidget = (id: WidgetId, color: string) => {
-    const net = data.income - data.expenses
-
     switch (id) {
 
       // ── GREETING ─────────────────────────────────────────────────────────
@@ -386,14 +429,20 @@ export default function HomeScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 14 }}>
               <ProgressRing pct={spentPct} color={spentPct > 80 ? '#EF4444' : color} size={60} />
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>Net Balance</Text>
-                <Text style={{ fontSize: 26, fontWeight: '900', color: net >= 0 ? '#22C55E' : '#EF4444', letterSpacing: -1 }}>
-                  {net >= 0 ? '+' : ''}{formatCurrency(Math.abs(net))}
+                <Text style={{ fontSize: 11, color: colors.textSecondary, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>Present Amount</Text>
+                <Text style={{ fontSize: 26, fontWeight: '900', color: data.presentAmount >= 0 ? '#22C55E' : '#EF4444', letterSpacing: -1 }}>
+                  {data.presentAmount >= 0 ? '' : '-'}{formatCurrency(Math.abs(animPresentAmount))}
                 </Text>
                 <Text style={{ fontSize: 11, color: colors.textSecondary, marginTop: 2 }}>
                   {savingsRate}% savings rate
                 </Text>
               </View>
+            </View>
+
+            <View style={{ paddingHorizontal: 10, paddingVertical: 8, backgroundColor: isDark ? 'rgba(148,163,184,0.12)' : 'rgba(100,116,139,0.08)', borderRadius: 10, marginBottom: 10 }}>
+              <Text style={{ fontSize: 10, color: colors.textSecondary, fontWeight: '600' }}>
+                Start {formatCurrency(data.initialBalance)} • Goals Reserved {formatCurrency(data.goalsReserved)}
+              </Text>
             </View>
 
             <View style={{ flexDirection: 'row', gap: 1, marginBottom: 10 }}>

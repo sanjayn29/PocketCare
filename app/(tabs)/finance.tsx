@@ -32,6 +32,7 @@ import {
     deleteFinanceGoal,
     deleteTransaction,
     FinanceGoal, getFinanceData,
+    setInitialBalance,
     Transaction,
     TransactionType,
     updateDebt,
@@ -350,6 +351,9 @@ export default function FinanceScreen() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
   const [goals, setGoals] = useState<FinanceGoal[]>([]);
+  const [initialBalanceValue, setInitialBalanceValue] = useState<number | null>(null);
+  const [initialBalanceInput, setInitialBalanceInput] = useState('');
+  const [showInitialBalanceModal, setShowInitialBalanceModal] = useState(false);
 
   // Overview Filters
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('Month');
@@ -435,6 +439,9 @@ export default function FinanceScreen() {
         return new Date(b.amount_given_date).getTime() - new Date(a.amount_given_date).getTime();
       }));
       setGoals((data.goals || []).sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+      const loadedInitialBalance = typeof data.initial_balance === 'number' ? data.initial_balance : null;
+      setInitialBalanceValue(loadedInitialBalance);
+      setShowInitialBalanceModal(loadedInitialBalance === null);
     } catch {}
     finally { setLoading(false); setRefreshing(false); }
   }, [email]);
@@ -510,7 +517,11 @@ export default function FinanceScreen() {
         });
       }
     });
-    return combined.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return combined.sort((a,b) => {
+      const createdDiff = new Date(b.created_at || b.date).getTime() - new Date(a.created_at || a.date).getTime();
+      if (createdDiff !== 0) return createdDiff;
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
   }, [transactions, debts]);
 
   const filteredTxs = useMemo(() => {
@@ -532,6 +543,53 @@ export default function FinanceScreen() {
       return true;
     });
   }, [combinedTransactions, timeFilter, customStart, customEnd]);
+
+  type TransactionListItem =
+    | { type: 'header'; id: string; label: string }
+    | { type: 'tx'; id: string; tx: Transaction };
+
+  const getTransactionDateLabel = (dateValue: string) => {
+    const parsedDate = new Date(dateValue);
+    if (Number.isNaN(parsedDate.getTime())) return dateValue;
+
+    const dayMs = 1000 * 60 * 60 * 24;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const targetDay = new Date(parsedDate);
+    targetDay.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.round((today.getTime() - targetDay.getTime()) / dayMs);
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    return `${targetDay.getDate()}.${targetDay.getMonth() + 1}.${targetDay.getFullYear()}`;
+  };
+
+  const txListData = useMemo(() => {
+    const result: TransactionListItem[] = [];
+    let lastSectionKey = '';
+
+    filteredTxs.forEach((tx) => {
+      const sectionSourceDate = tx.created_at || tx.date;
+      const sectionDate = new Date(sectionSourceDate);
+      const sectionKey = Number.isNaN(sectionDate.getTime())
+        ? sectionSourceDate
+        : `${sectionDate.getFullYear()}-${sectionDate.getMonth() + 1}-${sectionDate.getDate()}`;
+
+      if (sectionKey !== lastSectionKey) {
+        result.push({
+          type: 'header',
+          id: `hdr_${sectionKey}`,
+          label: getTransactionDateLabel(sectionSourceDate),
+        });
+        lastSectionKey = sectionKey;
+      }
+
+      result.push({ type: 'tx', id: `tx_${tx.id}`, tx });
+    });
+
+    return result;
+  }, [filteredTxs]);
 
   const filteredDebts = useMemo(() => {
     const now = new Date();
@@ -576,6 +634,15 @@ export default function FinanceScreen() {
   const totalIncome = filteredTxs.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount), 0);
   const totalExpense = filteredTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount), 0);
   const netBalance = totalIncome - totalExpense;
+  const allTimeIncome = combinedTransactions.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount), 0);
+  const allTimeExpense = combinedTransactions.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount), 0);
+  const totalGoalReserved = goals.reduce((sum, goal) => sum + Number(goal.current_amount || 0), 0);
+  const goalReservedLoggedInTx = combinedTransactions.reduce((sum, tx) => {
+    if (tx.source !== 'goal_auto') return sum;
+    return tx.type === 'expense' ? sum + Number(tx.amount) : sum - Number(tx.amount);
+  }, 0);
+  const legacyGoalReserved = Math.max(0, totalGoalReserved - goalReservedLoggedInTx);
+  const presentBalance = (initialBalanceValue ?? 0) + allTimeIncome - allTimeExpense - legacyGoalReserved;
   const formatINR = (value: number) =>
     `₹${Number(value).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -625,21 +692,33 @@ export default function FinanceScreen() {
       }
     });
 
-    // Sort and take top 5
-    const topIncome = Object.entries(incomeByCategory)
+    const incomeCategories = Object.entries(incomeByCategory)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
       .map(([cat, amt]) => ({ name: cat, amount: amt }));
 
-    const topExpense = Object.entries(expenseByCategory)
+    const expenseCategories = Object.entries(expenseByCategory)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
       .map(([cat, amt]) => ({ name: cat, amount: amt }));
 
-    return { topIncome, topExpense };
+    return { incomeCategories, expenseCategories };
   }, [filteredTxs]);
 
   // ── Actions: CREATE
+  const handleSaveInitialBalance = async () => {
+    if (!email) return;
+    if (!initialBalanceInput || isNaN(Number(initialBalanceInput))) {
+      return Alert.alert('Error', 'Enter a valid present amount.');
+    }
+    const parsedAmount = Number(initialBalanceInput);
+    const success = await setInitialBalance(email, parsedAmount);
+    if (!success) {
+      return Alert.alert('Error', 'Failed to save present amount. Try again.');
+    }
+    setInitialBalanceValue(parsedAmount);
+    setShowInitialBalanceModal(false);
+    setInitialBalanceInput('');
+  };
+
   const handleSaveTx = async () => {
     if(!email) return;
     if(!txAmount || isNaN(Number(txAmount))) return Alert.alert('Error', 'Valid amount required.');
@@ -715,9 +794,29 @@ export default function FinanceScreen() {
   const handleUpdateGoalAmount = async () => {
     if(!email || !selectedGoal) return;
     if(!goalUpdateAmount || isNaN(Number(goalUpdateAmount))) return Alert.alert('Error', 'Valid amount required.');
-    let amt = Number(goalUpdateAmount);
-    if(goalUpdateType === 'take') amt = -amt;
-    await updateFinanceGoal(email, selectedGoal.id, { current_amount: selectedGoal.current_amount + amt });
+    const amt = Number(goalUpdateAmount);
+    if (amt <= 0) return Alert.alert('Error', 'Amount must be greater than zero.');
+
+    if (goalUpdateType === 'add' && amt > presentBalance) {
+      return Alert.alert('Error', 'Not enough present amount to add to this goal.');
+    }
+    if (goalUpdateType === 'take' && amt > Number(selectedGoal.current_amount || 0)) {
+      return Alert.alert('Error', 'You cannot take more than what is saved in this goal.');
+    }
+
+    const signedAmount = goalUpdateType === 'take' ? -amt : amt;
+    await updateFinanceGoal(email, selectedGoal.id, { current_amount: selectedGoal.current_amount + signedAmount });
+    await addTransaction(
+      email,
+      goalUpdateType === 'add' ? 'expense' : 'income',
+      amt,
+      'Goal Transfer',
+      goalUpdateType === 'add'
+        ? `Added to goal: ${selectedGoal.title}`
+        : `Taken from goal: ${selectedGoal.title}`,
+      new Date().toISOString().split('T')[0],
+      'goal_auto'
+    );
     setGoalUpdateAmount(''); setShowGoalUpdateModal(false); loadData();
   };
 
@@ -889,6 +988,25 @@ export default function FinanceScreen() {
 
       {renderCustomDateFilters()}
 
+      <View style={[dynamicStyles.summaryBox, { width: '100%', marginBottom: 14 }]}>
+        <Text style={dynamicStyles.summaryLabel}>Present Amount</Text>
+        <Text style={[dynamicStyles.summaryVal, { color: presentBalance >= 0 ? '#10B981' : '#EF4444', fontSize: 28 }]}>
+          {formatINR(presentBalance)}
+        </Text>
+        <Text style={{ marginTop: 6, fontSize: 12, color: colors.textSecondary, fontWeight: '600' }}>
+          Start: {formatINR(initialBalanceValue ?? 0)} | Goals Reserved: {formatINR(totalGoalReserved)}
+        </Text>
+        <TouchableOpacity
+          style={{ alignSelf: 'flex-start', marginTop: 10, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 10, backgroundColor: isDark ? 'rgba(59,130,246,0.18)' : 'rgba(59,130,246,0.12)' }}
+          onPress={() => {
+            setInitialBalanceInput(initialBalanceValue !== null ? String(initialBalanceValue) : '');
+            setShowInitialBalanceModal(true);
+          }}
+        >
+          <Text style={{ color: uiColors.overview, fontWeight: '700', fontSize: 12 }}>Update Present Amount</Text>
+        </TouchableOpacity>
+      </View>
+
       <View style={dynamicStyles.summaryGrid}>
         <View style={dynamicStyles.summaryBox}>
           <Text style={dynamicStyles.summaryLabel}>Total Income</Text>
@@ -901,7 +1019,7 @@ export default function FinanceScreen() {
       </View>
       
       <View style={[dynamicStyles.summaryBox, { width: '100%', marginBottom: 20 }]}>
-        <Text style={dynamicStyles.summaryLabel}>Net Balance</Text>
+        <Text style={dynamicStyles.summaryLabel}>Net Change (Selected Period)</Text>
         <Text style={[dynamicStyles.summaryVal, { color: netBalance >= 0 ? '#10B981' : '#EF4444', fontSize: 28 }]}>
           {formatINR(netBalance)}
         </Text>
@@ -978,12 +1096,12 @@ export default function FinanceScreen() {
           </Text>
 
           {/* Income by Category */}
-          {categoryData.topIncome.length > 0 && (
+          {categoryData.incomeCategories.length > 0 && (
             <View style={{paddingHorizontal: 16, marginBottom: 20}}>
               <Text style={{fontSize: 14, fontWeight: '600', color: colors.success, marginBottom: 12}}>
-                Top Income Categories
+                Income Categories
               </Text>
-              {categoryData.topIncome.map((cat, idx) => {
+              {categoryData.incomeCategories.map((cat, idx) => {
                 const percentage = totalIncome > 0 ? (cat.amount / totalIncome) * 100 : 0;
                 return (
                   <View key={idx} style={{marginBottom: 12}}>
@@ -1008,12 +1126,12 @@ export default function FinanceScreen() {
           )}
 
           {/* Expense by Category */}
-          {categoryData.topExpense.length > 0 && (
+          {categoryData.expenseCategories.length > 0 && (
             <View style={{paddingHorizontal: 16, marginBottom: 20}}>
               <Text style={{fontSize: 14, fontWeight: '600', color: colors.danger, marginBottom: 12}}>
-                Top Expense Categories
+                Expense Categories
               </Text>
-              {categoryData.topExpense.map((cat, idx) => {
+              {categoryData.expenseCategories.map((cat, idx) => {
                 const percentage = totalExpense > 0 ? (cat.amount / totalExpense) * 100 : 0;
                 return (
                   <View key={idx} style={{marginBottom: 12}}>
@@ -1043,8 +1161,8 @@ export default function FinanceScreen() {
 
   const renderTransactions = () => (
     <FlatList
-      data={filteredTxs}
-      keyExtractor={t=>t.id}
+      data={txListData}
+      keyExtractor={(item)=>item.id}
       ListHeaderComponent={
         <>
           <View style={dynamicStyles.segmentBlock}>
@@ -1061,34 +1179,45 @@ export default function FinanceScreen() {
       contentContainerStyle={{padding: 16, paddingBottom: 100}}
       ListEmptyComponent={<Text style={{textAlign:'center', color:'#94A3B8', marginTop: 40}}>No transactions found.</Text>}
       renderItem={({item}) => {
-        const isSynthetic = item.id.startsWith('debt_');
+        if (item.type === 'header') {
+          return (
+            <View style={{paddingHorizontal: 2, paddingTop: 8, paddingBottom: 8}}>
+              <Text style={{fontSize: 13, fontWeight: '800', color: colors.textSecondary, letterSpacing: 0.3}}>
+                {item.label}
+              </Text>
+            </View>
+          );
+        }
+
+        const tx = item.tx;
+        const isSynthetic = tx.id.startsWith('debt_') || tx.source === 'goal_auto';
         return (
           <View style={[dynamicStyles.txCard, isSynthetic && dynamicStyles.txCardSynthetic]}>
             <TouchableOpacity
               style={dynamicStyles.txCardContent}
-              onPress={() => !isSynthetic ? openEditTx(item) : undefined}
+              onPress={() => !isSynthetic ? openEditTx(tx) : undefined}
               activeOpacity={!isSynthetic ? 0.7 : 1}
             >
               <View style={dynamicStyles.txCardHeader}>
                 <Text style={dynamicStyles.txTitle} numberOfLines={1}>
-                  {item.category}
+                  {tx.category}
                 </Text>
-                <Text style={[dynamicStyles.txAmount, { color: item.type === 'income' ? '#10B981' : '#EF4444' }]}>
-                  {item.type === 'income' ? '+' : '-'}{formatINR(Number(item.amount))}
+                <Text style={[dynamicStyles.txAmount, { color: tx.type === 'income' ? '#10B981' : '#EF4444' }]}>
+                  {tx.type === 'income' ? '+' : '-'}{formatINR(Number(tx.amount))}
                 </Text>
               </View>
 
-              {item.note ? <Text style={dynamicStyles.txNote} numberOfLines={2}>{item.note}</Text> : null}
+              {tx.note ? <Text style={dynamicStyles.txNote} numberOfLines={2}>{tx.note}</Text> : null}
 
               <View style={dynamicStyles.txMetaPanel}>
                 <View style={dynamicStyles.txMetaRow}>
                   <Ionicons name="calendar-outline" size={12} color={colors.textSecondary} />
-                  <Text style={dynamicStyles.txMetaText}>{item.date}</Text>
+                  <Text style={dynamicStyles.txMetaText}>{tx.date}</Text>
                 </View>
                 <View style={dynamicStyles.txMetaRow}>
-                  <Ionicons name={item.type === 'income' ? 'arrow-down-outline' : 'arrow-up-outline'} size={12} color={item.type === 'income' ? '#10B981' : '#EF4444'} />
+                  <Ionicons name={tx.type === 'income' ? 'arrow-down-outline' : 'arrow-up-outline'} size={12} color={tx.type === 'income' ? '#10B981' : '#EF4444'} />
                   <Text style={dynamicStyles.txMetaText}>
-                    {item.type === 'income' ? 'Income' : 'Expense'} {isSynthetic ? '· Auto Entry' : '· Manual'}
+                    {tx.type === 'income' ? 'Income' : 'Expense'} {isSynthetic ? '· Auto Entry' : '· Manual'}
                   </Text>
                 </View>
               </View>
@@ -1096,13 +1225,13 @@ export default function FinanceScreen() {
 
             {!isSynthetic && (
               <View style={dynamicStyles.txActionRail}>
-                <TouchableOpacity onPress={() => openEditTx(item)} style={dynamicStyles.txActionButton}>
+                <TouchableOpacity onPress={() => openEditTx(tx)} style={dynamicStyles.txActionButton}>
                   <Ionicons name="create-outline" size={18} color="#D4AF37"/>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
                     Alert.alert('Delete', 'Delete transaction?', [
-                      {text:'Cancel'}, {text:'Delete', style:'destructive', onPress:() => { deleteTransaction(email!, item.id); loadData(); }}
+                      {text:'Cancel'}, {text:'Delete', style:'destructive', onPress:() => { deleteTransaction(email!, tx.id); loadData(); }}
                     ]);
                   }}
                   style={dynamicStyles.txActionButton}
@@ -1335,6 +1464,44 @@ export default function FinanceScreen() {
       )}
 
       {/* ── Goal Add/Take Money Modal ── */}
+      <Modal visible={showInitialBalanceModal} animationType="fade" transparent={true}>
+        <View style={{flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', padding: 20}}>
+          <View style={{backgroundColor: colors.card, borderRadius: 20, padding: 24, borderWidth: 1, borderColor: colors.border}}>
+            <Text style={{fontSize: 21, fontWeight: '800', textAlign: 'center', color: colors.text, marginBottom: 10}}>
+              Enter Present Amount
+            </Text>
+            <Text style={{fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginBottom: 16}}>
+              This is the money you have right now. We will add income and subtract expenses, debts, and goals from this.
+            </Text>
+            <TextInput
+              style={dynamicStyles.input}
+              placeholder="Amount"
+              keyboardType="numeric"
+              value={initialBalanceInput}
+              onChangeText={setInitialBalanceInput}
+              placeholderTextColor={colors.textSecondary}
+              autoFocus
+            />
+            <View style={{flexDirection: 'row', gap: 12, marginTop: 8}}>
+              {initialBalanceValue !== null && (
+                <TouchableOpacity
+                  style={{flex: 1, padding: 14, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#F1F5F9', borderRadius: 14, alignItems: 'center'}}
+                  onPress={() => setShowInitialBalanceModal(false)}
+                >
+                  <Text style={{fontWeight: '700', color: colors.textSecondary}}>Cancel</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={{flex: 1, padding: 14, backgroundColor: uiColors.overview, borderRadius: 14, alignItems: 'center'}}
+                onPress={handleSaveInitialBalance}
+              >
+                <Text style={{fontWeight: '700', color: '#FFF'}}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <Modal visible={showGoalUpdateModal} animationType="fade" transparent={true}>
         <View style={{flex:1, backgroundColor:'rgba(0,0,0,0.5)', justifyContent:'center', padding:20}}>
           <View style={{backgroundColor: colors.card, borderRadius:20, padding:24, borderWidth: 1, borderColor: colors.border}}>
