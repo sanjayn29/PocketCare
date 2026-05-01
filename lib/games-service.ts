@@ -14,6 +14,9 @@ export interface GameScores {
   tapGame?: {
     bestScore: number;
   };
+  mathGame?: {
+    bestScore: number;
+  };
   lastUpdated?: string;
 }
 
@@ -107,6 +110,46 @@ export const saveTapGameScore = async (
 };
 
 /**
+ * Save math game best score
+ */
+export const saveMathGameScore = async (
+  email: string,
+  score: number
+): Promise<void> => {
+  try {
+    if (!email) {
+      console.warn('Email is required to save game score');
+      return;
+    }
+
+    const gameDocRef = doc(db, 'games', email);
+    const gameDoc = await getDoc(gameDocRef);
+
+    if (gameDoc.exists()) {
+      const data = gameDoc.data() as GameScores;
+      if (!data.mathGame || score > data.mathGame.bestScore) {
+        await updateDoc(gameDocRef, {
+          mathGame: {
+            bestScore: score,
+          },
+          lastUpdated: new Date().toISOString(),
+        });
+      }
+    } else {
+      await setDoc(gameDocRef, {
+        mathGame: {
+          bestScore: score,
+        },
+        lastUpdated: new Date().toISOString(),
+      });
+    }
+  } catch (error) {
+    console.error('Error saving math game score:', error);
+    throw error;
+  }
+};
+
+/**
  * Get all game scores for a user
  */
 export const getGameScores = async (email: string): Promise<GameScores | null> => {
@@ -153,6 +196,19 @@ export const getTapGameScore = async (email: string) => {
     return scores?.tapGame || null;
   } catch (error) {
     console.error('Error getting tap game score:', error);
+    return null;
+  }
+};
+
+/**
+ * Get math game best score
+ */
+export const getMathGameScore = async (email: string) => {
+  try {
+    const scores = await getGameScores(email);
+    return scores?.mathGame || null;
+  } catch (error) {
+    console.error('Error getting math game score:', error);
     return null;
   }
 };

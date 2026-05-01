@@ -1,11 +1,12 @@
 import MemoryGameComponent from "@/components/MemoryGameComponent";
+import MathGameComponent from "@/components/MathGameComponent";
 import TapGameComponent from "@/components/TapGameComponent";
 import { getCardSystem } from "@/constants/card-system";
 import { getColors } from "@/constants/styles";
 import { useTheme } from "@/context/ThemeContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { createDownloadFile, downloadAllUserData } from "@/lib/download-service";
-import { getMemoryGameScore, getTapGameScore } from "@/lib/games-service";
+import { getMathGameScore, getMemoryGameScore, getTapGameScore } from "@/lib/games-service";
 import { getStreakData } from "@/lib/streak-service";
 import { useAuth, useUser } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,6 +28,10 @@ interface MemoryScore {
 }
 
 interface TapScore {
+  bestScore: number;
+}
+
+interface MathScore {
   bestScore: number;
 }
 
@@ -468,8 +473,10 @@ const ProfileScreen: React.FC = () => {
 
   const [showMemoryGame, setShowMemoryGame] = useState(false);
   const [showTapGame, setShowTapGame] = useState(false);
+  const [showMathGame, setShowMathGame] = useState(false);
   const [memoryScore, setMemoryScore] = useState<MemoryScore | null>(null);
   const [tapScore, setTapScore] = useState<TapScore | null>(null);
+  const [mathScore, setMathScore] = useState<MathScore | null>(null);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [maxStreak, setMaxStreak] = useState(0);
   const [appLockEnabled, setAppLockEnabled] = useState(false);
@@ -582,13 +589,15 @@ const ProfileScreen: React.FC = () => {
   const loadData = useCallback(async () => {
     if (!email || !userId) return;
     try {
-      const [memoryData, tapData, streakData] = await Promise.all([
+      const [memoryData, tapData, mathData, streakData] = await Promise.all([
         getMemoryGameScore(email),
         getTapGameScore(email),
+        getMathGameScore(email),
         getStreakData(email),
       ]);
       setMemoryScore(memoryData);
       setTapScore(tapData);
+      setMathScore(mathData);
       setCurrentStreak(streakData.currentStreak);
       setMaxStreak(streakData.maxStreak);
     } catch (error) {
@@ -605,6 +614,7 @@ const ProfileScreen: React.FC = () => {
   const handleGameClose = () => {
     setShowMemoryGame(false);
     setShowTapGame(false);
+    setShowMathGame(false);
     loadData();
   };
 
@@ -1310,6 +1320,16 @@ const ProfileScreen: React.FC = () => {
                   </View>
                 </View>
               </View>
+
+              <View style={dynamicStyles.scoreCard}>
+                <Text style={dynamicStyles.gameTitle}>Math Challenge</Text>
+                <View style={dynamicStyles.scoreDetails}>
+                  <View style={dynamicStyles.scoreItem}>
+                    <Text style={dynamicStyles.scoreLabel}>Best Score</Text>
+                    <Text style={dynamicStyles.scoreValue}>{mathScore?.bestScore || "N/A"}</Text>
+                  </View>
+                </View>
+              </View>
             </View>
 
             <View style={dynamicStyles.sectionBlock}>
@@ -1348,6 +1368,17 @@ const ProfileScreen: React.FC = () => {
                 <View style={dynamicStyles.gameButtonContent}>
                   <Text style={dynamicStyles.gameButtonTitle}>Tap Game</Text>
                   <Text style={dynamicStyles.gameButtonSubtitle}>Tap as fast as you can</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={dynamicStyles.gameButtonArrow} />
+              </TouchableOpacity>
+
+              <TouchableOpacity style={dynamicStyles.gameButton} onPress={() => setShowMathGame(true)}>
+                <View style={dynamicStyles.gameButtonIconWrap}>
+                  <Ionicons name="bulb-outline" size={22} color={colors.primary} />
+                </View>
+                <View style={dynamicStyles.gameButtonContent}>
+                  <Text style={dynamicStyles.gameButtonTitle}>Math Challenge</Text>
+                  <Text style={dynamicStyles.gameButtonSubtitle}>Solve quick math under time pressure</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={dynamicStyles.gameButtonArrow} />
               </TouchableOpacity>
@@ -1541,6 +1572,7 @@ const ProfileScreen: React.FC = () => {
 
       {showMemoryGame && <MemoryGameComponent onClose={handleGameClose} />}
       {showTapGame && <TapGameComponent onClose={handleGameClose} />}
+      {showMathGame && <MathGameComponent onClose={handleGameClose} />}
     </SafeAreaView>
   );
 };
