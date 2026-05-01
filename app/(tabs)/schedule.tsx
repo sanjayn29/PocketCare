@@ -29,6 +29,7 @@ import {
     Keyboard,
     KeyboardAvoidingView,
     Modal,
+    PanResponder,
     Platform,
     ScrollView,
     StyleSheet,
@@ -53,6 +54,7 @@ const STATUS_CONFIG_SCHEDULE = (colors: any): Record<'Upcoming' | 'Completed' | 
 
 type TabType = 'Current' | 'Schedules';
 type StatusFilter = 'All' | 'Upcoming' | 'Completed' | 'Cancelled';
+const SCHEDULE_TAB_ORDER: TabType[] = ['Current', 'Schedules'];
 
 export default function ScheduleScreen() {
   const { user } = useUser();
@@ -105,6 +107,44 @@ export default function ScheduleScreen() {
   const [showEditStartTimePicker, setShowEditStartTimePicker] = useState(false);
   const [showEditEndTimePicker, setShowEditEndTimePicker] = useState(false);
   const [isEditSaving, setIsEditSaving] = useState(false);
+
+  const switchTabBySwipe = useCallback((direction: 'left' | 'right') => {
+    setActiveTab((prev) => {
+      const currentIndex = SCHEDULE_TAB_ORDER.indexOf(prev);
+      if (currentIndex === -1) return prev;
+      const nextIndex = direction === 'left'
+        ? Math.min(currentIndex + 1, SCHEDULE_TAB_ORDER.length - 1)
+        : Math.max(currentIndex - 1, 0);
+      return SCHEDULE_TAB_ORDER[nextIndex];
+    });
+  }, []);
+
+  const tabSwipeResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+        const absDx = Math.abs(gestureState.dx);
+        const absDy = Math.abs(gestureState.dy);
+        return absDx > 10 && absDx > absDy * 1.05;
+      },
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        const absDx = Math.abs(gestureState.dx);
+        const absDy = Math.abs(gestureState.dy);
+        return absDx > 10 && absDx > absDy * 1.05;
+      },
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderRelease: (_, gestureState) => {
+        const absDx = Math.abs(gestureState.dx);
+        const absDy = Math.abs(gestureState.dy);
+        const absVx = Math.abs(gestureState.vx);
+        const isHorizontalIntent = absDx > absDy * 0.9;
+        const passedDistance = absDx >= 35;
+        const passedFlick = absVx >= 0.35 && absDx >= 16;
+        if (!isHorizontalIntent || (!passedDistance && !passedFlick)) return;
+        if (gestureState.dx < 0) switchTabBySwipe('left');
+        else switchTabBySwipe('right');
+      },
+    })
+  ).current;
 
   useEffect(() => {
     Animated.loop(
@@ -604,7 +644,7 @@ export default function ScheduleScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={[styles.content, { backgroundColor: colors.background }]} contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false}>
+            <ScrollView style={[styles.content, { backgroundColor: colors.background }]} contentContainerStyle={{ paddingBottom: 140 }} showsVerticalScrollIndicator={false} {...tabSwipeResponder.panHandlers}>
             {/* Current Tab */}
             {activeTab === 'Current' && (
               <>

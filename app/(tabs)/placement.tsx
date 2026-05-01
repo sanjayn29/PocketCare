@@ -12,7 +12,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
     ActivityIndicator, Alert, Animated,
     FlatList,
-    Keyboard, KeyboardAvoidingView, Modal, Platform,
+    Keyboard, KeyboardAvoidingView, Modal, PanResponder, Platform,
     ScrollView, StyleSheet, Switch, Text, TextInput,
     TouchableOpacity, View
 } from 'react-native';
@@ -26,6 +26,7 @@ import {
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 type TabView = 'placements' | 'companies';
+const PLACEMENT_TAB_ORDER: TabView[] = ['placements', 'companies'];
 
 // Dynamic config based on theme
 const getStatusConfig = (colors: any): Record<PlacementStatus, { label: string; color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }> => ({
@@ -381,6 +382,44 @@ export default function PlacementScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [filterStatus, setFilterStatus] = useState<PlacementStatus | 'all'>('all');
   const [companyStatusFilter, setCompanyStatusFilter] = useState<CompanyStatus | 'all'>('all');
+
+  const switchTabBySwipe = useCallback((direction: 'left' | 'right') => {
+    setActiveTab((prev) => {
+      const currentIndex = PLACEMENT_TAB_ORDER.indexOf(prev);
+      if (currentIndex === -1) return prev;
+      const nextIndex = direction === 'left'
+        ? Math.min(currentIndex + 1, PLACEMENT_TAB_ORDER.length - 1)
+        : Math.max(currentIndex - 1, 0);
+      return PLACEMENT_TAB_ORDER[nextIndex];
+    });
+  }, []);
+
+  const tabSwipeResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+        const absDx = Math.abs(gestureState.dx);
+        const absDy = Math.abs(gestureState.dy);
+        return absDx > 10 && absDx > absDy * 1.05;
+      },
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        const absDx = Math.abs(gestureState.dx);
+        const absDy = Math.abs(gestureState.dy);
+        return absDx > 10 && absDx > absDy * 1.05;
+      },
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderRelease: (_, gestureState) => {
+        const absDx = Math.abs(gestureState.dx);
+        const absDy = Math.abs(gestureState.dy);
+        const absVx = Math.abs(gestureState.vx);
+        const isHorizontalIntent = absDx > absDy * 0.9;
+        const passedDistance = absDx >= 35;
+        const passedFlick = absVx >= 0.35 && absDx >= 16;
+        if (!isHorizontalIntent || (!passedDistance && !passedFlick)) return;
+        if (gestureState.dx < 0) switchTabBySwipe('left');
+        else switchTabBySwipe('right');
+      },
+    })
+  ).current;
 
   // Dynamic styles based on theme
   const styles = useMemo(() => getStyles(colors, isDark, activeTab), [colors, isDark, activeTab]);
@@ -751,7 +790,7 @@ export default function PlacementScreen() {
 
   return (
     <SafeAreaView style={dynamicStyles.container} edges={['top', 'left', 'right']}>
-      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.background }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.background }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} {...tabSwipeResponder.panHandlers}>
 
       {/* ── Page Header ── */}
       <View style={dynamicStyles.headerArea}>

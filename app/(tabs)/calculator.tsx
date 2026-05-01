@@ -16,6 +16,7 @@ import {
     FlatList,
     KeyboardAvoidingView,
     Modal,
+    PanResponder,
     Platform,
     StyleSheet,
     Text,
@@ -40,6 +41,7 @@ type Result = {
   interest: number;
   totalAmount: number;
 };
+const CALCULATOR_TAB_ORDER: ('basic' | 'interest' | 'history')[] = ['basic', 'interest', 'history'];
 
 export default function CalculatorScreen() {
   const { user } = useUser();
@@ -58,6 +60,44 @@ export default function CalculatorScreen() {
 
   // Tab state
   const [activeTab, setActiveTab] = useState<'basic' | 'interest' | 'history'>('basic');
+
+  const switchTabBySwipe = useCallback((direction: 'left' | 'right') => {
+    setActiveTab((prev) => {
+      const currentIndex = CALCULATOR_TAB_ORDER.indexOf(prev);
+      if (currentIndex === -1) return prev;
+      const nextIndex = direction === 'left'
+        ? Math.min(currentIndex + 1, CALCULATOR_TAB_ORDER.length - 1)
+        : Math.max(currentIndex - 1, 0);
+      return CALCULATOR_TAB_ORDER[nextIndex];
+    });
+  }, []);
+
+  const tabSwipeResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+        const absDx = Math.abs(gestureState.dx);
+        const absDy = Math.abs(gestureState.dy);
+        return absDx > 10 && absDx > absDy * 1.05;
+      },
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        const absDx = Math.abs(gestureState.dx);
+        const absDy = Math.abs(gestureState.dy);
+        return absDx > 10 && absDx > absDy * 1.05;
+      },
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderRelease: (_, gestureState) => {
+        const absDx = Math.abs(gestureState.dx);
+        const absDy = Math.abs(gestureState.dy);
+        const absVx = Math.abs(gestureState.vx);
+        const isHorizontalIntent = absDx > absDy * 0.9;
+        const passedDistance = absDx >= 35;
+        const passedFlick = absVx >= 0.35 && absDx >= 16;
+        if (!isHorizontalIntent || (!passedDistance && !passedFlick)) return;
+        if (gestureState.dx < 0) switchTabBySwipe('left');
+        else switchTabBySwipe('right');
+      },
+    })
+  ).current;
 
   useEffect(() => {
     Animated.loop(
@@ -1122,6 +1162,7 @@ export default function CalculatorScreen() {
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+          {...tabSwipeResponder.panHandlers}
         >
 
       {/* Basic Calculator Tab */}

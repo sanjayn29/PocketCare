@@ -18,7 +18,7 @@ import { useRouter } from "expo-router";
 import LottieView from "lottie-react-native";
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Image, Linking, Platform, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Linking, PanResponder, Platform, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 interface MemoryScore {
@@ -449,6 +449,7 @@ const createPdfBase64 = async (jsonString: string, email: string): Promise<strin
 const isDownloadsDirectoryUri = (uri: string) => /download/i.test(decodeURIComponent(uri));
 
 type ProfileTabType = 'Status' | 'Settings' | 'About';
+const PROFILE_TAB_ORDER: ProfileTabType[] = ['Status', 'Settings', 'About'];
 
 const ProfileScreen: React.FC = () => {
   const { signOut } = useAuth();
@@ -474,6 +475,44 @@ const ProfileScreen: React.FC = () => {
   const [appLockEnabled, setAppLockEnabled] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [activeTab, setActiveTab] = useState<ProfileTabType>('Status');
+
+  const switchTabBySwipe = useCallback((direction: 'left' | 'right') => {
+    setActiveTab((prev) => {
+      const currentIndex = PROFILE_TAB_ORDER.indexOf(prev);
+      if (currentIndex === -1) return prev;
+      const nextIndex = direction === 'left'
+        ? Math.min(currentIndex + 1, PROFILE_TAB_ORDER.length - 1)
+        : Math.max(currentIndex - 1, 0);
+      return PROFILE_TAB_ORDER[nextIndex];
+    });
+  }, []);
+
+  const tabSwipeResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+        const absDx = Math.abs(gestureState.dx);
+        const absDy = Math.abs(gestureState.dy);
+        return absDx > 10 && absDx > absDy * 1.05;
+      },
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        const absDx = Math.abs(gestureState.dx);
+        const absDy = Math.abs(gestureState.dy);
+        return absDx > 10 && absDx > absDy * 1.05;
+      },
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderRelease: (_, gestureState) => {
+        const absDx = Math.abs(gestureState.dx);
+        const absDy = Math.abs(gestureState.dy);
+        const absVx = Math.abs(gestureState.vx);
+        const isHorizontalIntent = absDx > absDy * 0.9;
+        const passedDistance = absDx >= 35;
+        const passedFlick = absVx >= 0.35 && absDx >= 16;
+        if (!isHorizontalIntent || (!passedDistance && !passedFlick)) return;
+        if (gestureState.dx < 0) switchTabBySwipe('left');
+        else switchTabBySwipe('right');
+      },
+    })
+  ).current;
 
   const profileTabColors = {
     status: '#D4AF37',
@@ -1142,7 +1181,7 @@ const ProfileScreen: React.FC = () => {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={dynamicStyles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={dynamicStyles.scrollContent} showsVerticalScrollIndicator={false} {...tabSwipeResponder.panHandlers}>
         <View style={dynamicStyles.userCard}>
           <View style={dynamicStyles.profileSection}>
             {user?.imageUrl ? (

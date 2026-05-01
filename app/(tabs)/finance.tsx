@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { BlurView } from 'expo-blur';
 import { useFonts } from 'expo-font';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -16,6 +17,7 @@ import {
     Keyboard,
     KeyboardAvoidingView,
     Modal, Platform, ScrollView,
+    PanResponder,
     StyleSheet,
     Switch, Text,
     TextInput, TouchableOpacity, View
@@ -48,6 +50,7 @@ const todayStr = new Date().toISOString().split('T')[0];
 type TabType = 'Overview' | 'Transactions' | 'Debts' | 'Goals';
 type TimeFilter = 'All' | 'Today' | 'Month' | 'Year' | 'Custom';
 type ChartType = 'Pie' | 'Line' | 'Bar';
+const TAB_ORDER: TabType[] = ['Overview', 'Transactions', 'Debts', 'Goals'];
 
 export default function FinanceScreen() {
   const { user } = useUser();
@@ -90,6 +93,46 @@ export default function FinanceScreen() {
   }, [backButtonScale])
 
   const [activeTab, setActiveTab] = useState<TabType>('Overview');
+
+  const switchTabBySwipe = useCallback((direction: 'left' | 'right') => {
+    const currentIndex = TAB_ORDER.indexOf(activeTab);
+    if (currentIndex === -1) return;
+    const nextIndex = direction === 'left'
+      ? Math.min(currentIndex + 1, TAB_ORDER.length - 1)
+      : Math.max(currentIndex - 1, 0);
+    if (nextIndex === currentIndex) return;
+    setActiveTab(TAB_ORDER[nextIndex]);
+    Haptics.selectionAsync().catch(() => {});
+  }, [activeTab]);
+
+  const tabSwipeResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+          const absDx = Math.abs(gestureState.dx);
+          const absDy = Math.abs(gestureState.dy);
+          return absDx > 10 && absDx > absDy * 1.05;
+        },
+        onMoveShouldSetPanResponder: (_, gestureState) => {
+          const absDx = Math.abs(gestureState.dx);
+          const absDy = Math.abs(gestureState.dy);
+          return absDx > 10 && absDx > absDy * 1.05;
+        },
+        onPanResponderTerminationRequest: () => false,
+        onPanResponderRelease: (_, gestureState) => {
+          const absDx = Math.abs(gestureState.dx);
+          const absDy = Math.abs(gestureState.dy);
+          const absVx = Math.abs(gestureState.vx);
+          const isHorizontalIntent = absDx > absDy * 0.9;
+          const passedDistance = absDx >= 35;
+          const passedFlick = absVx >= 0.35 && absDx >= 16;
+          if (!isHorizontalIntent || (!passedDistance && !passedFlick)) return;
+          if (gestureState.dx < 0) switchTabBySwipe('left');
+          else switchTabBySwipe('right');
+        },
+      }),
+    [switchTabBySwipe]
+  );
 
   const dynamicStyles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
@@ -1443,6 +1486,7 @@ export default function FinanceScreen() {
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+          {...tabSwipeResponder.panHandlers}
         >
           {loading ? (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -1634,6 +1678,3 @@ export default function FinanceScreen() {
     </SafeAreaView>
   );
 }
-
-
-

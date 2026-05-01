@@ -13,7 +13,7 @@ import {
     ActivityIndicator, Alert, Animated, FlatList,
     Keyboard,
     KeyboardAvoidingView,
-    Modal, Platform, ScrollView, StyleSheet, Text,
+    Modal, PanResponder, Platform, ScrollView, StyleSheet, Text,
     TextInput, TouchableOpacity, View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -37,6 +37,7 @@ import {
 const todayStr = new Date().toISOString().split('T')[0];
 type TabType = 'Medical' | 'Diet' | 'Fitness';
 type TimeFilter = 'Week' | 'Month' | 'Year' | 'All' | 'Custom';
+const HEALTH_TAB_ORDER: TabType[] = ['Diet', 'Fitness', 'Medical'];
 
 export default function HealthScreen() {
   const { user } = useUser();
@@ -86,6 +87,44 @@ export default function HealthScreen() {
   const [fitnessList, setFitnessList] = useState<FitnessPlan[]>([]);
 
   const [activeTab, setActiveTab] = useState<TabType>('Diet');
+
+  const switchTabBySwipe = useCallback((direction: 'left' | 'right') => {
+    setActiveTab((prev) => {
+      const currentIndex = HEALTH_TAB_ORDER.indexOf(prev);
+      if (currentIndex === -1) return prev;
+      const nextIndex = direction === 'left'
+        ? Math.min(currentIndex + 1, HEALTH_TAB_ORDER.length - 1)
+        : Math.max(currentIndex - 1, 0);
+      return HEALTH_TAB_ORDER[nextIndex];
+    });
+  }, []);
+
+  const tabSwipeResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+        const absDx = Math.abs(gestureState.dx);
+        const absDy = Math.abs(gestureState.dy);
+        return absDx > 10 && absDx > absDy * 1.05;
+      },
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        const absDx = Math.abs(gestureState.dx);
+        const absDy = Math.abs(gestureState.dy);
+        return absDx > 10 && absDx > absDy * 1.05;
+      },
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderRelease: (_, gestureState) => {
+        const absDx = Math.abs(gestureState.dx);
+        const absDy = Math.abs(gestureState.dy);
+        const absVx = Math.abs(gestureState.vx);
+        const isHorizontalIntent = absDx > absDy * 0.9;
+        const passedDistance = absDx >= 35;
+        const passedFlick = absVx >= 0.35 && absDx >= 16;
+        if (!isHorizontalIntent || (!passedDistance && !passedFlick)) return;
+        if (gestureState.dx < 0) switchTabBySwipe('left');
+        else switchTabBySwipe('right');
+      },
+    })
+  ).current;
 
   const backButtonScale = useRef(new Animated.Value(1)).current
 
@@ -780,7 +819,7 @@ export default function HealthScreen() {
           ))}
         </View>
 
-        <KeyboardAvoidingView style={{flex: 1}} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView style={{flex: 1}} behavior={Platform.OS === 'ios' ? 'padding' : undefined} {...tabSwipeResponder.panHandlers}>
           {loading ? <View style={{flex:1, justifyContent:'center'}}><ActivityIndicator size="large" color="#D4AF37" /></View> :
             activeTab === 'Medical' ? renderMedical() :
             activeTab === 'Diet' ? (
