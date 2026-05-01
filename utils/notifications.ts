@@ -182,8 +182,9 @@ export async function clearRemovedReminders(email?: string): Promise<void> {
 
   for (const request of scheduled) {
     const data = request.content.data as { type?: string; email?: string; eventId?: string } | undefined
+    // NOTE: 'daily-progress-reminder' is intentionally excluded — it is a permanent
+    // repeating alarm and must NOT be cancelled on every app launch.
     const isRemovedType =
-      data?.type === 'daily-progress-reminder' ||
       data?.type === 'goal-deadline-reminder' ||
       data?.type === 'schedule-event-reminder'
     if (!isRemovedType) continue
@@ -253,12 +254,22 @@ export async function scheduleScheduleEventReminder(input: ScheduleReminderInput
  * Call this once after login.
  */
 export async function scheduleDailyProgressReminder(): Promise<boolean> {
-  // Guard: already scheduled, skip
-  const alreadyScheduled = await AsyncStorage.getItem(DAILY_REMINDER_SCHEDULED_KEY)
-  if (alreadyScheduled === 'true') return false
-
   const permissionGranted = await ensureLocalNotificationPermission()
   if (!permissionGranted) return false
+
+  // Check if the notification is still actually alive in the OS queue.
+  // If it was wiped (reinstall, OS clear, etc.) but the guard flag survived,
+  // we must reschedule it — so we reset the guard and fall through.
+  const alreadyScheduled = await AsyncStorage.getItem(DAILY_REMINDER_SCHEDULED_KEY)
+  if (alreadyScheduled === 'true') {
+    const allScheduled = await Notifications.getAllScheduledNotificationsAsync()
+    const stillExists = allScheduled.some(
+      (n) => (n.content.data as any)?.type === 'daily-progress-reminder'
+    )
+    if (stillExists) return false   // Already live — nothing to do.
+    // Guard was stale — reset it so we fall through and reschedule.
+    await AsyncStorage.removeItem(DAILY_REMINDER_SCHEDULED_KEY)
+  }
 
   await Notifications.scheduleNotificationAsync({
     content: {

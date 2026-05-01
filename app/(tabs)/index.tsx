@@ -1,5 +1,5 @@
 import { getCardSystem } from '@/constants/card-system'
-import { getColors } from '@/constants/styles'
+import { getColors, rf, rs, rv } from '@/constants/styles'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import { Debt, getFinanceData } from '@/lib/finance-service'
 import { getGoals } from '@/lib/goals-service'

@@ -1,6 +1,6 @@
 
 import { getCardSystem } from '@/constants/card-system';
-import { getColors } from '@/constants/styles';
+import { getColors, rf, rs, rv } from '@/constants/styles';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { BlurView } from 'expo-blur';

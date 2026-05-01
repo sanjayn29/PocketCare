@@ -2,7 +2,7 @@ import MemoryGameComponent from "@/components/MemoryGameComponent";
 import MathGameComponent from "@/components/MathGameComponent";
 import TapGameComponent from "@/components/TapGameComponent";
 import { getCardSystem } from "@/constants/card-system";
-import { getColors } from "@/constants/styles";
+import { getColors, rf, rs, rv } from "@/constants/styles";
 import { useTheme } from "@/context/ThemeContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { createDownloadFile, downloadAllUserData } from "@/lib/download-service";

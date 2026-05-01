@@ -1,7 +1,7 @@
 
 
 
-import { getColors } from '@/constants/styles'
+import { getColors, rf, rs, rv } from '@/constants/styles'
 import { useColorScheme } from '@/hooks/use-color-scheme'
 import { getAIResponse } from '@/lib/ai-service'
 import { useUser } from '@clerk/expo'
